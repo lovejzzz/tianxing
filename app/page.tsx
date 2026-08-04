@@ -78,9 +78,9 @@ export default function Home() {
                 <span className="about-icon"><i>TX</i></span>
                 <span>About</span>
               </Link>
-              <a className="dock-link" href="mailto:hi@tianxing.studio" aria-label="Email Tian Xing">
-                <span className="mail-icon"><i /></span>
-                <span>Say Hello</span>
+              <a className="dock-link" href="https://github.com/lovejzzz" target="_blank" rel="noreferrer" aria-label="Tian Xing on GitHub">
+                <span className="github-icon"><i>GH</i></span>
+                <span>GitHub</span>
               </a>
             </div>
           </div>
