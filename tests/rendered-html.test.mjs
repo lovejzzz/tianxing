@@ -1,4 +1,5 @@
 import assert from "node:assert/strict";
+import { readFile } from "node:fs/promises";
 import test from "node:test";
 
 async function render(path = "/") {
@@ -16,8 +17,10 @@ test("renders the finished portfolio home", async () => {
   const html = await response.text();
   assert.match(html, /Tian Xing/);
   assert.match(html, /Selected Work/);
+  assert.match(html, /delivers\./i);
   assert.match(html, /EduTool/);
   assert.match(html, /Slotronome/);
+  assert.doesNotMatch(html, /Choose an icon to open a project|Nine things I care about|makes things/i);
   assert.doesNotMatch(html, /codex-preview|react-loading-skeleton|Your site is taking shape/);
 });
 
@@ -27,4 +30,15 @@ test("renders a project detail route", async () => {
   const html = await response.text();
   assert.match(html, /Push\. Recover\. Come back stronger\./);
   assert.match(html, /View on the App Store/);
+});
+
+test("keeps the iPhone interactive and time-aware", async () => {
+  const source = await readFile(new URL("../app/components/PhoneExperience.tsx", import.meta.url), "utf8");
+  assert.match(source, /toLocaleTimeString/);
+  assert.match(source, /onPointerDown/);
+  assert.match(source, /onPointerMove/);
+  assert.match(source, /onPointerUp/);
+  assert.match(source, /Go to iPhone Home screen/);
+  assert.match(source, /Selected Work/);
+  assert.match(source, /media\/about\/tian-xing\.jpg/);
 });
