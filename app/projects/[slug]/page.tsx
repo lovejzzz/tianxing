@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import type { CSSProperties } from "react";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { AppIcon } from "../../components/AppIcon";
@@ -59,17 +60,52 @@ export default async function ProjectPage({ params }: { params: Promise<{ slug: 
           </div>
         </section>
 
+        {project.livePreview && (
+          <section className="live-demo-section" aria-label={`${project.title} live demo`}>
+            <div className="live-demo-heading">
+              <div>
+                <p>LIVE DEMO</p>
+                <h2>{project.livePreview.label}</h2>
+              </div>
+              <p>{project.livePreview.note}</p>
+            </div>
+            <div className="live-demo-frame">
+              <div className="live-demo-bar" aria-hidden="true">
+                <span><i /><i /><i /></span>
+                <b>{project.livePreview.url.replace(/^https?:\/\//, "").replace(/\/$/, "")}</b>
+                <a href={project.livePreview.url} target="_blank" rel="noreferrer" tabIndex={-1}>Open ↗</a>
+              </div>
+              <iframe
+                className="live-demo-embed"
+                src={project.livePreview.url}
+                title={`${project.title} interactive demo`}
+                loading="lazy"
+                allow="autoplay; clipboard-write; fullscreen; gamepad"
+                allowFullScreen
+              />
+            </div>
+            <a className="live-demo-fallback" href={project.livePreview.url} target="_blank" rel="noreferrer">Open the full project in a new window <span>↗</span></a>
+          </section>
+        )}
+
         <section className={`media-gallery ${project.media.some((item) => item.portrait) ? "portrait-gallery" : ""}`} aria-label={`${project.title} screenshots`}>
           {project.media.map((item, mediaIndex) => (
-            <figure className={`media-item media-${item.type}`} key={`${item.src}-${mediaIndex}`}>
+            <figure
+              className={`media-item media-${item.type}`}
+              key={`${item.src}-${mediaIndex}`}
+              style={{ "--media-max": item.width ? `${item.width}px` : "1600px" } as CSSProperties}
+            >
               <div className="media-frame">
                 <div className="media-chrome" aria-hidden="true"><i /><i /><i /><span>{project.title}</span></div>
                 {item.type === "image" && (
-                  // Raw screenshots keep their native aspect ratios across the mixed gallery.
-                  // eslint-disable-next-line @next/next/no-img-element
-                  <img src={`${base}${item.src}`} alt={item.alt} loading={mediaIndex ? "lazy" : "eager"} />
+                  <a className="media-image-link" href={`${base}${item.src}`} target="_blank" rel="noreferrer" aria-label={`View full resolution: ${item.alt}`}>
+                    {/* Raw screenshots keep their native aspect ratios and never render wider than their source pixels. */}
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img src={`${base}${item.src}`} alt={item.alt} width={item.width} height={item.height} loading={mediaIndex ? "lazy" : "eager"} decoding="async" />
+                    <span>FULL RESOLUTION ↗</span>
+                  </a>
                 )}
-                {item.type === "video" && <video src={`${base}${item.src}`} aria-label={item.alt} controls muted loop playsInline poster={`${base}/media/film/5279-projection.jpg`} />}
+                {item.type === "video" && <video src={`${base}${item.src}`} aria-label={item.alt} controls muted loop playsInline poster={`${base}/media/film/5279-projection-hi.jpg`} />}
                 {item.type === "youtube" && (
                   <iframe src={`https://www.youtube-nocookie.com/embed/${item.src}?rel=0`} title={item.alt} allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" allowFullScreen />
                 )}

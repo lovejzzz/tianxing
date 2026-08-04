@@ -30,6 +30,17 @@ test("renders a project detail route", async () => {
   const html = await response.text();
   assert.match(html, /Push\. Recover\. Come back stronger\./);
   assert.match(html, /View on the App Store/);
+  assert.match(html, /main-hi\.png/);
+});
+
+test("embeds playable projects and full-resolution screenshots", async () => {
+  const response = await render("/projects/bebop-puzzle/");
+  assert.equal(response.status, 200);
+  const html = await response.text();
+  assert.match(html, /Play Bebop Puzzle here/);
+  assert.match(html, /https:\/\/beboppuzzle\.com/);
+  assert.match(html, /bebop-live\.png/);
+  assert.match(html, /FULL RESOLUTION/);
 });
 
 test("keeps the iPhone interactive and time-aware", async () => {
