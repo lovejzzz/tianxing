@@ -27,4 +27,4 @@ npm run dev
 
 ## Deployment
 
-Pushing `main` runs the GitHub Pages workflow. The public site is available at [lovejzzz.github.io/tianxing](https://lovejzzz.github.io/tianxing/).
+Pushing `main` runs the GitHub Pages workflow. The public site is available at [tian.fun](https://tian.fun/).
