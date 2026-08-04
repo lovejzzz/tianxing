@@ -1,0 +1,106 @@
+import type { Metadata } from "next";
+import Link from "next/link";
+import { notFound } from "next/navigation";
+import { AppIcon } from "../../components/AppIcon";
+import { getProject, projects } from "../../projects";
+
+export function generateStaticParams() {
+  return projects.map(({ slug }) => ({ slug }));
+}
+
+export async function generateMetadata({ params }: { params: Promise<{ slug: string }> }): Promise<Metadata> {
+  const { slug } = await params;
+  const project = getProject(slug);
+  if (!project) return {};
+  return { title: project.title, description: project.tagline };
+}
+
+export default async function ProjectPage({ params }: { params: Promise<{ slug: string }> }) {
+  const { slug } = await params;
+  const project = getProject(slug);
+  if (!project) notFound();
+  const index = projects.findIndex((item) => item.slug === project.slug);
+  const next = projects[(index + 1) % projects.length];
+  const base = process.env.NEXT_PUBLIC_BASE_PATH ?? "";
+
+  return (
+    <main className={`detail-page accent-${project.accent}`}>
+      <header className="detail-nav">
+        <Link className="back-button" href="/" aria-label="Back to all projects"><span>‹</span> Projects</Link>
+        <Link className="wordmark" href="/">TIAN XING <small>/ SELECTED WORK</small></Link>
+        <Link className="about-button" href="/about">About</Link>
+      </header>
+
+      <article>
+        <section className="project-hero">
+          <div className="project-identity">
+            <AppIcon project={project} large />
+            <div>
+              <p className="project-category">{project.category}</p>
+              <h1>{project.title}</h1>
+              <p className="project-tagline">{project.tagline}</p>
+            </div>
+          </div>
+          <a className="store-button" href={project.externalUrl} target="_blank" rel="noreferrer">
+            <small>VIEW PROJECT</small>
+            <strong>{project.externalLabel}</strong>
+            <span>↗</span>
+          </a>
+        </section>
+
+        <section className="project-overview">
+          <div className="project-meta">
+            <p><span>Year</span><strong>{project.year}</strong></p>
+            <p><span>Role</span><strong>{project.role}</strong></p>
+          </div>
+          <div className="project-copy">
+            <p>{project.description}</p>
+            <blockquote>{project.note}</blockquote>
+          </div>
+        </section>
+
+        <section className={`media-gallery ${project.media.some((item) => item.portrait) ? "portrait-gallery" : ""}`} aria-label={`${project.title} screenshots`}>
+          {project.media.map((item, mediaIndex) => (
+            <figure className={`media-item media-${item.type}`} key={`${item.src}-${mediaIndex}`}>
+              <div className="media-frame">
+                <div className="media-chrome" aria-hidden="true"><i /><i /><i /><span>{project.title}</span></div>
+                {item.type === "image" && (
+                  // Raw screenshots keep their native aspect ratios across the mixed gallery.
+                  // eslint-disable-next-line @next/next/no-img-element
+                  <img src={`${base}${item.src}`} alt={item.alt} loading={mediaIndex ? "lazy" : "eager"} />
+                )}
+                {item.type === "video" && <video src={`${base}${item.src}`} aria-label={item.alt} controls muted loop playsInline poster={`${base}/media/film/5279-projection.jpg`} />}
+                {item.type === "youtube" && (
+                  <iframe src={`https://www.youtube-nocookie.com/embed/${item.src}?rel=0`} title={item.alt} allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" allowFullScreen />
+                )}
+              </div>
+              {item.caption && <figcaption><span>{String(mediaIndex + 1).padStart(2, "0")}</span>{item.caption}</figcaption>}
+            </figure>
+          ))}
+        </section>
+
+        <section className="feature-section">
+          <div className="section-kicker"><span>Inside the work</span><i /></div>
+          <div className="feature-grid">
+            {project.features.map((feature, featureIndex) => (
+              <article key={feature.title}>
+                <span>{String(featureIndex + 1).padStart(2, "0")}</span>
+                <h2>{feature.title}</h2>
+                <p>{feature.body}</p>
+              </article>
+            ))}
+          </div>
+        </section>
+      </article>
+
+      <footer className="next-project">
+        <p>Up next</p>
+        <Link href={`/projects/${next.slug}`}>
+          <AppIcon project={next} />
+          <span><small>{next.category}</small><strong>{next.title}</strong></span>
+          <b>→</b>
+        </Link>
+      </footer>
+    </main>
+  );
+}
