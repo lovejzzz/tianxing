@@ -17,15 +17,16 @@ type NativeApp =
   | "maps"
   | "notes"
   | "phone"
-  | "mail";
+  | "mail"
+  | "music";
 
 type HomeApp = {
-  id: NativeApp | "folder" | "appstore" | "youtube" | "github" | "about";
+  id: NativeApp | "folder";
   label: string;
   badge?: string;
 };
 
-const firstPage: HomeApp[] = [
+const homeApps: HomeApp[] = [
   { id: "messages", label: "Messages", badge: "1" },
   { id: "calendar", label: "Calendar" },
   { id: "photos", label: "Photos" },
@@ -35,84 +36,73 @@ const firstPage: HomeApp[] = [
   { id: "maps", label: "Maps" },
   { id: "notes", label: "Notes" },
   { id: "folder", label: "Selected Work" },
-  { id: "appstore", label: "App Store" },
-  { id: "youtube", label: "YouTube" },
-  { id: "about", label: "About" },
 ];
 
-const secondPage = projects.slice(0, 8);
-const externalApps: Partial<Record<HomeApp["id"], string>> = {
-  appstore: "https://apps.apple.com/us/app/surge-method/id6758555101",
-  youtube: "https://www.youtube.com/@HereWeGoFilmStudio",
-  github: "https://github.com/lovejzzz",
-};
+const dockApps: Array<{ id: NativeApp | "folder"; label: string }> = [
+  { id: "phone", label: "Phone" },
+  { id: "mail", label: "Mail" },
+  { id: "folder", label: "Selected Work" },
+  { id: "music", label: "Music" },
+];
+
+type Origin = { x: number; y: number };
 
 export function PhoneExperience() {
   const [mode, setMode] = useState<"folder" | "home" | "native">("folder");
   const [activeApp, setActiveApp] = useState<NativeApp | null>(null);
-  const [page, setPage] = useState(0);
-  const [dragX, setDragX] = useState(0);
+  const [closing, setClosing] = useState(false);
+  const [origin, setOrigin] = useState<Origin>({ x: 50, y: 58 });
   const [time, setTime] = useState("9:41 AM");
+  const [calendarDay, setCalendarDay] = useState("1");
   const [cameraFlash, setCameraFlash] = useState(false);
-  const drag = useRef({ startX: 0, lastX: 0, active: false, moved: false });
-  const suppressClickUntil = useRef(0);
+  const screenRef = useRef<HTMLDivElement>(null);
+  const transitionTimer = useRef<number | null>(null);
   const base = process.env.NEXT_PUBLIC_BASE_PATH ?? "";
 
   useEffect(() => {
-    const update = () => setTime(new Date().toLocaleTimeString([], { hour: "numeric", minute: "2-digit" }));
+    const update = () => {
+      const now = new Date();
+      setTime(now.toLocaleTimeString([], { hour: "numeric", minute: "2-digit" }));
+      setCalendarDay(String(now.getDate()));
+    };
     update();
     const timer = window.setInterval(update, 30_000);
-    return () => window.clearInterval(timer);
+    return () => {
+      window.clearInterval(timer);
+      if (transitionTimer.current) window.clearTimeout(transitionTimer.current);
+    };
   }, []);
 
-  const openHomeApp = (app: HomeApp) => {
-    if (Date.now() < suppressClickUntil.current) return;
-    if (app.id === "folder") {
+  const rememberOrigin = (element?: HTMLElement | null) => {
+    const screen = screenRef.current?.getBoundingClientRect();
+    const icon = element?.getBoundingClientRect();
+    if (!screen || !icon) return;
+    setOrigin({
+      x: ((icon.left + icon.width / 2 - screen.left) / screen.width) * 100,
+      y: ((icon.top + icon.height / 2 - screen.top) / screen.height) * 100,
+    });
+  };
+
+  const openApp = (id: NativeApp | "folder", element?: HTMLElement | null) => {
+    rememberOrigin(element);
+    setClosing(false);
+    if (id === "folder") {
+      setActiveApp(null);
       setMode("folder");
       return;
     }
-    if (app.id === "about") {
-      setActiveApp("photos");
-      setMode("native");
-      return;
-    }
-    if (externalApps[app.id]) {
-      window.open(externalApps[app.id], "_blank", "noopener,noreferrer");
-      return;
-    }
-    setActiveApp(app.id as NativeApp);
+    setActiveApp(id);
     setMode("native");
   };
 
   const goHome = () => {
-    if (mode === "home") setPage(0);
-    setMode("home");
-    setActiveApp(null);
-    setDragX(0);
-  };
-
-  const onPointerDown = (event: React.PointerEvent<HTMLDivElement>) => {
-    drag.current = { startX: event.clientX, lastX: event.clientX, active: true, moved: false };
-    event.currentTarget.setPointerCapture(event.pointerId);
-  };
-
-  const onPointerMove = (event: React.PointerEvent<HTMLDivElement>) => {
-    if (!drag.current.active) return;
-    const delta = event.clientX - drag.current.startX;
-    drag.current.lastX = event.clientX;
-    if (Math.abs(delta) > 6) drag.current.moved = true;
-    const atEdge = (page === 0 && delta > 0) || (page === 1 && delta < 0);
-    setDragX(atEdge ? delta * 0.22 : delta);
-  };
-
-  const onPointerUp = (event: React.PointerEvent<HTMLDivElement>) => {
-    if (!drag.current.active) return;
-    const delta = event.clientX - drag.current.startX;
-    if (drag.current.moved) suppressClickUntil.current = Date.now() + 180;
-    if (delta < -48 && page === 0) setPage(1);
-    if (delta > 48 && page === 1) setPage(0);
-    drag.current.active = false;
-    setDragX(0);
+    if (mode === "home" || closing) return;
+    setClosing(true);
+    transitionTimer.current = window.setTimeout(() => {
+      setMode("home");
+      setActiveApp(null);
+      setClosing(false);
+    }, 410);
   };
 
   return (
@@ -123,42 +113,44 @@ export function PhoneExperience() {
         <div className="device-button mute" />
       </div>
 
-      <div className="phone" role="application" aria-label="Tian Xing's iPhone portfolio">
+      <div className="phone" role="application" aria-label="Tian Xing's iPhone">
         <div className="phone-top">
           <span className="speaker" aria-hidden="true" />
           <span className="camera" aria-hidden="true" />
         </div>
 
-        <div className={`screen phone-mode-${mode}`}>
+        <div className={`screen phone-mode-${mode}`} ref={screenRef}>
           <StatusBar time={time} />
 
-          {mode === "folder" && (
-            <FolderView base={base} />
-          )}
-
-          {mode === "home" && (
+          <div className={`phone-home-layer ${mode === "home" ? "is-active" : "is-background"}`}>
             <HomeScreen
-              base={base}
-              page={page}
-              dragX={dragX}
-              onPageChange={setPage}
-              onOpenApp={openHomeApp}
-              onPointerDown={onPointerDown}
-              onPointerMove={onPointerMove}
-              onPointerUp={onPointerUp}
-              onOpenNative={(app) => { setActiveApp(app); setMode("native"); }}
-              onOpenFolder={() => setMode("folder")}
-              onLinkClick={(event) => {
-                if (Date.now() < suppressClickUntil.current) event.preventDefault();
-              }}
+              calendarDay={calendarDay}
+              onOpenApp={(id, element) => openApp(id, element)}
             />
-          )}
+          </div>
 
-          {mode === "native" && activeApp && (
-            <NativeAppView app={activeApp} base={base} time={time} cameraFlash={cameraFlash} onShutter={() => {
-              setCameraFlash(true);
-              window.setTimeout(() => setCameraFlash(false), 180);
-            }} />
+          {mode !== "home" && (
+            <div
+              className={`phone-app-layer ${closing ? "is-closing" : "is-opening"}`}
+              style={{
+                "--origin-x": `${origin.x}%`,
+                "--origin-y": `${origin.y}%`,
+              } as React.CSSProperties}
+            >
+              {mode === "folder" && <FolderView />}
+              {mode === "native" && activeApp && (
+                <NativeAppView
+                  app={activeApp}
+                  base={base}
+                  time={time}
+                  cameraFlash={cameraFlash}
+                  onShutter={() => {
+                    setCameraFlash(true);
+                    window.setTimeout(() => setCameraFlash(false), 180);
+                  }}
+                />
+              )}
+            </div>
           )}
         </div>
 
@@ -180,7 +172,7 @@ function StatusBar({ time }: { time: string }) {
   );
 }
 
-function FolderView({ base }: { base: string }) {
+function FolderView() {
   return (
     <div className="folder-screen">
       <div className="screen-titlebar">
@@ -195,116 +187,104 @@ function FolderView({ base }: { base: string }) {
             className="app-link"
             href={`/projects/${project.slug}`}
             key={project.slug}
-            style={{ "--delay": `${index * 55}ms` } as React.CSSProperties}
+            style={{ "--delay": `${index * 38}ms` } as React.CSSProperties}
           >
             <AppIcon project={project} />
             <span className="app-name">{project.shortTitle}</span>
           </Link>
         ))}
       </nav>
-
-      <div className="folder-caption">Press Home to close the folder</div>
-
-      <div className="phone-dock">
-        <Link className="dock-link" href="/about" aria-label="About Tian Xing">
-          <span className="about-photo-icon"><img src={`${base}/media/about/tian-xing.jpg`} alt="" /></span>
-          <span>About</span>
-        </Link>
-        <a className="dock-link" href="https://github.com/lovejzzz" target="_blank" rel="noreferrer" aria-label="Tian Xing on GitHub">
-          <span className="github-icon"><i>GH</i></span>
-          <span>GitHub</span>
-        </a>
-      </div>
     </div>
   );
 }
 
-type HomeScreenProps = {
-  base: string;
-  page: number;
-  dragX: number;
-  onPageChange: (page: number) => void;
-  onOpenApp: (app: HomeApp) => void;
-  onPointerDown: (event: React.PointerEvent<HTMLDivElement>) => void;
-  onPointerMove: (event: React.PointerEvent<HTMLDivElement>) => void;
-  onPointerUp: (event: React.PointerEvent<HTMLDivElement>) => void;
-  onOpenNative: (app: NativeApp) => void;
-  onOpenFolder: () => void;
-  onLinkClick: (event: React.MouseEvent<HTMLAnchorElement>) => void;
-};
-
-function HomeScreen({ base, page, dragX, onPageChange, onOpenApp, onPointerDown, onPointerMove, onPointerUp, onOpenNative, onOpenFolder, onLinkClick }: HomeScreenProps) {
+function HomeScreen({ calendarDay, onOpenApp }: {
+  calendarDay: string;
+  onOpenApp: (id: NativeApp | "folder", element: HTMLElement) => void;
+}) {
   return (
     <div className="iphone-desktop">
-      <div
-        className={`home-pages-viewport ${dragX ? "is-dragging" : ""}`}
-        onPointerDown={onPointerDown}
-        onPointerMove={onPointerMove}
-        onPointerUp={onPointerUp}
-        onPointerCancel={onPointerUp}
-        onKeyDown={(event) => {
-          if (event.key === "ArrowRight") onPageChange(1);
-          if (event.key === "ArrowLeft") onPageChange(0);
-        }}
-        tabIndex={0}
-        aria-label="iPhone Home screen. Drag or use arrow keys to change page."
-      >
-        <div className="home-pages" style={{ transform: `translateX(calc(-${page * 50}% + ${dragX}px))` }}>
-          <div className="home-page system-page">
-            {firstPage.map((app) => (
-              <button className="system-app" key={app.id} onClick={() => onOpenApp(app)}>
-                <SystemAppIcon id={app.id} base={base} />
-                {app.badge && <b className="app-badge">{app.badge}</b>}
-                <span>{app.label}</span>
-              </button>
-            ))}
-          </div>
-          <div className="home-page creator-page">
-            {secondPage.map((project) => (
-              <Link className="system-app" href={`/projects/${project.slug}`} key={project.slug} onClick={onLinkClick}>
-                <AppIcon project={project} />
-                <span>{project.shortTitle}</span>
-              </Link>
-            ))}
-            <button className="system-app" onClick={() => onOpenApp({ id: "github", label: "GitHub" })}>
-              <SystemAppIcon id="github" base={base} /><span>GitHub</span>
-            </button>
-            <Link className="system-app" href="/about" onClick={onLinkClick}>
-              <SystemAppIcon id="about" base={base} /><span>About</span>
-            </Link>
-          </div>
-        </div>
-      </div>
-
-      <div className="home-page-controls" role="group" aria-label="Home screen pages">
-        {[0, 1].map((pageNumber) => (
-          <button key={pageNumber} className={page === pageNumber ? "active" : ""} onClick={() => onPageChange(pageNumber)} aria-label={`Go to page ${pageNumber + 1}`} aria-current={page === pageNumber ? "page" : undefined}><span /></button>
+      <div className="system-page" aria-label="iPhone Home screen">
+        {homeApps.map((app) => (
+          <button
+            className="system-app"
+            key={app.id}
+            onClick={(event) => onOpenApp(app.id, event.currentTarget)}
+          >
+            <SystemAppIcon id={app.id} calendarDay={calendarDay} />
+            {app.badge && <b className="app-badge">{app.badge}</b>}
+            <span>{app.label}</span>
+          </button>
         ))}
       </div>
 
-      <div className="desktop-dock">
-        <button className="system-app dock-system-app" onClick={() => onOpenNative("phone")}><SystemAppIcon id="phone" base={base} /><span>Phone</span></button>
-        <button className="system-app dock-system-app" onClick={() => onOpenNative("mail")}><SystemAppIcon id="mail" base={base} /><span>Mail</span></button>
-        <button className="system-app dock-system-app" onClick={onOpenFolder}><SystemAppIcon id="safari" base={base} /><span>Portfolio</span></button>
-        <a className="system-app dock-system-app" href="https://lovejzzz.github.io/Slotronome/" target="_blank" rel="noreferrer"><SystemAppIcon id="ipod" base={base} /><span>iPod</span></a>
+      <div className="desktop-dock" aria-label="Favorite apps">
+        {dockApps.map((app) => (
+          <button
+            className="system-app dock-system-app"
+            key={app.id}
+            onClick={(event) => onOpenApp(app.id, event.currentTarget)}
+            aria-label={app.label}
+            title={app.label}
+          >
+            <SystemAppIcon id={app.id === "folder" ? "safari" : app.id} calendarDay={calendarDay} />
+          </button>
+        ))}
       </div>
     </div>
   );
 }
 
-function SystemAppIcon({ id, base }: { id: HomeApp["id"] | "phone" | "mail" | "safari" | "ipod"; base: string }) {
-  if (id === "about") return <span className="system-app-icon sys-about"><img src={`${base}/media/about/tian-xing.jpg`} alt="" /></span>;
-  if (id === "folder") return (
-    <span className="system-app-icon sys-folder"><i>{projects.slice(0, 9).map((project) => <AppIcon project={project} key={project.slug} />)}</i></span>
-  );
+function SystemAppIcon({ id, calendarDay }: {
+  id: HomeApp["id"] | "safari";
+  calendarDay: string;
+}) {
+  if (id === "folder") {
+    return (
+      <span className="system-app-icon sys-folder">
+        <i>{projects.slice(0, 9).map((project) => <AppIcon project={project} key={project.slug} />)}</i>
+      </span>
+    );
+  }
   const marks: Record<string, string> = {
-    messages: "●", calendar: "4", photos: "✿", camera: "", weather: "☀", clock: "", maps: "⌖", notes: "", appstore: "A", youtube: "▶", github: "GH", phone: "☎", mail: "✉", safari: "✦", ipod: "♫",
+    messages: "",
+    calendar: calendarDay,
+    photos: "",
+    camera: "",
+    weather: "",
+    clock: "",
+    maps: "",
+    notes: "",
+    phone: "☎",
+    mail: "✉",
+    safari: "✦",
+    music: "♫",
   };
-  return <span className={`system-app-icon sys-${id}`}><i>{marks[id] ?? "•"}</i></span>;
+  const month = id === "calendar" ? new Date().toLocaleDateString([], { month: "short" }).toUpperCase() : undefined;
+  return <span className={`system-app-icon sys-${id}`} data-month={month}><i>{marks[id] ?? ""}</i></span>;
 }
 
-function NativeAppView({ app, base, time, cameraFlash, onShutter }: { app: NativeApp; base: string; time: string; cameraFlash: boolean; onShutter: () => void }) {
-  const titles: Record<NativeApp, string> = { messages: "Messages", calendar: "Calendar", photos: "Photos", camera: "Camera", weather: "Weather", clock: "Clock", maps: "Maps", notes: "Notes", phone: "Phone", mail: "Mail" };
+function NativeAppView({ app, base, time, cameraFlash, onShutter }: {
+  app: NativeApp;
+  base: string;
+  time: string;
+  cameraFlash: boolean;
+  onShutter: () => void;
+}) {
+  const titles: Record<NativeApp, string> = {
+    messages: "Messages",
+    calendar: "Calendar",
+    photos: "Photos",
+    camera: "Camera",
+    weather: "Weather",
+    clock: "Clock",
+    maps: "Maps",
+    notes: "Notes",
+    phone: "Phone",
+    mail: "Mail",
+    music: "Music",
+  };
+
   return (
     <div className={`native-app native-${app}`}>
       <div className="native-titlebar"><strong>{titles[app]}</strong></div>
@@ -317,21 +297,108 @@ function NativeAppView({ app, base, time, cameraFlash, onShutter }: { app: Nativ
         {app === "clock" && <ClockApp time={time} />}
         {app === "maps" && <MapsApp />}
         {app === "notes" && <NotesApp />}
-        {app === "phone" && <ContactApp />}
+        {app === "phone" && <ContactApp base={base} />}
         {app === "mail" && <MailApp />}
+        {app === "music" && <MusicApp />}
       </div>
-      <p className="native-home-hint">Press the Home button to close</p>
     </div>
   );
 }
 
-function MessagesApp() { return <div className="messages-list"><div className="message-row"><span className="message-avatar">TX</span><div><strong>Selected Work</strong><p>Nine projects. One tiny phone. Thanks for visiting.</p></div><time>now</time></div><div className="message-row"><span className="message-avatar jazz-avatar">♪</span><div><strong>Bebop Puzzle</strong><p>Your next phrase is ready to play.</p></div><time>4:04</time></div></div>; }
-function CalendarApp() { const days = Array.from({ length: 35 }, (_, index) => index < 5 ? "" : index - 4); return <div className="calendar-app"><p>AUGUST 2026</p><div className="calendar-week"><span>S</span><span>M</span><span>T</span><span>W</span><span>T</span><span>F</span><span>S</span></div><div className="calendar-days">{days.map((day, index) => <span key={index} className={day === 4 ? "today" : ""}>{day}</span>)}</div><strong>Selected Work is live.</strong></div>; }
-function PhotosApp({ base }: { base: string }) { const photos = ["/media/about/tian-xing.jpg", "/media/projects/edutool-live.png", "/media/projects/bebop-live.png", "/media/projects/quicky-live.png", "/media/projects/5279-live.png", "/media/projects/start-where-you-are.jpg"]; return <div className="photos-app"><div className="photo-feature"><img src={`${base}${photos[0]}`} alt="Tian Xing" /><span>About · Coming Soon</span></div><div className="photo-grid">{photos.slice(1).map((src) => <img key={src} src={`${base}${src}`} alt="Project thumbnail" />)}</div></div>; }
-function CameraApp({ base, flash, onShutter }: { base: string; flash: boolean; onShutter: () => void }) { return <div className="camera-app"><div className="viewfinder"><img src={`${base}/media/about/tian-xing.jpg`} alt="Tian Xing in the camera viewfinder" />{flash && <i />}</div><button onClick={onShutter} aria-label="Take photo"><span /></button></div>; }
-function WeatherApp() { return <div className="weather-app"><p>NEW YORK</p><strong>78°</strong><span>Clear ideas</span><div><i>NOW<br /><b>78°</b></i><i>6 PM<br /><b>76°</b></i><i>9 PM<br /><b>71°</b></i></div><small>Perfect weather to ship something.</small></div>; }
-function ClockApp({ time }: { time: string }) { return <div className="clock-app"><div className="analog-clock"><i /><b /></div><strong>{time}</strong><span>New York</span></div>; }
-function MapsApp() { return <div className="maps-app"><div className="map-road road-one" /><div className="map-road road-two" /><div className="map-road road-three" /><span className="map-pin">TX</span><strong>NEW YORK</strong><small>You are here, making things.</small></div>; }
-function NotesApp() { return <div className="notes-app"><textarea aria-label="A note from Tian Xing" defaultValue={"Ship the work.\n\nStay curious about systems, images, sound, games, and the strange places where they overlap.\n\n— Tian"} /></div>; }
-function ContactApp() { return <div className="contact-app"><div className="contact-monogram">TX</div><h2>Tian Xing</h2><p>Designer · filmmaker · builder</p><a href="https://github.com/lovejzzz" target="_blank" rel="noreferrer">GitHub</a><a href="https://www.youtube.com/@HereWeGoFilmStudio" target="_blank" rel="noreferrer">YouTube</a></div>; }
-function MailApp() { return <div className="mail-app"><p>INBOX</p><article><strong>From: Tian Xing</strong><time>Today</time><h2>Thanks for stopping by.</h2><span>The best way to reach the work is through GitHub or the project links throughout the portfolio.</span><a href="https://github.com/lovejzzz" target="_blank" rel="noreferrer">Open GitHub ↗</a></article></div>; }
+function MessagesApp() {
+  return (
+    <div className="messages-list">
+      <Link className="message-row" href="/projects/edutool"><span className="message-avatar">ED</span><div><strong>EduTool</strong><p>The course map is ready. Open the project.</p></div><time>now</time></Link>
+      <Link className="message-row" href="/projects/bebop-puzzle"><span className="message-avatar jazz-avatar">♪</span><div><strong>Bebop Puzzle</strong><p>Your next jazz phrase is ready to play.</p></div><time>4:04</time></Link>
+      <Link className="message-row" href="/projects/start-where-you-are"><span className="message-avatar film-avatar">▶</span><div><strong>Here We Go Studio</strong><p>Start Where You Are is screening now.</p></div><time>3:19</time></Link>
+    </div>
+  );
+}
+
+function CalendarApp() {
+  const now = new Date();
+  const firstDay = new Date(now.getFullYear(), now.getMonth(), 1).getDay();
+  const dayCount = new Date(now.getFullYear(), now.getMonth() + 1, 0).getDate();
+  const cells = Array.from({ length: 42 }, (_, index) => {
+    const day = index - firstDay + 1;
+    return day > 0 && day <= dayCount ? day : "";
+  });
+  const month = now.toLocaleDateString([], { month: "long", year: "numeric" }).toUpperCase();
+  return <div className="calendar-app"><p>{month}</p><div className="calendar-week"><span>S</span><span>M</span><span>T</span><span>W</span><span>T</span><span>F</span><span>S</span></div><div className="calendar-days">{cells.map((day, index) => <span key={index} className={day === now.getDate() ? "today" : ""}>{day}</span>)}</div><strong>Selected Work · tian.fun</strong></div>;
+}
+
+function PhotosApp({ base }: { base: string }) {
+  const photos = [
+    { src: "/media/about/tian-xing-photobooth.png", alt: "Tian Xing in a 2010 Photo Booth portrait" },
+    { src: "/media/film/5279-projection-hi.jpg", alt: "5279 film emulation projection" },
+    { src: "/media/projects/start-where-you-are.jpg", alt: "Start Where You Are film still" },
+    { src: "/media/film/5279-scan-hi.jpg", alt: "5279 film emulation scan" },
+    { src: "/media/projects/bebop-live.png", alt: "Bebop Puzzle" },
+  ];
+  const [selected, setSelected] = useState(0);
+  return (
+    <div className="photos-app">
+      <div className="photo-feature"><img src={`${base}${photos[selected].src}`} alt={photos[selected].alt} /><span>Camera Roll</span></div>
+      <div className="photo-grid">
+        {photos.map((photo, index) => <button key={photo.src} className={selected === index ? "selected" : ""} onClick={() => setSelected(index)} aria-label={`View ${photo.alt}`}><img src={`${base}${photo.src}`} alt="" /></button>)}
+      </div>
+    </div>
+  );
+}
+
+function CameraApp({ base, flash, onShutter }: { base: string; flash: boolean; onShutter: () => void }) {
+  return <div className="camera-app"><div className="viewfinder"><img src={`${base}/media/about/tian-xing-photobooth.png`} alt="Tian Xing in the camera viewfinder" />{flash && <i />}</div><button onClick={onShutter} aria-label="Take photo"><span /></button></div>;
+}
+
+type WeatherData = { temperature: number; wind: number; code: number };
+
+function WeatherApp() {
+  const [weather, setWeather] = useState<WeatherData | null>(null);
+  useEffect(() => {
+    const controller = new AbortController();
+    fetch("https://api.open-meteo.com/v1/forecast?latitude=40.7128&longitude=-74.0060&current=temperature_2m,weather_code,wind_speed_10m&temperature_unit=fahrenheit&wind_speed_unit=mph", { signal: controller.signal })
+      .then((response) => response.json())
+      .then((data) => setWeather({ temperature: data.current.temperature_2m, wind: data.current.wind_speed_10m, code: data.current.weather_code }))
+      .catch(() => undefined);
+    return () => controller.abort();
+  }, []);
+  const description = weather ? weatherLabel(weather.code) : "Updating weather";
+  return <div className="weather-app"><p>NEW YORK</p><strong>{weather ? `${Math.round(weather.temperature)}°` : "—"}</strong><span>{description}</span><div><i>NOW<br /><b>{weather ? `${Math.round(weather.temperature)}°` : "—"}</b></i><i>WIND<br /><b>{weather ? `${Math.round(weather.wind)} mph` : "—"}</b></i><i>LOCAL<br /><b>NYC</b></i></div><small>Live conditions from Open-Meteo</small></div>;
+}
+
+function weatherLabel(code: number) {
+  if (code === 0) return "Clear";
+  if (code <= 3) return "Partly cloudy";
+  if (code <= 48) return "Foggy";
+  if (code <= 67) return "Rain";
+  if (code <= 77) return "Snow";
+  if (code <= 82) return "Rain showers";
+  return "Thunderstorms";
+}
+
+function ClockApp({ time }: { time: string }) {
+  const now = new Date();
+  const minute = now.getMinutes() * 6;
+  const hour = (now.getHours() % 12) * 30 + now.getMinutes() / 2;
+  return <div className="clock-app"><div className="analog-clock"><i style={{ transform: `rotate(${minute}deg)` }} /><b style={{ transform: `rotate(${hour}deg)` }} /></div><strong>{time}</strong><span>New York</span></div>;
+}
+
+function MapsApp() {
+  return <div className="maps-app"><iframe title="Map of New York" src="https://www.openstreetmap.org/export/embed.html?bbox=-74.029%2C40.698%2C-73.982%2C40.728&amp;layer=mapnik&amp;marker=40.7128%2C-74.0060" /><a href="https://www.openstreetmap.org/?mlat=40.7128&amp;mlon=-74.0060#map=14/40.7128/-74.0060" target="_blank" rel="noreferrer">Open New York map</a></div>;
+}
+
+function NotesApp() {
+  return <div className="notes-app"><textarea aria-label="A note from Tian Xing" defaultValue={"This iPhone is my brain.\n\nSoftware, images, sound, cinema, games—and the strange places where they overlap.\n\nKeep making. Keep looking.\n\n— Tian"} /></div>;
+}
+
+function ContactApp({ base }: { base: string }) {
+  return <div className="contact-app"><img className="contact-photo" src={`${base}/media/about/tian-xing-photobooth.png`} alt="Tian Xing" /><h2>Tian Xing</h2><p>Designer · filmmaker · builder</p><a href="https://tian.fun" target="_blank" rel="noreferrer">tian.fun</a><a href="https://github.com/lovejzzz" target="_blank" rel="noreferrer">GitHub</a><a href="https://www.youtube.com/@HereWeGoFilmStudio" target="_blank" rel="noreferrer">Film Studio</a></div>;
+}
+
+function MailApp() {
+  return <div className="mail-app"><p>INBOX</p><Link href="/projects/surge-method"><article><strong>Surge Method</strong><time>Today</time><h2>Push. Recover. Come back stronger.</h2><span>Open the App Store project and see the complete product story.</span></article></Link><Link href="/projects/quicky-resume"><article><strong>Quicky Resume</strong><time>Yesterday</time><h2>Your next resume is ready.</h2><span>Open the working resume builder.</span></article></Link></div>;
+}
+
+function MusicApp() {
+  return <div className="music-app"><iframe data-testid="spotify-embed" title="The Jazz I Love 2022 Spotify playlist" src="https://open.spotify.com/embed/playlist/6hYj1RoYJ85hj8c1kaDFJ2?utm_source=generator&amp;theme=0" width="100%" height="352" allow="autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture" loading="lazy" /><a href="https://open.spotify.com/playlist/6hYj1RoYJ85hj8c1kaDFJ2" target="_blank" rel="noreferrer">Open The Jazz I Love [2022] in Spotify</a></div>;
+}

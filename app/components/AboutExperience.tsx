@@ -23,7 +23,7 @@ export function AboutExperience() {
           <div className="about-status" aria-label={`Current time ${time}`}><span>●●●●○</span><span>{time}</span><span>100% ▰</span></div>
           <div className="about-nav"><Link href="/">‹ Projects</Link><strong>About</strong><span /></div>
           <section>
-            <div className="coming-icon coming-photo"><img src={`${base}/media/about/tian-xing.jpg`} alt="Tian Xing" /></div>
+            <div className="coming-icon coming-photo"><img src={`${base}/media/about/tian-xing-photobooth.png`} alt="Tian Xing in a 2010 Photo Booth portrait" /></div>
             <p>PROFILE UPDATE</p>
             <h1>Coming Soon</h1>
             <span>The story is still being written.</span>

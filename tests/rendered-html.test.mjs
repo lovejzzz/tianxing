@@ -46,10 +46,9 @@ test("embeds playable projects and full-resolution screenshots", async () => {
 test("keeps the iPhone interactive and time-aware", async () => {
   const source = await readFile(new URL("../app/components/PhoneExperience.tsx", import.meta.url), "utf8");
   assert.match(source, /toLocaleTimeString/);
-  assert.match(source, /onPointerDown/);
-  assert.match(source, /onPointerMove/);
-  assert.match(source, /onPointerUp/);
   assert.match(source, /Go to iPhone Home screen/);
   assert.match(source, /Selected Work/);
-  assert.match(source, /media\/about\/tian-xing\.jpg/);
+  assert.match(source, /media\/about\/tian-xing-photobooth\.png/);
+  assert.match(source, /open\.spotify\.com\/embed\/playlist\/6hYj1RoYJ85hj8c1kaDFJ2/);
+  assert.doesNotMatch(source, /appstore|youtube:|id: "about"/i);
 });
