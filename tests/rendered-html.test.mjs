@@ -82,6 +82,11 @@ test("keeps the iPhone interactive and time-aware", async () => {
   assert.match(source, /precipitation_probability/);
   assert.match(source, /SUNRISE & SUNSET/);
   assert.match(source, /Mechanical timer/);
+  assert.match(source, /endTimeRef/);
+  assert.match(source, /Reset timer to the last setting/);
+  assert.match(source, /role="slider"/);
+  assert.match(source, /Timer complete/);
+  assert.match(source, /AudioContext/);
   assert.match(source, /Draw on this note/);
   assert.match(source, /NOTES_STORAGE_KEY/);
   assert.match(source, /Search notes/);

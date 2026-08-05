@@ -4,7 +4,7 @@
 
 import Link from "next/link";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import type { CSSProperties, FormEvent, PointerEvent as ReactPointerEvent } from "react";
+import type { CSSProperties, FormEvent, KeyboardEvent as ReactKeyboardEvent, PointerEvent as ReactPointerEvent } from "react";
 import { projects } from "../projects";
 import { portfolioPhotos } from "../photoManifest";
 import { AppIcon } from "./AppIcon";
@@ -1216,28 +1216,78 @@ function uvLabel(value: number) {
 function ClockApp({ time }: { time: string }) {
   const [tab, setTab] = useState<"clock" | "timer">("clock");
   const [seconds, setSeconds] = useState(5 * 60);
+  const [lastSetSeconds, setLastSetSeconds] = useState(5 * 60);
   const [running, setRunning] = useState(false);
   const [draggingHand, setDraggingHand] = useState(false);
+  const [finished, setFinished] = useState(false);
+  const endTimeRef = useRef<number | null>(null);
+  const audioRef = useRef<AudioContext | null>(null);
+  const lastHapticMinute = useRef(5);
   const now = new Date();
   const minute = now.getMinutes() * 6;
   const hour = (now.getHours() % 12) * 30 + now.getMinutes() / 2;
 
+  const playTone = useCallback((frequency: number, duration: number, delay = 0, volume = .035) => {
+    try {
+      const AudioContextClass = window.AudioContext || (window as unknown as { webkitAudioContext?: typeof AudioContext }).webkitAudioContext;
+      if (!AudioContextClass) return;
+      const context = audioRef.current ?? new AudioContextClass();
+      audioRef.current = context;
+      void context.resume();
+      const oscillator = context.createOscillator();
+      const gain = context.createGain();
+      const start = context.currentTime + delay;
+      oscillator.type = "sine";
+      oscillator.frequency.setValueAtTime(frequency, start);
+      gain.gain.setValueAtTime(.0001, start);
+      gain.gain.exponentialRampToValueAtTime(volume, start + .008);
+      gain.gain.exponentialRampToValueAtTime(.0001, start + duration);
+      oscillator.connect(gain).connect(context.destination);
+      oscillator.start(start);
+      oscillator.stop(start + duration + .02);
+    } catch { /* Sound is an enhancement; the timer remains fully visual. */ }
+  }, []);
+
+  const ringTimer = useCallback(() => {
+    playTone(880, .28, 0, .055);
+    playTone(660, .28, .32, .05);
+    playTone(880, .42, .64, .06);
+    navigator.vibrate?.([120, 70, 120, 70, 180]);
+  }, [playTone]);
+
   useEffect(() => {
     if (!running) return;
-    const timer = window.setInterval(() => {
-      setSeconds((value) => {
-        if (value <= 1) {
-          setRunning(false);
-          return 0;
-        }
-        return value - 1;
-      });
-    }, 1000);
+    const update = () => {
+      if (endTimeRef.current === null) return;
+      const remaining = Math.max(0, Math.ceil((endTimeRef.current - Date.now()) / 1000));
+      setSeconds((value) => value === remaining ? value : remaining);
+      if (remaining === 0) {
+        endTimeRef.current = null;
+        setRunning(false);
+        setFinished(true);
+        ringTimer();
+      }
+    };
+    update();
+    const timer = window.setInterval(update, 125);
     return () => window.clearInterval(timer);
-  }, [running]);
+  }, [ringTimer, running]);
 
   const timerText = `${String(Math.floor(seconds / 60)).padStart(2, "0")}:${String(seconds % 60).padStart(2, "0")}`;
   const handAngle = seconds / 10;
+  const secondHandAngle = -(lastSetSeconds - seconds) * 6;
+  const timerState = finished ? "TIME" : running ? "RUNNING" : seconds < lastSetSeconds ? "PAUSED" : "READY";
+  const applyTimerSeconds = (nextSeconds: number, haptic = false) => {
+    const next = Math.max(30, Math.min(3600, Math.round(nextSeconds / 30) * 30));
+    setSeconds(next);
+    setLastSetSeconds(next);
+    setFinished(false);
+    if (haptic) {
+      const nextMinute = Math.ceil(next / 60);
+      if (nextMinute !== lastHapticMinute.current) navigator.vibrate?.(5);
+      lastHapticMinute.current = nextMinute;
+    }
+  };
   const setTimerFromPointer = (event: ReactPointerEvent<HTMLDivElement>) => {
     if (running) return;
     const bounds = event.currentTarget.getBoundingClientRect();
@@ -1245,11 +1295,37 @@ function ClockApp({ time }: { time: string }) {
     const dy = event.clientY - (bounds.top + bounds.height / 2);
     let angle = Math.atan2(dx, -dy) * 180 / Math.PI;
     if (angle <= 0) angle += 360;
-    setSeconds(Math.max(30, Math.min(3600, Math.round((angle * 10) / 30) * 30)));
+    applyTimerSeconds(angle * 10, true);
   };
   const toggleTimer = () => {
-    if (seconds === 0) setSeconds(5 * 60);
-    setRunning((value) => !value);
+    playTone(430, .045, 0, .025);
+    navigator.vibrate?.(8);
+    setFinished(false);
+    if (running) {
+      if (endTimeRef.current !== null) setSeconds(Math.max(0, Math.ceil((endTimeRef.current - Date.now()) / 1000)));
+      endTimeRef.current = null;
+      setRunning(false);
+      return;
+    }
+    const duration = seconds > 0 ? seconds : lastSetSeconds;
+    if (seconds === 0) setSeconds(duration);
+    endTimeRef.current = Date.now() + duration * 1000;
+    setRunning(true);
+  };
+  const resetTimer = () => {
+    endTimeRef.current = null;
+    setRunning(false);
+    setFinished(false);
+    setSeconds(lastSetSeconds);
+    playTone(310, .055, 0, .022);
+    navigator.vibrate?.(10);
+  };
+  const adjustTimerFromKeyboard = (event: ReactKeyboardEvent<HTMLDivElement>) => {
+    if (running) return;
+    const changes: Record<string, number> = { ArrowUp: 30, ArrowRight: 30, ArrowDown: -30, ArrowLeft: -30, PageUp: 300, PageDown: -300 };
+    if (event.key === "Home") { event.preventDefault(); applyTimerSeconds(30); return; }
+    if (event.key === "End") { event.preventDefault(); applyTimerSeconds(3600); return; }
+    if (changes[event.key]) { event.preventDefault(); applyTimerSeconds(seconds + changes[event.key]); }
   };
   return (
     <div className="clock-app">
@@ -1259,22 +1335,38 @@ function ClockApp({ time }: { time: string }) {
           <strong>{time}</strong><span>New York</span>
         </div>
       ) : (
-        <div className="timer-panel">
-          <div className="stopwatch" aria-label={`Mechanical timer, ${timerText} remaining`}>
-            <i className="stopwatch-loop" /><button className={`stopwatch-crown ${running ? "is-running" : ""}`} onClick={toggleTimer} aria-label={running ? "Stop timer" : "Start timer"} /><i className="stopwatch-pusher" />
+        <div className={`timer-panel timer-mechanical timer-${timerState.toLowerCase()}`}>
+          <div className={`stopwatch ${running ? "is-ticking" : ""} ${finished ? "is-finished" : ""}`} aria-label={`Mechanical timer, ${timerText} remaining`}>
+            <i className="stopwatch-loop" />
+            <button className={`stopwatch-crown ${running ? "is-running" : ""}`} onClick={toggleTimer} aria-label={running ? "Stop timer" : "Start timer"} />
+            <button className="stopwatch-pusher" onClick={resetTimer} aria-label="Reset timer to the last setting" />
             <div
               className={`stopwatch-face ${draggingHand ? "is-dragging" : ""}`}
               onPointerDown={(event) => { if (running) return; setDraggingHand(true); event.currentTarget.setPointerCapture(event.pointerId); setTimerFromPointer(event); }}
               onPointerMove={(event) => { if (draggingHand) setTimerFromPointer(event); }}
               onPointerUp={() => setDraggingHand(false)}
               onPointerCancel={() => setDraggingHand(false)}
+              onLostPointerCapture={() => setDraggingHand(false)}
+              onKeyDown={adjustTimerFromKeyboard}
+              role="slider"
+              tabIndex={0}
+              aria-label="Timer hand"
+              aria-valuemin={.5}
+              aria-valuemax={60}
+              aria-valuenow={Math.round(seconds / 30) / 2}
+              aria-valuetext={timerText}
+              style={{ "--timer-progress": `${(seconds / Math.max(1, lastSetSeconds)) * 360}deg` } as CSSProperties}
             >
               <span className="dial-number dial-60">60</span><span className="dial-number dial-5">5</span><span className="dial-number dial-10">10</span><span className="dial-number dial-15">15</span><span className="dial-number dial-20">20</span><span className="dial-number dial-25">25</span><span className="dial-number dial-30">30</span><span className="dial-number dial-35">35</span><span className="dial-number dial-40">40</span><span className="dial-number dial-45">45</span><span className="dial-number dial-50">50</span><span className="dial-number dial-55">55</span>
+              <span className="stopwatch-brand">TIAN<br /><b>MECHANICAL</b></span>
+              <span className="stopwatch-subdial"><i style={{ transform: `rotate(${secondHandAngle}deg)` }} /><b>30</b><em>15</em><strong>45</strong></span>
               <i className="stopwatch-hand" style={{ transform: `rotate(${handAngle}deg)` }} /><i className="stopwatch-pin" />
               <span className="stopwatch-readout">{timerText}</span>
+              <span className={`stopwatch-state state-${timerState.toLowerCase()}`}>{timerState}</span>
             </div>
           </div>
-          <p className="timer-instruction">Drag the red hand to set · press the crown to {running ? "stop" : "start"}</p>
+          <p className="timer-instruction">{finished ? "Time’s up · press the crown to run it again" : running ? "Press the crown to pause · side pusher resets" : "Drag the red hand to set · press the crown to start"}</p>
+          <p className="timer-live" role="status" aria-live="assertive">{finished ? "Timer complete" : ""}</p>
         </div>
       )}
       <nav className="clock-tabs"><button className={tab === "clock" ? "active" : ""} onClick={() => setTab("clock")}><i>◷</i>World Clock</button><button className={tab === "timer" ? "active" : ""} onClick={() => setTab("timer")}><i>◴</i>Timer</button></nav>
