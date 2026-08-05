@@ -15,12 +15,9 @@ test("renders the finished portfolio home", async () => {
   const response = await render();
   assert.equal(response.status, 200);
   const html = await response.text();
-  assert.match(html, /Tian Xing/);
-  assert.match(html, /Selected Work/);
-  assert.match(html, /delivers\./i);
-  assert.match(html, /Welcome to my heart\. Have fun\./);
   assert.match(html, /EduTool/);
   assert.match(html, /Slotronome/);
+  assert.doesNotMatch(html, /Portfolio · Edition 01|Selected work|2024—2026|Tian Xing delivers|Welcome to my heart|Designed &amp; built by Tian Xing|New York/i);
   assert.doesNotMatch(html, /Choose an icon to open a project|Nine things I care about|makes things|systems thinking and play/i);
   assert.doesNotMatch(html, /codex-preview|react-loading-skeleton|Your site is taking shape/);
 });

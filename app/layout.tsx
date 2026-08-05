@@ -4,26 +4,26 @@ import "./globals.css";
 export const metadata: Metadata = {
   metadataBase: new URL("https://tian.fun/"),
   title: {
-    default: "Tian Xing — Selected Work",
+    default: "Tian Xing",
     template: "%s — Tian Xing",
   },
   description:
-    "Selected software, games, film, music tools, and experiments by Tian Xing.",
+    "Welcome to Tian Xing’s iPhone.",
   icons: {
     icon: "/favicon.png",
     shortcut: "/favicon.png",
   },
   openGraph: {
-    title: "Tian Xing — Selected Work",
+    title: "Tian Xing",
     description:
-      "Nine projects across software, games, cinema, music tools, and experiments.",
+      "Welcome to Tian Xing’s iPhone.",
     type: "website",
-    images: [{ url: "https://tian.fun/og.png", width: 1729, height: 910, alt: "Tian Xing — Selected Work" }],
+    images: [{ url: "https://tian.fun/og.png", width: 1729, height: 910, alt: "Tian Xing’s iPhone" }],
   },
   twitter: {
     card: "summary_large_image",
-    title: "Tian Xing — Selected Work",
-    description: "Nine projects across code, cinema, games, and sound.",
+    title: "Tian Xing",
+    description: "Welcome to Tian Xing’s iPhone.",
     images: ["https://tian.fun/og.png"],
   },
   appleWebApp: {

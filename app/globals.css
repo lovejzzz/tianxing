@@ -27,11 +27,10 @@ img, video { display: block; max-width: 100%; }
   position: relative;
   overflow: hidden;
   display: grid;
-  grid-template-columns: minmax(280px, 520px) minmax(410px, 540px);
-  align-items: center;
-  justify-content: center;
-  gap: clamp(36px, 7vw, 120px);
-  padding: 56px max(32px, 5vw) 72px;
+  grid-template-columns: minmax(410px, 540px);
+  place-items: center;
+  gap: 0;
+  padding: 28px;
   background:
     radial-gradient(circle at 72% 35%, rgba(31, 104, 167, .22), transparent 30%),
     radial-gradient(circle at 22% 72%, rgba(124, 45, 105, .1), transparent 26%),
