@@ -117,6 +117,8 @@ type NoteDocument = {
 
 export function PhoneExperience() {
   const [mode, setMode] = useState<"folder" | "home" | "native">("folder");
+  const [immersive, setImmersive] = useState(false);
+  const [immersiveShift, setImmersiveShift] = useState(0);
   const [activeApp, setActiveApp] = useState<NativeApp | null>(null);
   const [closing, setClosing] = useState(false);
   const [origin, setOrigin] = useState<Origin>({ x: 50, y: 58, left: 134, top: 260, scaleX: .16, scaleY: .09 });
@@ -135,6 +137,7 @@ export function PhoneExperience() {
     }
   });
   const screenRef = useRef<HTMLDivElement>(null);
+  const deviceStageRef = useRef<HTMLElement>(null);
   const transitionTimer = useRef<number | null>(null);
   const base = process.env.NEXT_PUBLIC_BASE_PATH ?? "";
 
@@ -232,6 +235,20 @@ export function PhoneExperience() {
 
   const goHome = () => {
     if (mode === "home" || closing) return;
+    if (!immersive) {
+      const stage = deviceStageRef.current;
+      const before = stage?.getBoundingClientRect();
+      const phone = stage?.querySelector<HTMLElement>(".phone")?.getBoundingClientRect();
+      if (before) {
+        setImmersiveShift(window.innerWidth / 2 - (before.left + before.width / 2));
+      }
+      if (phone) {
+        window.dispatchEvent(new CustomEvent("tian:immersive-home", {
+          detail: { phoneLeft: phone.left, phoneWidth: phone.width, delay: 0, duration: 1080 },
+        }));
+      }
+      setImmersive(true);
+    }
     setClosing(true);
     transitionTimer.current = window.setTimeout(() => {
       setMode("home");
@@ -242,7 +259,14 @@ export function PhoneExperience() {
   };
 
   return (
-    <section className="device-stage" aria-label="Interactive iPhone portfolio">
+    <section
+      ref={deviceStageRef}
+      className={`device-stage ${immersive ? "is-immersive" : ""}`}
+      style={{
+        "--immersive-shift": `${immersiveShift}px`,
+      } as CSSProperties}
+      aria-label="Interactive iPhone portfolio"
+    >
       <div className="device" aria-hidden="true">
         <div className="device-button volume-up" />
         <div className="device-button volume-down" />
@@ -1434,6 +1458,7 @@ function ClockApp({ time }: { time: string }) {
   const lastHapticMinute = useRef(5);
   const dragonKindRef = useRef(0);
   const reactionTimerRef = useRef<number | null>(null);
+  const codexTrackRef = useRef<HTMLDivElement>(null);
   const now = new Date();
   const minute = now.getMinutes() * 6;
   const hour = (now.getHours() % 12) * 30 + now.getMinutes() / 2;
@@ -1560,6 +1585,16 @@ function ClockApp({ time }: { time: string }) {
     navigator.vibrate?.(next === "fire" ? [20, 20, 35] : 12);
     reactionTimerRef.current = window.setTimeout(() => setDragonReaction(null), 1250);
   };
+  const openDragonCodex = () => {
+    setDragonView("codex");
+    window.requestAnimationFrame(() => window.requestAnimationFrame(() => {
+      const track = codexTrackRef.current;
+      const kind = dragonCollection[0]?.kind ?? DRAGON_KINDS[dragonKind].id;
+      const card = track?.querySelector<HTMLElement>(`[data-dragon-kind="${kind}"]`);
+      if (!track || !card) return;
+      track.scrollTo({ left: card.offsetLeft - (track.clientWidth - card.clientWidth) / 2, behavior: "smooth" });
+    }));
+  };
   const adjustTimerFromKeyboard = (event: ReactKeyboardEvent<HTMLDivElement>) => {
     if (running) return;
     const changes: Record<string, number> = { ArrowUp: 30, ArrowRight: 30, ArrowDown: -30, ArrowLeft: -30, PageUp: 300, PageDown: -300 };
@@ -1582,13 +1617,13 @@ function ClockApp({ time }: { time: string }) {
           {dragonView === "codex" ? (
             <section className="dragon-codex" aria-label="Dragon card collection">
               <header><button onClick={() => setDragonView("ritual")}>‹ EGG</button><div><strong>DRAGON CODEX</strong><span>{dragonCollection.length} HATCHED</span></div><i>✦</i></header>
-              <div className="dragon-card-track">
+              <div ref={codexTrackRef} className="dragon-card-track">
                 {DRAGON_KINDS.map((kind) => {
                   const hatches = dragonCollection.filter((card) => card.kind === kind.id);
                   const latest = hatches[0];
                   const locked = hatches.length === 0;
                   return (
-                    <article key={kind.id} className={`dragon-card dragon-variant-${kind.id} rarity-${kind.rarity.toLowerCase()} ${locked ? "is-undiscovered" : ""}`}>
+                    <article data-dragon-kind={kind.id} key={kind.id} className={`dragon-card dragon-variant-${kind.id} rarity-${kind.rarity.toLowerCase()} ${locked ? "is-undiscovered" : ""}`}>
                       <div className="dragon-card-foil" /><div className="dragon-card-grain" />
                       <header><span>{kind.element} HATCHLING</span><b>№ {kind.number}</b></header>
                       <div className="dragon-card-art"><i className="card-moon" /><DragonSprite card /><b>{locked ? "?" : hatches.length}</b></div>
@@ -1605,17 +1640,19 @@ function ClockApp({ time }: { time: string }) {
           ) : (
             <>
               <div className="dragon-chamber" aria-label={`Dragon egg timer, ${timerText} remaining`}>
-                <button className="dragon-codex-button" onClick={() => setDragonView("codex")} aria-label="Open dragon card collection"><i>▤</i><b>{dragonCollection.length}</b></button>
+                <button className="dragon-codex-button" onClick={openDragonCodex} aria-label="Open dragon card collection"><i>▤</i><b>{dragonCollection.length}</b></button>
                 <div className="dragon-sky" aria-hidden="true"><i /><i /><i /><i /><i /><i /><i /><i /></div>
                 <button
                   className={`dragon-egg-button ${running ? "is-incubating" : ""} ${finished ? "is-hatched" : ""}`}
                   onClick={finished ? interactDragon : toggleTimer}
                   aria-label={finished ? `Play with ${DRAGON_KINDS[dragonKind].name}` : running ? "Pause dragon egg timer" : "Start dragon egg timer"}
                 >
-                  <span className="egg-aura" /><span className="egg-shadow" />
-                  <span className="dragon-egg"><i className="egg-facet egg-facet-one" /><i className="egg-facet egg-facet-two" /><i className="egg-facet egg-facet-three" /><i className="egg-rune">◇</i><i className="egg-crack crack-one" /><i className="egg-crack crack-two" /><i className="egg-crack crack-three" /></span>
-                  <span className="egg-shell egg-shell-left" /><span className="egg-shell egg-shell-right" />
-                  <DragonSprite reaction={dragonReaction} />
+                  <span className="egg-creature">
+                    <span className="egg-aura" /><span className="egg-shadow" />
+                    <span className="dragon-egg"><i className="egg-facet egg-facet-one" /><i className="egg-facet egg-facet-two" /><i className="egg-facet egg-facet-three" /><i className="egg-rune">◇</i><i className="egg-crack crack-one" /><i className="egg-crack crack-two" /><i className="egg-crack crack-three" /></span>
+                    <span className="egg-shell egg-shell-left" /><span className="egg-shell egg-shell-right" />
+                    <DragonSprite reaction={dragonReaction} />
+                  </span>
                 </button>
                 <div className="dragon-time-readout" aria-hidden="true"><span>{timerText}</span><b>{finished ? `${DRAGON_KINDS[dragonKind].rarity} · ${DRAGON_KINDS[dragonKind].name}` : running ? "INCUBATING" : timerState}</b></div>
               </div>
