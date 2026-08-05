@@ -4,7 +4,7 @@
 
 import Link from "next/link";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import type { CSSProperties, FocusEvent as ReactFocusEvent, FormEvent, KeyboardEvent as ReactKeyboardEvent, PointerEvent as ReactPointerEvent } from "react";
+import type { CSSProperties, FocusEvent as ReactFocusEvent, FormEvent, KeyboardEvent as ReactKeyboardEvent, MouseEvent as ReactMouseEvent, PointerEvent as ReactPointerEvent } from "react";
 import { projects } from "../projects";
 import { portfolioPhotos } from "../photoManifest";
 import { AppIcon } from "./AppIcon";
@@ -1448,6 +1448,8 @@ function ClockApp({ time }: { time: string }) {
   const [dragonKind, setDragonKind] = useState(0);
   const [dragonView, setDragonView] = useState<"ritual" | "codex">("ritual");
   const [dragonReaction, setDragonReaction] = useState<DragonReaction>(null);
+  const [dragonMessage, setDragonMessage] = useState("");
+  const [dragonCombo, setDragonCombo] = useState(0);
   const [dragonCollection, setDragonCollection] = useState<DragonCard[]>(() => {
     if (typeof window === "undefined") return [];
     try { const saved = JSON.parse(window.localStorage.getItem(DRAGON_COLLECTION_KEY) ?? "[]"); return Array.isArray(saved) ? saved : []; }
@@ -1458,6 +1460,7 @@ function ClockApp({ time }: { time: string }) {
   const lastHapticMinute = useRef(5);
   const dragonKindRef = useRef(0);
   const reactionTimerRef = useRef<number | null>(null);
+  const lastDragonTapRef = useRef(0);
   const cardGlareTimerRef = useRef<number | null>(null);
   const codexTrackRef = useRef<HTMLDivElement>(null);
   const now = new Date();
@@ -1516,6 +1519,8 @@ function ClockApp({ time }: { time: string }) {
         dragonKindRef.current = next;
         setDragonKind(next);
         setDragonReaction(null);
+        setDragonMessage("HELLO!");
+        setDragonCombo(0);
         setDragonCollection((cards) => [{ id: `${Date.now()}-${Math.random().toString(36).slice(2, 7)}`, kind: DRAGON_KINDS[next].id, hatchedAt: new Date().toISOString(), minutes: Math.max(.5, lastSetSeconds / 60), bond: 1 }, ...cards].slice(0, 60));
         setFinished(true);
         ringTimer();
@@ -1574,18 +1579,57 @@ function ClockApp({ time }: { time: string }) {
     playTone(310, .055, 0, .022);
     navigator.vibrate?.(10);
   };
-  const interactDragon = () => {
-    const reactions: Exclude<DragonReaction, null>[] = ["happy", "fire", "spin", "sleep"];
-    const next = reactions[Math.floor(Math.random() * reactions.length)];
+  const interactDragon = (event: ReactMouseEvent<HTMLButtonElement>) => {
+    const bounds = event.currentTarget.getBoundingClientRect();
+    const x = event.clientX ? (event.clientX - bounds.left) / bounds.width : .5;
+    const y = event.clientY ? (event.clientY - bounds.top) / bounds.height : .35;
+    const now = Date.now();
+    const nextCombo = now - lastDragonTapRef.current < 1100 ? Math.min(5, dragonCombo + 1) : 1;
+    lastDragonTapRef.current = now;
+
+    let next: Exclude<DragonReaction, null> = "happy";
+    let message = "PURRR!";
+    if (y < .46) {
+      next = "happy";
+      message = nextCombo > 2 ? "BEST FRIEND!" : "PURRR!";
+    } else if (x > .58) {
+      next = "fire";
+      message = nextCombo > 2 ? "BIG SPARK!" : "ACHOO!";
+    } else if (x < .42) {
+      next = "spin";
+      message = nextCombo > 2 ? "AGAIN!" : "WHEEE!";
+    } else {
+      next = nextCombo >= 4 ? "spin" : "happy";
+      message = nextCombo >= 4 ? "ZOOM!" : "HEHE!";
+    }
+
     if (reactionTimerRef.current !== null) window.clearTimeout(reactionTimerRef.current);
     setDragonReaction(next);
+    setDragonMessage(message);
+    setDragonCombo(nextCombo);
     setDragonCollection((cards) => cards.map((card, index) => index === 0 ? { ...card, bond: Math.min(99, card.bond + 1) } : card));
     if (next === "fire") { playTone(330, .09, 0, .025); playTone(520, .12, .08, .025); }
     else if (next === "happy") { playTone(660, .08, 0, .022); playTone(880, .12, .1, .025); }
     else if (next === "spin") playTone(740, .16, 0, .024);
     else playTone(260, .16, 0, .018);
     navigator.vibrate?.(next === "fire" ? [20, 20, 35] : 12);
-    reactionTimerRef.current = window.setTimeout(() => setDragonReaction(null), 1250);
+    reactionTimerRef.current = window.setTimeout(() => {
+      setDragonReaction(null);
+      setDragonMessage("");
+      setDragonCombo(0);
+    }, 1450);
+  };
+  const watchDragon = (event: ReactPointerEvent<HTMLButtonElement>) => {
+    if (!finished || event.pointerType === "touch") return;
+    const bounds = event.currentTarget.getBoundingClientRect();
+    const x = Math.max(-1, Math.min(1, ((event.clientX - bounds.left) / bounds.width - .5) * 2));
+    const y = Math.max(-1, Math.min(1, ((event.clientY - bounds.top) / bounds.height - .42) * 2));
+    event.currentTarget.style.setProperty("--dragon-look-x", `${(x * 2.2).toFixed(1)}px`);
+    event.currentTarget.style.setProperty("--dragon-look-y", `${(y * 1.7).toFixed(1)}px`);
+  };
+  const restDragonGaze = (event: ReactPointerEvent<HTMLButtonElement>) => {
+    event.currentTarget.style.setProperty("--dragon-look-x", "0px");
+    event.currentTarget.style.setProperty("--dragon-look-y", "0px");
   };
   const openDragonCodex = () => {
     setDragonView("codex");
@@ -1690,7 +1734,9 @@ function ClockApp({ time }: { time: string }) {
                 <div className="dragon-sky" aria-hidden="true"><i /><i /><i /><i /><i /><i /><i /><i /></div>
                 <button
                   className={`dragon-egg-button ${running ? "is-incubating" : ""} ${finished ? "is-hatched" : ""}`}
-                  onClick={finished ? interactDragon : toggleTimer}
+                  onClick={(event) => finished ? interactDragon(event) : toggleTimer()}
+                  onPointerMove={watchDragon}
+                  onPointerLeave={restDragonGaze}
                   aria-label={finished ? `Play with ${DRAGON_KINDS[dragonKind].name}` : running ? "Pause dragon egg timer" : "Start dragon egg timer"}
                 >
                   <span className="egg-creature">
@@ -1698,8 +1744,15 @@ function ClockApp({ time }: { time: string }) {
                     <span className="dragon-egg"><i className="egg-facet egg-facet-one" /><i className="egg-facet egg-facet-two" /><i className="egg-facet egg-facet-three" /><i className="egg-rune">◇</i><i className="egg-crack crack-one" /><i className="egg-crack crack-two" /><i className="egg-crack crack-three" /></span>
                     <span className="egg-shell egg-shell-left" /><span className="egg-shell egg-shell-right" />
                     <DragonSprite reaction={dragonReaction} />
+                    {finished && dragonMessage && <span className="dragon-dialogue" aria-hidden="true">{dragonMessage}</span>}
                   </span>
                 </button>
+                {finished && (
+                  <div className="dragon-bond-chip" aria-hidden="true">
+                    <span>BOND</span><i><b style={{ width: `${dragonCollection[0]?.bond ?? 1}%` }} /></i><strong>{dragonCollection[0]?.bond ?? 1}</strong>
+                    {dragonCombo > 1 && <em>×{dragonCombo}</em>}
+                  </div>
+                )}
                 <div className="dragon-time-readout" aria-hidden="true"><span>{timerText}</span><b>{finished ? `${DRAGON_KINDS[dragonKind].rarity} · ${DRAGON_KINDS[dragonKind].name}` : running ? "INCUBATING" : timerState}</b></div>
               </div>
               <div className="stone-dial-wrap">
@@ -1711,7 +1764,7 @@ function ClockApp({ time }: { time: string }) {
               <p className="timer-instruction">{finished ? "Tap your dragon to play · open the Codex to see its card" : running ? "Tap the egg to pause the ritual" : "Drag the amber pin · tap the egg to begin"}</p>
             </>
           )}
-          <p className="timer-live" role="status" aria-live="assertive">{finished ? "The dragon has hatched" : ""}</p>
+          <p className="timer-live" role="status" aria-live="assertive">{finished ? dragonMessage ? `${DRAGON_KINDS[dragonKind].name}: ${dragonMessage}` : `${DRAGON_KINDS[dragonKind].name} has hatched` : ""}</p>
         </div>
       )}
       <nav className="clock-tabs"><button className={tab === "clock" ? "active" : ""} onClick={() => setTab("clock")}><i>◷</i>World Clock</button><button className={tab === "timer" ? "active" : ""} onClick={() => setTab("timer")}><i>◴</i>Timer</button></nav>

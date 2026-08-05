@@ -88,12 +88,15 @@ test("keeps the iPhone interactive and time-aware", async () => {
   assert.match(source, /WEATHER_CACHE_KEY/);
   assert.match(source, /precipitation_probability/);
   assert.match(source, /SUNRISE & SUNSET/);
-  assert.match(source, /Mechanical timer/);
+  assert.match(source, /Dragon egg timer/);
   assert.match(source, /endTimeRef/);
-  assert.match(source, /Reset timer to the last setting/);
+  assert.match(source, /Reset timer/);
   assert.match(source, /role="slider"/);
-  assert.match(source, /Timer complete/);
+  assert.match(source, /has hatched/);
   assert.match(source, /AudioContext/);
+  assert.match(source, /watchDragon/);
+  assert.match(source, /dragonCombo/);
+  assert.match(styles, /dragon-bond-chip/);
   assert.match(styles, /fun-shared-open/);
   assert.match(source, /fun-icon-shell/);
   assert.match(source, /--launch-scale-x/);
