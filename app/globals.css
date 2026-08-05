@@ -560,3 +560,129 @@ img, video { display: block; max-width: 100%; }
   .photo-feature img { height:38vh; min-height:210px; }
   .photo-grid img { height:21vw; max-height:82px; }
 }
+
+/* On a phone, the browser viewport becomes the iPhone screen itself. */
+.mobile-home-nav { display:none; }
+
+@media (max-width:560px) {
+  html,
+  body { width:100%; min-height:100%; background:#000; overscroll-behavior:none; }
+  body:has(.home-shell) { overflow:hidden; }
+  .home-shell {
+    position:fixed;
+    inset:0;
+    width:100%;
+    height:100dvh;
+    min-height:0;
+    overflow:hidden;
+    padding:0;
+    background:#000;
+  }
+  .device-stage {
+    position:absolute;
+    inset:0;
+    width:100%;
+    height:100%;
+    min-height:0;
+    margin:0;
+    display:block;
+    filter:none;
+    animation:none;
+  }
+  .phone {
+    width:100%;
+    height:100%;
+    min-height:0;
+    padding:0;
+    overflow:hidden;
+    border:0;
+    border-radius:0;
+    background:#000;
+    box-shadow:none;
+  }
+  .phone::after,
+  .phone-top,
+  .phone>.home-button { display:none; }
+  .phone .screen {
+    width:100%;
+    height:100%;
+    border-radius:0;
+    box-shadow:none;
+  }
+  .status-bar {
+    height:calc(21px + env(safe-area-inset-top));
+    padding:env(safe-area-inset-top) max(8px, env(safe-area-inset-right)) 0 max(8px, env(safe-area-inset-left));
+    font-size:9px;
+  }
+  .phone-home-layer,
+  .phone-app-layer { inset:calc(21px + env(safe-area-inset-top)) 0 0; }
+  .phone-home-layer .iphone-desktop,
+  .phone-app-layer .folder-screen,
+  .phone-app-layer .native-app { height:100%; }
+  .iphone-desktop,
+  .folder-screen,
+  .native-app { min-height:0; }
+  .system-page {
+    height:calc(100% - max(88px, calc(78px + env(safe-area-inset-bottom))));
+    padding:clamp(24px, 4.2dvh, 38px) max(9px, env(safe-area-inset-left)) 10px max(9px, env(safe-area-inset-right));
+    gap:clamp(20px, 3.2dvh, 31px) 6px;
+  }
+  .desktop-dock {
+    bottom:max(7px, env(safe-area-inset-bottom));
+    left:max(8px, env(safe-area-inset-left));
+    right:max(8px, env(safe-area-inset-right));
+  }
+  .screen-titlebar,
+  .native-titlebar { position:relative; }
+  .mobile-home-nav {
+    appearance:none;
+    position:absolute;
+    z-index:8;
+    left:7px;
+    top:7px;
+    height:30px;
+    min-width:52px;
+    display:block;
+    padding:0 9px 0 13px;
+    border:1px solid #20394d;
+    border-radius:6px;
+    color:#fff;
+    background:linear-gradient(#7d97ab 0%,#49677f 48%,#2d4d67 51%,#52738d 100%);
+    box-shadow:inset 0 1px rgba(255,255,255,.45),0 1px 2px rgba(0,0,0,.4);
+    font:700 11px/28px Helvetica,Arial,sans-serif;
+    text-shadow:0 -1px #193247;
+  }
+  .mobile-home-nav::before {
+    content:"";
+    position:absolute;
+    left:-5px;
+    top:6px;
+    width:16px;
+    height:16px;
+    border-left:1px solid #20394d;
+    border-bottom:1px solid #20394d;
+    border-radius:3px;
+    background:linear-gradient(135deg,#708ba0 0 48%,#36566f 52%);
+    transform:rotate(45deg);
+    z-index:-1;
+  }
+  .mobile-home-nav:active { filter:brightness(.78); }
+  .work-titlebar .mini-mark { visibility:hidden; }
+  .native-content { padding-bottom:env(safe-area-inset-bottom); }
+}
+
+@media (max-width:560px) and (orientation:landscape) {
+  .system-page {
+    padding-top:10px;
+    gap:9px 6px;
+  }
+  .system-app-icon,
+  .system-app-icon.sys-authentic,
+  .desktop-dock .dock-system-app>.system-app-icon,
+  .desktop-dock .dock-system-app>.system-app-icon.sys-authentic {
+    width:min(10dvh,54px);
+    height:min(10dvh,54px);
+    flex-basis:min(10dvh,54px);
+  }
+  .desktop-dock { height:68px; }
+}

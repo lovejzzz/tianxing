@@ -81,6 +81,7 @@ export function PhoneExperience() {
   const [origin, setOrigin] = useState<Origin>({ x: 50, y: 58 });
   const [time, setTime] = useState("9:41 AM");
   const [calendarDay, setCalendarDay] = useState("1");
+  const [calendarWeekday, setCalendarWeekday] = useState("Today");
   const [captures, setCaptures] = useState<CapturedPhoto[]>(() => {
     if (typeof window === "undefined") return [];
     try {
@@ -95,14 +96,24 @@ export function PhoneExperience() {
   const base = process.env.NEXT_PUBLIC_BASE_PATH ?? "";
 
   useEffect(() => {
+    let mobileStartFrame = 0;
+    if (window.matchMedia("(max-width: 560px)").matches) {
+      mobileStartFrame = window.requestAnimationFrame(() => {
+        setMode("home");
+        setActiveApp(null);
+      });
+    }
+
     const update = () => {
       const now = new Date();
       setTime(now.toLocaleTimeString([], { hour: "numeric", minute: "2-digit" }));
       setCalendarDay(String(now.getDate()));
+      setCalendarWeekday(now.toLocaleDateString([], { weekday: "long" }));
     };
     update();
     const timer = window.setInterval(update, 30_000);
     return () => {
+      window.cancelAnimationFrame(mobileStartFrame);
       window.clearInterval(timer);
       if (transitionTimer.current) window.clearTimeout(transitionTimer.current);
     };
@@ -181,7 +192,7 @@ export function PhoneExperience() {
         <div className={`screen phone-mode-${mode}`} ref={screenRef}>
           <StatusBar time={time} />
           <div className={`phone-home-layer ${mode === "home" ? "is-active" : "is-background"}`}>
-            <HomeScreen calendarDay={calendarDay} onOpenApp={openApp} />
+            <HomeScreen calendarDay={calendarDay} calendarWeekday={calendarWeekday} onOpenApp={openApp} />
           </div>
 
           {mode !== "home" && (
@@ -189,7 +200,7 @@ export function PhoneExperience() {
               className={`phone-app-layer ${mode === "folder" ? "is-fun-app" : ""} ${closing ? "is-closing" : "is-opening"}`}
               style={{ "--origin-x": `${origin.x}%`, "--origin-y": `${origin.y}%` } as CSSProperties}
             >
-              {mode === "folder" && <FolderView />}
+              {mode === "folder" && <FolderView onGoHome={goHome} />}
               {mode === "native" && activeApp && (
                 <NativeAppView
                   app={activeApp}
@@ -199,6 +210,7 @@ export function PhoneExperience() {
                   onCapture={saveCapture}
                   onDeleteCapture={deleteCapture}
                   onOpenWork={() => openApp("folder")}
+                  onGoHome={goHome}
                 />
               )}
             </div>
@@ -223,12 +235,13 @@ function StatusBar({ time }: { time: string }) {
   );
 }
 
-function FolderView() {
+function FolderView({ onGoHome }: { onGoHome: () => void }) {
   return (
     <div className="folder-screen">
       <div className="fun-dolly" aria-hidden="true"><i /><i /><i /><i /></div>
       <div className="screen-titlebar work-titlebar">
         <span className="mini-mark">TX</span>
+        <button className="mobile-home-nav" type="button" onClick={onGoHome}>Home</button>
         <strong>Fun</strong>
       </div>
 
@@ -249,8 +262,9 @@ function FolderView() {
   );
 }
 
-function HomeScreen({ calendarDay, onOpenApp }: {
+function HomeScreen({ calendarDay, calendarWeekday, onOpenApp }: {
   calendarDay: string;
+  calendarWeekday: string;
   onOpenApp: (id: NativeApp | "folder", element?: HTMLElement | null) => void;
 }) {
   return (
@@ -258,7 +272,7 @@ function HomeScreen({ calendarDay, onOpenApp }: {
       <div className="system-page" aria-label="iPhone Home screen">
         {homeApps.map((app) => (
           <button className="system-app" key={app.id} onClick={(event) => onOpenApp(app.id, event.currentTarget)}>
-            <SystemAppIcon id={app.id} calendarDay={calendarDay} />
+            <SystemAppIcon id={app.id} calendarDay={calendarDay} calendarWeekday={calendarWeekday} />
             <span>{app.label}</span>
           </button>
         ))}
@@ -273,7 +287,7 @@ function HomeScreen({ calendarDay, onOpenApp }: {
             aria-label={app.label}
             title={app.label}
           >
-            <SystemAppIcon id={app.id} calendarDay={calendarDay} />
+            <SystemAppIcon id={app.id} calendarDay={calendarDay} calendarWeekday={calendarWeekday} />
           </button>
         ))}
       </div>
@@ -281,9 +295,10 @@ function HomeScreen({ calendarDay, onOpenApp }: {
   );
 }
 
-function SystemAppIcon({ id, calendarDay }: {
+function SystemAppIcon({ id, calendarDay, calendarWeekday }: {
   id: HomeApp["id"];
   calendarDay: string;
+  calendarWeekday: string;
 }) {
   if (id === "folder") {
     return (
@@ -295,11 +310,10 @@ function SystemAppIcon({ id, calendarDay }: {
   const base = process.env.NEXT_PUBLIC_BASE_PATH ?? "";
   const icon = id === "music" ? "music" : id;
   if (id === "calendar") {
-    const weekday = new Date().toLocaleDateString([], { weekday: "long" });
     return (
       <span className="system-app-icon sys-authentic authentic-calendar">
         <img src={`${base}/media/ios4/icons/calendar.png`} alt="" aria-hidden="true" />
-        <span className="calendar-weekday">{weekday}</span>
+        <span className="calendar-weekday">{calendarWeekday}</span>
         <span className="calendar-icon-day">{calendarDay}</span>
       </span>
     );
@@ -311,7 +325,7 @@ function SystemAppIcon({ id, calendarDay }: {
   );
 }
 
-function NativeAppView({ app, base, time, captures, onCapture, onDeleteCapture, onOpenWork }: {
+function NativeAppView({ app, base, time, captures, onCapture, onDeleteCapture, onOpenWork, onGoHome }: {
   app: NativeApp;
   base: string;
   time: string;
@@ -319,6 +333,7 @@ function NativeAppView({ app, base, time, captures, onCapture, onDeleteCapture, 
   onCapture: (src: string) => void;
   onDeleteCapture: (id: string) => void;
   onOpenWork: () => void;
+  onGoHome: () => void;
 }) {
   const titles: Record<NativeApp, string> = {
     messages: "New Message",
@@ -336,7 +351,10 @@ function NativeAppView({ app, base, time, captures, onCapture, onDeleteCapture, 
 
   return (
     <div className={`native-app native-${app}`}>
-      <div className="native-titlebar"><strong>{titles[app]}</strong></div>
+      <div className="native-titlebar">
+        <button className="mobile-home-nav" type="button" onClick={onGoHome}>Home</button>
+        <strong>{titles[app]}</strong>
+      </div>
       <div className="native-content">
         {app === "messages" && <MessagesApp />}
         {app === "calendar" && <CalendarApp />}

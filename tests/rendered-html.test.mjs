@@ -50,6 +50,8 @@ test("keeps the iPhone interactive and time-aware", async () => {
   const projectSource = await readFile(new URL("../app/projects.ts", import.meta.url), "utf8");
   assert.match(source, /toLocaleTimeString/);
   assert.match(source, /Go to iPhone Home screen/);
+  assert.match(source, /matchMedia\("\(max-width: 560px\)"\)/);
+  assert.match(source, /className="mobile-home-nav"/);
   assert.match(source, /label: "Fun"/);
   assert.match(source, /media\/about\/tian-xing-iphone4\.jpg/);
   assert.match(source, /navigator\.mediaDevices\.getUserMedia/);

@@ -26,11 +26,18 @@ export const metadata: Metadata = {
     description: "Nine projects across code, cinema, games, and sound.",
     images: ["https://tian.fun/og.png"],
   },
+  appleWebApp: {
+    capable: true,
+    statusBarStyle: "black-translucent",
+    title: "Tian",
+  },
 };
 
 export const viewport: Viewport = {
   width: "device-width",
   initialScale: 1,
+  maximumScale: 1,
+  viewportFit: "cover",
   themeColor: "#05070a",
 };
 
