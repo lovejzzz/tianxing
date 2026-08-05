@@ -45,10 +45,17 @@ test("embeds playable projects and full-resolution screenshots", async () => {
 
 test("keeps the iPhone interactive and time-aware", async () => {
   const source = await readFile(new URL("../app/components/PhoneExperience.tsx", import.meta.url), "utf8");
+  const photoManifest = await readFile(new URL("../app/photoManifest.ts", import.meta.url), "utf8");
   assert.match(source, /toLocaleTimeString/);
   assert.match(source, /Go to iPhone Home screen/);
   assert.match(source, /Selected Work/);
-  assert.match(source, /media\/about\/tian-xing-photobooth\.png/);
+  assert.match(source, /media\/about\/tian-xing-iphone4\.jpg/);
+  assert.match(source, /navigator\.mediaDevices\.getUserMedia/);
+  assert.match(source, /xingpicture@gmail\.com/);
+  assert.match(source, /xing_tian_lifeitself/);
+  assert.match(source, /Happiness comes from solving problems--Mark Manson/);
+  assert.doesNotMatch(source, /\| "maps"|MapsApp/);
+  assert.equal((photoManifest.match(/media\/photos\/all\//g) ?? []).length, 42);
   assert.match(source, /open\.spotify\.com\/embed\/playlist\/6hYj1RoYJ85hj8c1kaDFJ2/);
   assert.doesNotMatch(source, /appstore|youtube:|id: "about"/i);
 });

@@ -4,7 +4,7 @@ export function AppIcon({ project, large = false }: { project: Project; large?: 
   return (
     <span className={`app-icon icon-${project.slug} ${large ? "app-icon-large" : ""}`} aria-hidden="true">
       <span className="icon-gloss" />
-      <IconArt slug={project.slug} />
+      <span className="app-icon-art"><IconArt slug={project.slug} /></span>
     </span>
   );
 }
