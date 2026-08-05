@@ -4,20 +4,12 @@ export const portfolioPhotos = [
     "alt": "Photograph 1 from Tian Xing's portfolio"
   },
   {
-    "src": "/media/photos/all/09a5edf5-e310-48cb-b015-4bbe6d90dafb.jpg",
-    "alt": "Photograph 2 from Tian Xing's portfolio"
-  },
-  {
     "src": "/media/photos/all/0bf635f9-34c5-44a3-9c66-cb6ee12c87d1.jpg",
     "alt": "Photograph 3 from Tian Xing's portfolio"
   },
   {
     "src": "/media/photos/all/0c2eaf8a-bafe-40ac-9907-10bfb807b782.jpg",
     "alt": "Photograph 4 from Tian Xing's portfolio"
-  },
-  {
-    "src": "/media/photos/all/14011c3d-6cba-4ac6-b332-d2c09ae72449.jpg",
-    "alt": "Photograph 5 from Tian Xing's portfolio"
   },
   {
     "src": "/media/photos/all/16ee2b9a-5b70-49b4-8bce-212bfae48acd.jpg",
@@ -60,40 +52,16 @@ export const portfolioPhotos = [
     "alt": "Photograph 15 from Tian Xing's portfolio"
   },
   {
-    "src": "/media/photos/all/6fd39a5e-545c-4fdc-ba19-9eb22aef9953.jpg",
-    "alt": "Photograph 16 from Tian Xing's portfolio"
-  },
-  {
     "src": "/media/photos/all/70a36717-0113-405c-8d8d-1083c6a9b07e.jpg",
     "alt": "Photograph 17 from Tian Xing's portfolio"
-  },
-  {
-    "src": "/media/photos/all/713b0da1-2fd9-4a5e-8b6b-c8472bd0f8c1.jpg",
-    "alt": "Photograph 18 from Tian Xing's portfolio"
-  },
-  {
-    "src": "/media/photos/all/7dc3c68b-4351-4465-9f81-cc0f9e97ea02.jpg",
-    "alt": "Photograph 19 from Tian Xing's portfolio"
   },
   {
     "src": "/media/photos/all/806cfd00-6736-43e6-abca-1c2f284b440f.jpg",
     "alt": "Photograph 20 from Tian Xing's portfolio"
   },
   {
-    "src": "/media/photos/all/81b0712f-019f-47e2-a929-a658deac485f.jpg",
-    "alt": "Photograph 21 from Tian Xing's portfolio"
-  },
-  {
     "src": "/media/photos/all/8bfbf867-ff6d-41b2-add0-a82f450bc215.jpg",
     "alt": "Photograph 22 from Tian Xing's portfolio"
-  },
-  {
-    "src": "/media/photos/all/8c8963da-0966-4485-baf4-d5201701de9e.jpg",
-    "alt": "Photograph 23 from Tian Xing's portfolio"
-  },
-  {
-    "src": "/media/photos/all/90fb235c-bbad-4c75-b8af-9189c257e90c.jpg",
-    "alt": "Photograph 24 from Tian Xing's portfolio"
   },
   {
     "src": "/media/photos/all/99625806-eaeb-44f9-a123-b0f58b911964.jpg",
@@ -120,28 +88,12 @@ export const portfolioPhotos = [
     "alt": "Photograph 30 from Tian Xing's portfolio"
   },
   {
-    "src": "/media/photos/all/cf3f896c-d4ec-4de2-bf3b-15cd8d894c1f.jpg",
-    "alt": "Photograph 31 from Tian Xing's portfolio"
-  },
-  {
     "src": "/media/photos/all/d1fc4027-7293-45c7-9dbb-fa6f7130a667.jpg",
     "alt": "Photograph 32 from Tian Xing's portfolio"
   },
   {
     "src": "/media/photos/all/d5e55f7c-3ae7-4fac-bdcb-c0963ba0b4dd.jpg",
     "alt": "Photograph 33 from Tian Xing's portfolio"
-  },
-  {
-    "src": "/media/photos/all/ddd2a9e1-0b4e-48b0-8e9a-1d457f155f9b.jpg",
-    "alt": "Photograph 34 from Tian Xing's portfolio"
-  },
-  {
-    "src": "/media/photos/all/e35bd580-d600-4e4a-bcbf-ae7fabc57876.jpg",
-    "alt": "Photograph 35 from Tian Xing's portfolio"
-  },
-  {
-    "src": "/media/photos/all/e56cf3b2-c11a-42bd-9490-75050d11a29f.jpg",
-    "alt": "Photograph 36 from Tian Xing's portfolio"
   },
   {
     "src": "/media/photos/all/e5e05c28-1277-4148-a777-6edc18a0bbd1.jpg",
@@ -156,16 +108,7 @@ export const portfolioPhotos = [
     "alt": "Photograph 39 from Tian Xing's portfolio"
   },
   {
-    "src": "/media/photos/all/ee6d8148-cea1-4174-96bb-cf015e26d886.jpg",
-    "alt": "Photograph 40 from Tian Xing's portfolio"
-  },
-  {
     "src": "/media/photos/all/fe909671-cc1d-4ba1-8d82-45ff36a0df9a.jpg",
     "alt": "Photograph 41 from Tian Xing's portfolio"
-  },
-  {
-    "src": "/media/photos/all/fff11607-32c7-41cb-9d4b-c890afd3e1e4.jpg",
-    "alt": "Photograph 42 from Tian Xing's portfolio"
   }
 ] as const;
-

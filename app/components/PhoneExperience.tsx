@@ -89,13 +89,27 @@ export function PhoneExperience() {
   }, []);
 
   const saveCapture = (src: string) => {
-    const next = [{ id: crypto.randomUUID(), src, createdAt: new Date().toISOString() }, ...captures].slice(0, 12);
-    setCaptures(next);
-    try {
-      window.localStorage.setItem(PHOTO_STORAGE_KEY, JSON.stringify(next));
-    } catch {
-      // Large camera rolls may exceed private-browser storage; the session copy remains available.
-    }
+    setCaptures((current) => {
+      const next = [{ id: crypto.randomUUID(), src, createdAt: new Date().toISOString() }, ...current].slice(0, 12);
+      try {
+        window.localStorage.setItem(PHOTO_STORAGE_KEY, JSON.stringify(next));
+      } catch {
+        // Large camera rolls may exceed private-browser storage; the session copy remains available.
+      }
+      return next;
+    });
+  };
+
+  const deleteCapture = (id: string) => {
+    setCaptures((current) => {
+      const next = current.filter((photo) => photo.id !== id);
+      try {
+        window.localStorage.setItem(PHOTO_STORAGE_KEY, JSON.stringify(next));
+      } catch {
+        // The in-memory camera roll still reflects the deletion for this session.
+      }
+      return next;
+    });
   };
 
   const rememberOrigin = (element?: HTMLElement | null) => {
@@ -163,6 +177,7 @@ export function PhoneExperience() {
                   time={time}
                   captures={captures}
                   onCapture={saveCapture}
+                  onDeleteCapture={deleteCapture}
                   onOpenWork={() => openApp("folder")}
                 />
               )}
@@ -276,12 +291,13 @@ function SystemAppIcon({ id, calendarDay, time }: {
   return <span className="system-app-icon sys-music"><i>♫</i></span>;
 }
 
-function NativeAppView({ app, base, time, captures, onCapture, onOpenWork }: {
+function NativeAppView({ app, base, time, captures, onCapture, onDeleteCapture, onOpenWork }: {
   app: NativeApp;
   base: string;
   time: string;
   captures: CapturedPhoto[];
   onCapture: (src: string) => void;
+  onDeleteCapture: (id: string) => void;
   onOpenWork: () => void;
 }) {
   const titles: Record<NativeApp, string> = {
@@ -305,7 +321,7 @@ function NativeAppView({ app, base, time, captures, onCapture, onOpenWork }: {
         {app === "messages" && <MessagesApp />}
         {app === "calendar" && <CalendarApp />}
         {app === "photos" && <PhotosApp base={base} captures={captures} />}
-        {app === "camera" && <CameraApp onCapture={onCapture} captureCount={captures.length} />}
+        {app === "camera" && <CameraApp captures={captures} onCapture={onCapture} onDeleteCapture={onDeleteCapture} />}
         {app === "weather" && <WeatherApp />}
         {app === "clock" && <ClockApp time={time} />}
         {app === "notes" && <NotesApp />}
@@ -437,13 +453,18 @@ function PhotosApp({ base, captures }: { base: string; captures: CapturedPhoto[]
   );
 }
 
-function CameraApp({ onCapture, captureCount }: { onCapture: (src: string) => void; captureCount: number }) {
+function CameraApp({ captures, onCapture, onDeleteCapture }: {
+  captures: CapturedPhoto[];
+  onCapture: (src: string) => void;
+  onDeleteCapture: (id: string) => void;
+}) {
   const videoRef = useRef<HTMLVideoElement>(null);
   const streamRef = useRef<MediaStream | null>(null);
   const [status, setStatus] = useState<"starting" | "ready" | "blocked">("starting");
   const [flash, setFlash] = useState(false);
   const [facing, setFacing] = useState<"user" | "environment">("environment");
-  const [latest, setLatest] = useState<string | null>(null);
+  const [reviewing, setReviewing] = useState(false);
+  const latest = captures[0];
 
   const stopCamera = useCallback(() => {
     streamRef.current?.getTracks().forEach((track) => track.stop());
@@ -517,7 +538,6 @@ function CameraApp({ onCapture, captureCount }: { onCapture: (src: string) => vo
     }
     context.putImageData(frame, 0, 0);
     const src = canvas.toDataURL("image/jpeg", 0.82);
-    setLatest(src);
     setFlash(true);
     window.setTimeout(() => setFlash(false), 180);
     onCapture(src);
@@ -534,10 +554,26 @@ function CameraApp({ onCapture, captureCount }: { onCapture: (src: string) => vo
         {flash && <i className="camera-flash" />}
       </div>
       <div className="camera-controls">
-        <span className="latest-shot" aria-label={`${captureCount} photos in camera roll`}>{latest && <img src={latest} alt="Latest capture" />}</span>
+        <button className="latest-shot" onClick={() => setReviewing(true)} disabled={!latest} aria-label={latest ? `Open latest photo. ${captures.length} photos in camera roll` : "Camera roll is empty"}>
+          {latest && <img src={latest.src} alt="Latest capture" />}
+        </button>
         <button className="shutter" onClick={takePhoto} disabled={status !== "ready"} aria-label="Take photo"><span /></button>
         <span className="camera-mode">PHOTO</span>
       </div>
+      {reviewing && latest && (
+        <div className="camera-review" role="dialog" aria-modal="true" aria-label="Latest camera photo">
+          <div className="camera-review-toolbar">
+            <button onClick={() => setReviewing(false)}>Camera</button>
+            <strong>Camera Roll</strong>
+            <span>1 of {captures.length}</span>
+          </div>
+          <div className="camera-review-photo"><img src={latest.src} alt={`Photo taken ${new Date(latest.createdAt).toLocaleString()}`} /></div>
+          <div className="camera-review-actions">
+            <time dateTime={latest.createdAt}>{new Date(latest.createdAt).toLocaleString([], { month: "short", day: "numeric", hour: "numeric", minute: "2-digit" })}</time>
+            <button onClick={() => { onDeleteCapture(latest.id); setReviewing(false); }} aria-label="Delete latest photo">Delete Photo</button>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

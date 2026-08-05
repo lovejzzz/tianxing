@@ -46,6 +46,7 @@ test("embeds playable projects and full-resolution screenshots", async () => {
 test("keeps the iPhone interactive and time-aware", async () => {
   const source = await readFile(new URL("../app/components/PhoneExperience.tsx", import.meta.url), "utf8");
   const photoManifest = await readFile(new URL("../app/photoManifest.ts", import.meta.url), "utf8");
+  const projectSource = await readFile(new URL("../app/projects.ts", import.meta.url), "utf8");
   assert.match(source, /toLocaleTimeString/);
   assert.match(source, /Go to iPhone Home screen/);
   assert.match(source, /Selected Work/);
@@ -55,7 +56,15 @@ test("keeps the iPhone interactive and time-aware", async () => {
   assert.match(source, /xing_tian_lifeitself/);
   assert.match(source, /Happiness comes from solving problems--Mark Manson/);
   assert.doesNotMatch(source, /\| "maps"|MapsApp/);
-  assert.equal((photoManifest.match(/media\/photos\/all\//g) ?? []).length, 42);
+  assert.equal((photoManifest.match(/media\/photos\/all\//g) ?? []).length, 28);
+  const photoPaths = [...photoManifest.matchAll(/"src": "(\/media\/photos\/all\/[^"]+)"/g)].map((match) => match[1]);
+  assert.equal(new Set(photoPaths).size, photoPaths.length);
+  assert.match(source, /Delete Photo/);
+  assert.match(source, /onDeleteCapture/);
+  assert.match(projectSource, /slug: "edutool"[\s\S]{0,180}year: "2026"/);
+  assert.match(projectSource, /slug: "start-where-you-are"[\s\S]{0,180}year: "2025"/);
+  assert.match(projectSource, /slug: "texas-jack"[\s\S]{0,180}year: "2024"/);
+  assert.match(projectSource, /slug: "slotronome"[\s\S]{0,180}year: "2025"/);
   assert.match(source, /open\.spotify\.com\/embed\/playlist\/6hYj1RoYJ85hj8c1kaDFJ2/);
   assert.doesNotMatch(source, /appstore|youtube:|id: "about"/i);
 });
