@@ -33,6 +33,25 @@ type CapturedPhoto = {
   createdAt: string;
 };
 
+type BoothEffectId = "original" | "sepia" | "mono" | "pop" | "xray" | "glow";
+
+const boothEffects: Array<{ id: BoothEffectId; label: string; filter: string }> = [
+  { id: "original", label: "Original", filter: "saturate(.94) contrast(1.04)" },
+  { id: "sepia", label: "Sepia", filter: "sepia(.72) saturate(.86) contrast(1.08)" },
+  { id: "mono", label: "Mono", filter: "grayscale(1) contrast(1.22)" },
+  { id: "pop", label: "Pop Art", filter: "saturate(2.15) contrast(1.38) brightness(1.05)" },
+  { id: "xray", label: "X-Ray", filter: "grayscale(1) invert(1) contrast(1.5)" },
+  { id: "glow", label: "Glow", filter: "saturate(1.15) contrast(1.04) brightness(1.12) blur(.35px)" },
+];
+
+const safariPortals = [
+  { title: "Radio Garden", host: "radio.garden", description: "Spin the globe. Listen anywhere.", url: "https://radio.garden/", mark: "◉" },
+  { title: "WindowSwap", host: "window-swap.com", description: "Borrow somebody else’s window for a while.", url: "https://www.window-swap.com/", mark: "▤" },
+  { title: "A Picture from Space", host: "apod.nasa.gov", description: "One new window into the universe every day.", url: "https://apod.nasa.gov/apod/astropix.html", mark: "✦" },
+  { title: "Public Domain Review", host: "publicdomainreview.org", description: "Beautiful oddities from art, film, and history.", url: "https://publicdomainreview.org/", mark: "∞" },
+  { title: "Earth", host: "earth.nullschool.net", description: "Watch the planet breathe in real time.", url: "https://earth.nullschool.net/", mark: "≈" },
+];
+
 const homeApps: HomeApp[] = [
   { id: "messages", label: "Messages" },
   { id: "calendar", label: "Calendar" },
@@ -303,7 +322,7 @@ function NativeAppView({ app, base, time, captures, onCapture, onDeleteCapture, 
     messages: "New Message",
     calendar: "Calendar",
     photos: "Photos",
-    camera: "Camera",
+    camera: "Photo Booth",
     weather: "Weather",
     clock: "Clock",
     notes: "Notes",
@@ -435,19 +454,43 @@ function PhotosApp({ base, captures }: { base: string; captures: CapturedPhoto[]
     ...portfolioPhotos.map((photo) => ({ ...photo, id: photo.src, src: `${base}${photo.src}`, captured: false })),
   ], [base, captures]);
   const [selected, setSelected] = useState(photos[0]?.id ?? "");
+  const [viewing, setViewing] = useState(false);
   const selectedPhoto = photos.find((photo) => photo.id === selected) ?? photos[0];
+  const selectedIndex = Math.max(0, photos.findIndex((photo) => photo.id === selectedPhoto?.id));
+
+  const movePhoto = (direction: number) => {
+    if (!photos.length) return;
+    const next = (selectedIndex + direction + photos.length) % photos.length;
+    setSelected(photos[next].id);
+  };
 
   return (
     <div className="photos-app">
-      {selectedPhoto && <div className="photo-feature"><img src={selectedPhoto.src} alt={selectedPhoto.alt} /><span>{selectedPhoto.captured ? "Camera Roll" : "Tian Xing · Portfolio"}</span></div>}
       <div className="photo-album-bar"><strong>Camera Roll</strong><span>{photos.length} Photos</span></div>
       <div className="photo-grid">
         {photos.map((photo) => (
-          <button key={photo.id} className={selected === photo.id ? "selected" : ""} onClick={() => setSelected(photo.id)} aria-label={`View ${photo.alt}`}>
+          <button key={photo.id} className={selected === photo.id ? "selected" : ""} onClick={() => { setSelected(photo.id); setViewing(true); }} aria-label={`View ${photo.alt}`}>
             <img src={photo.src} alt="" />{photo.captured && <i>NEW</i>}
           </button>
         ))}
       </div>
+      {viewing && selectedPhoto && (
+        <div className="photo-viewer" role="dialog" aria-modal="true" aria-label="Photo viewer">
+          <div className="photo-viewer-bar">
+            <button onClick={() => setViewing(false)}>Camera Roll</button>
+            <strong>{selectedIndex + 1} of {photos.length}</strong>
+            <span>{selectedPhoto.captured ? "Today" : "Portfolio"}</span>
+          </div>
+          <div className="photo-viewer-stage">
+            <button onClick={() => movePhoto(-1)} aria-label="Previous photo">‹</button>
+            <img src={selectedPhoto.src} alt={selectedPhoto.alt} />
+            <button onClick={() => movePhoto(1)} aria-label="Next photo">›</button>
+          </div>
+          <div className="photo-viewer-strip">
+            {photos.map((photo) => <button key={photo.id} className={selectedPhoto.id === photo.id ? "selected" : ""} onClick={() => setSelected(photo.id)} aria-label={`View ${photo.alt}`}><img src={photo.src} alt="" /></button>)}
+          </div>
+        </div>
+      )}
     </div>
   );
 }
@@ -459,11 +502,15 @@ function CameraApp({ captures, onCapture, onDeleteCapture }: {
 }) {
   const videoRef = useRef<HTMLVideoElement>(null);
   const streamRef = useRef<MediaStream | null>(null);
+  const countdownTimer = useRef<number | null>(null);
   const [status, setStatus] = useState<"starting" | "ready" | "blocked">("starting");
   const [flash, setFlash] = useState(false);
-  const [facing, setFacing] = useState<"user" | "environment">("environment");
+  const [facing, setFacing] = useState<"user" | "environment">("user");
+  const [effect, setEffect] = useState<BoothEffectId>("original");
+  const [countdown, setCountdown] = useState<number | null>(null);
   const [reviewing, setReviewing] = useState(false);
   const latest = captures[0];
+  const activeEffect = boothEffects.find((item) => item.id === effect) ?? boothEffects[0];
 
   const stopCamera = useCallback(() => {
     streamRef.current?.getTracks().forEach((track) => track.stop());
@@ -490,9 +537,10 @@ function CameraApp({ captures, onCapture, onDeleteCapture }: {
   }, [stopCamera]);
 
   useEffect(() => {
-    const timer = window.setTimeout(() => { void startCamera("environment"); }, 0);
+    const timer = window.setTimeout(() => { void startCamera("user"); }, 0);
     return () => {
       window.clearTimeout(timer);
+      if (countdownTimer.current) window.clearInterval(countdownTimer.current);
       stopCamera();
     };
   }, [startCamera, stopCamera]);
@@ -521,7 +569,14 @@ function CameraApp({ captures, onCapture, onDeleteCapture }: {
       sh = video.videoWidth / targetRatio;
       sy = (video.videoHeight - sh) / 2;
     }
+    context.save();
+    context.filter = activeEffect.filter;
+    if (facing === "user") {
+      context.translate(640, 0);
+      context.scale(-1, 1);
+    }
     context.drawImage(video, sx, sy, sw, sh, 0, 0, 640, 480);
+    context.restore();
     const frame = context.getImageData(0, 0, 640, 480);
     for (let index = 0; index < frame.data.length; index += 4) {
       const pixel = index / 4;
@@ -530,10 +585,10 @@ function CameraApp({ captures, onCapture, onDeleteCapture }: {
       const dx = (x - 320) / 320;
       const dy = (y - 240) / 240;
       const vignette = 1 - Math.min(0.18, (dx * dx + dy * dy) * 0.09);
-      const grain = Math.sin(pixel * 12.9898) * 3.2;
-      frame.data[index] = Math.max(0, Math.min(255, (((frame.data[index] - 128) * 1.08 + 128) * 1.035 + grain) * vignette));
-      frame.data[index + 1] = Math.max(0, Math.min(255, (((frame.data[index + 1] - 128) * 1.06 + 128) + grain * 0.45) * vignette));
-      frame.data[index + 2] = Math.max(0, Math.min(255, (((frame.data[index + 2] - 128) * 1.08 + 128) * 0.94 - grain * 0.2) * vignette));
+      const grain = Math.sin(pixel * 12.9898) * (effect === "mono" ? 5 : 2.4);
+      frame.data[index] = Math.max(0, Math.min(255, (frame.data[index] + grain) * vignette));
+      frame.data[index + 1] = Math.max(0, Math.min(255, (frame.data[index + 1] + grain * .6) * vignette));
+      frame.data[index + 2] = Math.max(0, Math.min(255, (frame.data[index + 2] - grain * .2) * vignette));
     }
     context.putImageData(frame, 0, 0);
     const src = canvas.toDataURL("image/jpeg", 0.82);
@@ -542,22 +597,43 @@ function CameraApp({ captures, onCapture, onDeleteCapture }: {
     onCapture(src);
   };
 
+  const beginCapture = () => {
+    if (status !== "ready" || countdown !== null) return;
+    let value = 3;
+    setCountdown(value);
+    countdownTimer.current = window.setInterval(() => {
+      value -= 1;
+      if (value <= 0) {
+        if (countdownTimer.current) window.clearInterval(countdownTimer.current);
+        countdownTimer.current = null;
+        setCountdown(null);
+        takePhoto();
+      } else {
+        setCountdown(value);
+      }
+    }, 700);
+  };
+
   return (
-    <div className="camera-app">
-      <div className="camera-toolbar"><button onClick={switchCamera} disabled={status !== "ready"} aria-label="Switch camera">↻</button><span>HDR Off</span><b>AUTO</b></div>
-      <div className="viewfinder">
-        <video ref={videoRef} muted playsInline aria-label="Live camera view" />
-        <div className="camera-grid-lines" aria-hidden="true" />
+    <div className="camera-app photobooth-app">
+      <div className="camera-toolbar"><span>Effects</span><b>PHOTO BOOTH</b><button onClick={switchCamera} disabled={status !== "ready"} aria-label="Switch camera">↻</button></div>
+      <div className="viewfinder booth-stage">
+        <video ref={videoRef} muted playsInline aria-label="Live camera view" style={{ filter: activeEffect.filter, transform: facing === "user" ? "scaleX(-1)" : "none" }} />
+        <div className="booth-curtain booth-curtain-left" aria-hidden="true" /><div className="booth-curtain booth-curtain-right" aria-hidden="true" />
+        {countdown !== null && <strong className="booth-countdown">{countdown}</strong>}
         {status === "starting" && <p>Starting camera…</p>}
-        {status === "blocked" && <div className="camera-permission"><strong>Camera Access</strong><span>Allow camera access to take an iPhone 4-style photo.</span><button onClick={() => startCamera(facing)}>Try Again</button></div>}
+        {status === "blocked" && <div className="camera-permission"><strong>Photo Booth needs a camera</strong><span>Allow camera access, then make a portrait with a 2010-era effect.</span><button onClick={() => startCamera(facing)}>Try Again</button></div>}
         {flash && <i className="camera-flash" />}
+      </div>
+      <div className="booth-effects" aria-label="Photo Booth effects">
+        {boothEffects.map((item) => <button key={item.id} className={effect === item.id ? "active" : ""} onClick={() => setEffect(item.id)} aria-pressed={effect === item.id}><i className={`effect-${item.id}`} /><span>{item.label}</span></button>)}
       </div>
       <div className="camera-controls">
         <button className="latest-shot" onClick={() => setReviewing(true)} disabled={!latest} aria-label={latest ? `Open latest photo. ${captures.length} photos in camera roll` : "Camera roll is empty"}>
           {latest && <img src={latest.src} alt="Latest capture" />}
         </button>
-        <button className="shutter" onClick={takePhoto} disabled={status !== "ready"} aria-label="Take photo"><span /></button>
-        <span className="camera-mode">PHOTO</span>
+        <button className="shutter booth-shutter" onClick={beginCapture} disabled={status !== "ready" || countdown !== null} aria-label="Take Photo Booth photo"><span /></button>
+        <span className="camera-mode">{activeEffect.label}</span>
       </div>
       {reviewing && latest && (
         <div className="camera-review" role="dialog" aria-modal="true" aria-label="Latest camera photo">
@@ -579,6 +655,7 @@ function CameraApp({ captures, onCapture, onDeleteCapture }: {
 
 type WeatherData = {
   location: string;
+  isDay: boolean;
   temperature: number;
   apparent: number;
   humidity: number;
@@ -599,7 +676,7 @@ function WeatherApp() {
       const url = new URL("https://api.open-meteo.com/v1/forecast");
       url.searchParams.set("latitude", String(latitude));
       url.searchParams.set("longitude", String(longitude));
-      url.searchParams.set("current", "temperature_2m,apparent_temperature,relative_humidity_2m,weather_code,wind_speed_10m");
+      url.searchParams.set("current", "temperature_2m,apparent_temperature,relative_humidity_2m,weather_code,wind_speed_10m,is_day");
       url.searchParams.set("daily", "weather_code,temperature_2m_max,temperature_2m_min");
       url.searchParams.set("temperature_unit", "fahrenheit");
       url.searchParams.set("wind_speed_unit", "mph");
@@ -609,6 +686,7 @@ function WeatherApp() {
       const data = await response.json();
       setWeather({
         location,
+        isDay: Boolean(data.current.is_day),
         temperature: data.current.temperature_2m,
         apparent: data.current.apparent_temperature,
         humidity: data.current.relative_humidity_2m,
@@ -643,7 +721,8 @@ function WeatherApp() {
   };
 
   return (
-    <div className={`weather-app weather-code-${weather?.code ?? 0}`}>
+    <div className={`weather-app weather-code-${weather?.code ?? 0} ${weather?.isDay === false ? "weather-night" : "weather-day"}`}>
+      <WeatherScene code={weather?.code ?? 0} isDay={weather?.isDay ?? true} />
       <button className="weather-location" onClick={useCurrentLocation}>◎ Use My Location</button>
       <p>{weather?.location ?? "Updating"}</p>
       <div className="weather-now"><i>{weatherSymbol(weather?.code ?? 0)}</i><strong>{weather ? `${Math.round(weather.temperature)}°` : "—"}</strong></div>
@@ -658,6 +737,21 @@ function WeatherApp() {
         {weather?.daily.map((day) => <i key={day.day}><strong>{day.day}</strong><em>{weatherSymbol(day.code)}</em><b>{Math.round(day.high)}°</b><span>{Math.round(day.low)}°</span></i>)}
       </div>
       {error && <small>{error}</small>}
+    </div>
+  );
+}
+
+function WeatherScene({ code, isDay }: { code: number; isDay: boolean }) {
+  const precipitation = code >= 51 && code <= 82;
+  const snow = code >= 71 && code <= 77;
+  const cloudy = code >= 1;
+  return (
+    <div className="weather-scene" aria-hidden="true">
+      <i className={isDay ? "weather-sun" : "weather-moon"} />
+      {cloudy && <><i className="weather-cloud weather-cloud-one" /><i className="weather-cloud weather-cloud-two" /></>}
+      {precipitation && <div className={snow ? "weather-snow" : "weather-rain"}>{Array.from({ length: 16 }, (_, index) => <i key={index} style={{ "--drop": index } as CSSProperties} />)}</div>}
+      {!isDay && <div className="weather-stars">{Array.from({ length: 10 }, (_, index) => <i key={index} style={{ "--star": index } as CSSProperties} />)}</div>}
+      <span className="weather-haze" />
     </div>
   );
 }
@@ -684,6 +778,7 @@ function weatherSymbol(code: number) {
 
 function ClockApp({ time }: { time: string }) {
   const [tab, setTab] = useState<"clock" | "timer">("clock");
+  const [duration, setDuration] = useState(5 * 60);
   const [seconds, setSeconds] = useState(5 * 60);
   const [running, setRunning] = useState(false);
   const now = new Date();
@@ -705,6 +800,7 @@ function ClockApp({ time }: { time: string }) {
   }, [running]);
 
   const timerText = `${String(Math.floor(seconds / 60)).padStart(2, "0")}:${String(seconds % 60).padStart(2, "0")}`;
+  const elapsed = Math.max(0, duration - seconds);
   return (
     <div className="clock-app">
       {tab === "clock" ? (
@@ -714,10 +810,16 @@ function ClockApp({ time }: { time: string }) {
         </div>
       ) : (
         <div className="timer-panel">
-          <p>TIMER</p><strong>{timerText}</strong>
-          <input type="range" min="60" max="3600" step="60" value={seconds || 60} disabled={running} onChange={(event) => setSeconds(Number(event.target.value))} aria-label="Timer duration" />
-          <span>{Math.max(1, Math.round(seconds / 60))} minutes</span>
-          <div><button onClick={() => setRunning((value) => !value)}>{running ? "Pause" : "Start"}</button><button onClick={() => { setRunning(false); setSeconds(5 * 60); }}>Reset</button></div>
+          <div className="stopwatch" aria-label={`Mechanical timer, ${timerText} remaining`}>
+            <i className="stopwatch-loop" /><i className="stopwatch-crown" /><i className="stopwatch-pusher" />
+            <div className="stopwatch-face">
+              <span className="dial-number dial-60">60</span><span className="dial-number dial-5">5</span><span className="dial-number dial-10">10</span><span className="dial-number dial-15">15</span><span className="dial-number dial-20">20</span><span className="dial-number dial-25">25</span><span className="dial-number dial-30">30</span><span className="dial-number dial-35">35</span><span className="dial-number dial-40">40</span><span className="dial-number dial-45">45</span><span className="dial-number dial-50">50</span><span className="dial-number dial-55">55</span>
+              <i className="stopwatch-hand" style={{ transform: `rotate(${elapsed * 6}deg)` }} /><i className="stopwatch-pin" />
+              <span className="stopwatch-readout">{timerText}</span>
+            </div>
+          </div>
+          <label className="timer-setting"><span>SET</span><input type="range" min="60" max="3600" step="60" value={duration} disabled={running} onChange={(event) => { const next = Number(event.target.value); setDuration(next); setSeconds(next); }} aria-label="Timer duration" /><b>{Math.round(duration / 60)} MIN</b></label>
+          <div className="timer-actions"><button onClick={() => setRunning((value) => !value)}>{running ? "Pause" : "Start"}</button><button onClick={() => { setRunning(false); setSeconds(duration); }}>Reset</button></div>
         </div>
       )}
       <nav className="clock-tabs"><button className={tab === "clock" ? "active" : ""} onClick={() => setTab("clock")}><i>◷</i>World Clock</button><button className={tab === "timer" ? "active" : ""} onClick={() => setTab("timer")}><i>◴</i>Timer</button></nav>
@@ -756,15 +858,26 @@ function MailApp() {
 }
 
 function SafariApp({ onOpenWork }: { onOpenWork: () => void }) {
+  const [portalIndex, setPortalIndex] = useState(0);
+  const portal = safariPortals[portalIndex];
+  const shufflePortal = () => setPortalIndex((current) => {
+    const jump = 1 + Math.floor(Math.random() * (safariPortals.length - 1));
+    return (current + jump) % safariPortals.length;
+  });
   return (
     <div className="safari-app">
-      <div className="safari-address"><span>https://</span><b>tian.fun</b><i>↻</i></div>
-      <section><h2>Bookmarks</h2>
+      <div className="safari-address"><span>https://</span><b>somewhere.good</b><button onClick={shufflePortal} aria-label="Shuffle destination">↻</button></div>
+      <section className="safari-home">
+        <div className="safari-portal">
+          <small>TIAN’S INTERNET</small><i>{portal.mark}</i><h2>{portal.title}</h2><p>{portal.description}</p>
+          <a href={portal.url} target="_blank" rel="noreferrer">Take me there <b>→</b></a>
+          <button onClick={shufflePortal}>Surprise me again</button>
+        </div>
+        <h2>Keep close</h2>
         <button onClick={onOpenWork}><i className="bookmark-work">TX</i><span><b>Selected Work</b>Nine projects</span><em>›</em></button>
         <a href="https://xingpicture.myportfolio.com" target="_blank" rel="noreferrer"><i className="bookmark-photo">▣</i><span><b>Photo</b>xingpicture.myportfolio.com</span><em>›</em></a>
-        <a href="https://github.com/lovejzzz" target="_blank" rel="noreferrer"><i className="bookmark-github">GH</i><span><b>GitHub</b>lovejzzz</span><em>›</em></a>
       </section>
-      <nav><span>‹</span><span>›</span><span>＋</span><span>▤</span></nav>
+      <nav><span>‹</span><span>›</span><button onClick={shufflePortal} aria-label="New surprise">＋</button><span>▤</span></nav>
     </div>
   );
 }

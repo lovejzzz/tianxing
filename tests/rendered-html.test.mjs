@@ -61,6 +61,12 @@ test("keeps the iPhone interactive and time-aware", async () => {
   assert.equal(new Set(photoPaths).size, photoPaths.length);
   assert.match(source, /Delete Photo/);
   assert.match(source, /onDeleteCapture/);
+  assert.match(source, /Photo Booth effects/);
+  assert.match(source, /photo-viewer/);
+  assert.match(source, /WeatherScene/);
+  assert.match(source, /Mechanical timer/);
+  assert.match(source, /radio\.garden/);
+  assert.match(source, /Surprise me again/);
   assert.equal((source.match(/media\/ios4\/icons\//g) ?? []).length, 2);
   assert.doesNotMatch(source, /Photo Portfolio/);
   for (const icon of ["messages", "calendar", "photos", "camera", "weather", "clock", "notes", "phone", "mail", "safari", "music"]) {
