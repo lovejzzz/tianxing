@@ -361,20 +361,17 @@ function MessagesApp() {
     event.preventDefault();
     if (!message.trim() || status === "sending") return;
     setStatus("sending");
-    const form = new FormData();
+    const form = new URLSearchParams();
     form.set("message", message.trim());
-    form.set("_subject", "New message from tian.fun");
-    form.set("_template", "table");
-    form.set("_captcha", "false");
-    form.set("_url", window.location.href);
+    form.set("website", "");
+    form.set("site_key", "tian-heart-2026");
     try {
-      const response = await fetch("https://formsubmit.co/ajax/xingpicture@gmail.com", {
+      await fetch("https://script.google.com/macros/s/AKfycbyXBqJ3mfDqYPFESbxJTi6TXbwpQIh_59aGxw-lP_lxn7EyTrFS2wSR0spqosGWDM1EbQ/exec", {
         method: "POST",
-        headers: { Accept: "application/json" },
-        body: form,
+        mode: "no-cors",
+        headers: { "Content-Type": "application/x-www-form-urlencoded;charset=UTF-8" },
+        body: form.toString(),
       });
-      const result = await response.json().catch(() => ({}));
-      if (!response.ok || result.success === "false") throw new Error("send");
       setMessage("");
       setStatus("sent");
       window.setTimeout(() => setStatus("idle"), 3500);

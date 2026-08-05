@@ -64,7 +64,7 @@ test("keeps the iPhone interactive and time-aware", async () => {
   assert.match(source, /onDeleteCapture/);
   assert.match(source, /PHOTO_HIDDEN_KEY/);
   assert.match(source, /setPointerCapture/);
-  assert.match(source, /formsubmit\.co\/ajax\/xingpicture@gmail\.com/);
+  assert.match(source, /script\.google\.com\/macros\/s\/AKfycby/);
   assert.match(source, /Photo Booth effects/);
   assert.match(source, /photo-viewer/);
   assert.match(source, /WeatherScene/);
