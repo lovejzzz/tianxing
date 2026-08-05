@@ -101,6 +101,28 @@ type DragonTraitId = (typeof DRAGON_TRAITS)[number]["id"];
 type DragonPatternId = (typeof DRAGON_PATTERNS)[number];
 type DragonCard = { id: string; kind: DragonKindId; hatchedAt: string; minutes: number; bond: number; trait: DragonTraitId; pattern: DragonPatternId; seed: number };
 type DragonReaction = "happy" | "fire" | "spin" | "sleep" | null;
+type DragonRarityOdds = { common: number; rare: number; mythic: number; charge: number; ritual: string };
+
+function dragonRarityOdds(seconds: number): DragonRarityOdds {
+  const charge = Math.max(0, Math.min(1, seconds / 3600));
+  const mythic = .01 + .24 * Math.pow(charge, 1.7);
+  const rare = .11 + .44 * Math.pow(charge, 1.05);
+  const common = Math.max(0, 1 - rare - mythic);
+  const ritual = charge >= .82 ? "CELESTIAL" : charge >= .58 ? "ANCIENT" : charge >= .32 ? "RESONANT" : charge >= .15 ? "AWAKENED" : "EMBER";
+  return { common, rare, mythic, charge, ritual };
+}
+
+function chooseDragonKind(seconds: number, previous: DragonKindId): number {
+  const odds = dragonRarityOdds(seconds);
+  const roll = Math.random();
+  const rarity = roll < odds.common ? "COMMON" : roll < odds.common + odds.rare ? "RARE" : "MYTHIC";
+  const candidates = DRAGON_KINDS
+    .map((kind, index) => ({ kind, index }))
+    .filter(({ kind }) => kind.rarity === rarity);
+  const freshCandidates = candidates.filter(({ kind }) => kind.id !== previous);
+  const pool = freshCandidates.length > 0 ? freshCandidates : candidates;
+  return pool[Math.floor(Math.random() * pool.length)].index;
+}
 
 function dragonHash(value: string) {
   let hash = 2166136261;
@@ -1533,6 +1555,14 @@ function ClockApp({ time }: { time: string }) {
     ...dragonCollection.map((card) => ({ card, kind: DRAGON_KINDS.find((kind) => kind.id === card.kind) ?? DRAGON_KINDS[0] })),
     ...undiscoveredKinds.map((kind) => ({ card: null, kind })),
   ];
+  const rarityOdds = dragonRarityOdds(lastSetSeconds);
+  const rarePercent = Math.round(rarityOdds.rare * 100);
+  const mythicPercent = Math.round(rarityOdds.mythic * 100);
+  const rarityPercent = {
+    common: 100 - rarePercent - mythicPercent,
+    rare: rarePercent,
+    mythic: mythicPercent,
+  };
 
   const playTone = useCallback((frequency: number, duration: number, delay = 0, volume = .035) => {
     try {
@@ -1580,10 +1610,7 @@ function ClockApp({ time }: { time: string }) {
       if (remaining === 0) {
         endTimeRef.current = null;
         setRunning(false);
-        const roll = Math.random();
-        const focusLuck = Math.min(.1, (lastSetSeconds / 3600) * .1);
-        let next = roll > .96 - focusLuck ? 4 : roll > .76 - focusLuck ? 3 : roll > .58 - focusLuck * .6 ? 2 : roll > .28 ? 1 : 0;
-        if (next === dragonKindRef.current) next = (next + 1 + Math.floor(Math.random() * (DRAGON_KINDS.length - 1))) % DRAGON_KINDS.length;
+        const next = chooseDragonKind(lastSetSeconds, DRAGON_KINDS[dragonKindRef.current].id);
         dragonKindRef.current = next;
         setDragonKind(next);
         setDragonReaction(null);
@@ -1860,6 +1887,13 @@ function ClockApp({ time }: { time: string }) {
                     {dragonCombo > 1 && <em>×{dragonCombo}</em>}
                   </div>
                 )}
+                {!finished && (
+                  <div className="dragon-rarity-forecast" aria-label={`Ritual power ${rarityOdds.ritual}. Common chance ${rarityPercent.common} percent, rare chance ${rarityPercent.rare} percent, mythic chance ${rarityPercent.mythic} percent.`}>
+                    <span>RITUAL POWER</span><strong>{rarityOdds.ritual}</strong>
+                    <i aria-hidden="true"><b className="chance-common" style={{ width: `${rarityPercent.common}%` }} /><b className="chance-rare" style={{ width: `${rarityPercent.rare}%` }} /><b className="chance-mythic" style={{ width: `${rarityPercent.mythic}%` }} /></i>
+                    <em>{rarityPercent.mythic}% MYTHIC</em>
+                  </div>
+                )}
                 <div className="dragon-time-readout" aria-hidden="true"><span>{timerText}</span><b>{finished ? `${activeKind.name} · ${activeTrait?.label ?? activeKind.rarity}` : running ? "INCUBATING" : timerState}</b></div>
               </div>
               <div className="stone-dial-wrap">
@@ -1868,7 +1902,7 @@ function ClockApp({ time }: { time: string }) {
                 </div>
                 <button className="stone-reset" onClick={resetTimer} aria-label="Reset timer"><i>↺</i><span>RESET</span></button>
               </div>
-              <p className="timer-instruction">{finished ? "Pet the head · tap either side · reach ×3 to earn Bond" : running ? "Tap the egg to pause the ritual" : "Drag the amber pin · longer focus improves rare-egg luck"}</p>
+              <p className="timer-instruction">{finished ? "Pet the head · tap either side · reach ×3 to earn Bond" : running ? `${rarityPercent.rare + rarityPercent.mythic}% rare-or-better · tap the egg to pause` : "Drag the amber pin · more focus awakens rarer eggs"}</p>
             </>
           )}
           <p className="timer-live" role="status" aria-live="assertive">{finished ? dragonMessage ? `${activeKind.name}: ${dragonMessage}` : `${activeKind.name} has hatched` : ""}</p>

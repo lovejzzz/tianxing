@@ -1489,3 +1489,28 @@ body:has(.home-shell){overflow:hidden}
   letter-spacing:.08em;
 }
 .dragon-card:not(.is-undiscovered):active{transform:perspective(900px) translateY(2px) scale(.985)}
+
+/* The timer duration visibly charges the egg's rarity odds. */
+.dragon-rarity-forecast{
+  position:absolute;
+  z-index:12;
+  left:9px;
+  top:11px;
+  width:72px;
+  padding:6px 6px 5px;
+  color:#c8bd8e;
+  background:linear-gradient(145deg,rgba(61,67,57,.94),rgba(24,29,26,.96));
+  border:1px solid #51482e;
+  border-radius:5px;
+  box-shadow:inset 2px 2px rgba(225,218,168,.09),2px 3px 0 rgba(0,0,0,.42);
+  font-family:"Courier New",monospace;
+  pointer-events:none;
+}
+.dragon-rarity-forecast>span{display:block;font-size:4px;line-height:1;letter-spacing:.13em}
+.dragon-rarity-forecast>strong{display:block;margin-top:3px;color:#f2d169;font-size:7px;line-height:1;letter-spacing:.07em;text-shadow:0 0 5px rgba(239,194,72,.32)}
+.dragon-rarity-forecast>i{height:4px;margin-top:5px;display:flex;overflow:hidden;background:#111;border:1px solid #4b4430;border-radius:1px}
+.dragon-rarity-forecast>i>b{height:100%;display:block;transition:width .2s steps(4,end)}
+.dragon-rarity-forecast .chance-common{background:#71865c}
+.dragon-rarity-forecast .chance-rare{background:#6d9eb6}
+.dragon-rarity-forecast .chance-mythic{background:#ba82d0;box-shadow:0 0 4px #c99ae2}
+.dragon-rarity-forecast>em{display:block;margin-top:3px;color:#cabde0;font:700 5px/1 Arial,sans-serif;letter-spacing:.07em}

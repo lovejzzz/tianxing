@@ -99,6 +99,11 @@ test("keeps the iPhone interactive and time-aware", async () => {
   assert.match(styles, /dragon-bond-chip/);
   assert.match(source, /createDragonCard/);
   assert.match(source, /hydrateDragonCard/);
+  assert.match(source, /dragonRarityOdds/);
+  assert.match(source, /chooseDragonKind/);
+  assert.match(source, /RITUAL POWER/);
+  assert.match(source, /MYTHIC/);
+  assert.match(styles, /dragon-rarity-forecast/);
   assert.match(source, /DRAGON_TRAITS/);
   assert.match(source, /visitDragon/);
   assert.match(source, /data-dragon-id/);
