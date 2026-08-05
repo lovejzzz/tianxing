@@ -27,6 +27,7 @@ const IMPACT_EVENT = "tian:immersive-home";
 
 export function FluidHeartNote() {
   const rootRef = useRef<HTMLDivElement>(null);
+  const copyRef = useRef<HTMLParagraphElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const animationRef = useRef<number | null>(null);
   const [fluidActive, setFluidActive] = useState(false);
@@ -36,8 +37,9 @@ export function FluidHeartNote() {
     const handleImpact = (event: Event) => {
       const detail = (event as CustomEvent<ImpactDetail>).detail;
       const root = rootRef.current;
+      const copy = copyRef.current;
       const canvas = canvasRef.current;
-      if (!root || !canvas || window.innerWidth <= 960) {
+      if (!root || !copy || !canvas || window.innerWidth <= 960) {
         setFluidComplete(true);
         return;
       }
@@ -122,6 +124,21 @@ export function FluidHeartNote() {
         const eased = ease(progress);
         const phoneEdge = phoneStart + (phoneEnd - phoneStart) * eased;
 
+        // Keep the original typography intact until the phone's pressure wave
+        // reaches it, then replace only the impacted edge with particles.
+        if (progress < .44) {
+          copy.style.maskImage = "none";
+          copy.style.webkitMaskImage = "none";
+        } else {
+          const dissolve = Math.min(1, Math.max(0, (progress - .44) / .42));
+          const frontier = (1 - ease(dissolve)) * 100;
+          const solidEdge = Math.max(0, frontier - 3.2);
+          const mistEdge = Math.min(100, frontier + 1.2);
+          const mask = `linear-gradient(90deg,#000 0%,#000 ${solidEdge}%,rgba(0,0,0,.38) ${frontier}%,transparent ${mistEdge}%,transparent 100%)`;
+          copy.style.maskImage = mask;
+          copy.style.webkitMaskImage = mask;
+        }
+
         target.setTransform(dpr, 0, 0, dpr, 0, 0);
         target.clearRect(0, 0, width, height);
         target.lineCap = "round";
@@ -143,22 +160,19 @@ export function FluidHeartNote() {
         for (const particle of particles) {
           particle.px = particle.x;
           particle.py = particle.y;
-          if (progress >= particle.hitAt) {
-            if (particle.vx === 0 && particle.vy === 0) {
-              const vertical = (particle.y - textMiddleY) / Math.max(28, bounds.height * .5);
-              const impactStrength = 2.2 + Math.random() * 2.8;
-              particle.vx = -impactStrength * (.72 + (1 - particle.hitAt) * .65);
-              particle.vy = vertical * (1.6 + Math.random() * 2.1) + (Math.random() - .5) * 1.25;
-            }
-            const turbulence = Math.sin(elapsed * .018 + particle.phase) * .055;
-            particle.vx = particle.vx * .974 - .012;
-            particle.vy = particle.vy * .968 + turbulence + .014;
-            particle.x += particle.vx;
-            particle.y += particle.vy;
-            particle.alpha *= progress > .79 ? .925 : .982;
-          } else {
-            particle.x += Math.sin(elapsed * .012 + particle.phase) * .018 * collisionProgress;
+          if (progress < particle.hitAt) continue;
+          if (particle.vx === 0 && particle.vy === 0) {
+            const vertical = (particle.y - textMiddleY) / Math.max(28, bounds.height * .5);
+            const impactStrength = 2.2 + Math.random() * 2.8;
+            particle.vx = -impactStrength * (.72 + (1 - particle.hitAt) * .65);
+            particle.vy = vertical * (1.6 + Math.random() * 2.1) + (Math.random() - .5) * 1.25;
           }
+          const turbulence = Math.sin(elapsed * .018 + particle.phase) * .055;
+          particle.vx = particle.vx * .974 - .012;
+          particle.vy = particle.vy * .968 + turbulence + .014;
+          particle.x += particle.vx;
+          particle.y += particle.vy;
+          particle.alpha *= progress > .79 ? .925 : .982;
 
           if (particle.alpha < .018) continue;
           target.globalAlpha = particle.alpha * Math.max(0, 1 - Math.max(0, progress - .86) / .14);
@@ -198,7 +212,7 @@ export function FluidHeartNote() {
       ref={rootRef}
       className={`heart-note ${fluidActive ? "is-fluid-active" : ""} ${fluidComplete ? "is-fluid-complete" : ""}`}
     >
-      <p className="heart-copy" aria-label="Welcome to my heart. Have fun. — Tian Xing">
+      <p ref={copyRef} className="heart-copy" aria-label="Welcome to my heart. Have fun. — Tian Xing">
         <span className="heart-line" data-fluid-line>Welcome to my</span>
         <span className="heart-line" data-fluid-line>heart. Have fun.</span>
         <span className="heart-signature" data-fluid-line>— Tian Xing</span>
