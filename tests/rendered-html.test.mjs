@@ -18,9 +18,10 @@ test("renders the finished portfolio home", async () => {
   assert.match(html, /Tian Xing/);
   assert.match(html, /Selected Work/);
   assert.match(html, /delivers\./i);
+  assert.match(html, /Welcome to my heart\. Have fun\./);
   assert.match(html, /EduTool/);
   assert.match(html, /Slotronome/);
-  assert.doesNotMatch(html, /Choose an icon to open a project|Nine things I care about|makes things/i);
+  assert.doesNotMatch(html, /Choose an icon to open a project|Nine things I care about|makes things|systems thinking and play/i);
   assert.doesNotMatch(html, /codex-preview|react-loading-skeleton|Your site is taking shape/);
 });
 

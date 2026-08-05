@@ -11,10 +11,7 @@ export default function Home() {
         <h1 id="portfolio-title">
           Tian Xing<span>delivers.</span>
         </h1>
-        <p className="intro-copy">
-          Software, games, cinema, music tools, and experiments—nine projects
-          made with equal parts systems thinking and play.
-        </p>
+        <p className="intro-copy">Welcome to my heart. Have fun.</p>
         <div className="intro-rule">
           <span>Selected work</span>
           <span>2024—2026</span>
