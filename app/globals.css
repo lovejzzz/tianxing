@@ -417,6 +417,11 @@ img, video { display: block; max-width: 100%; }
 .system-app-icon::after { left:2px; right:2px; top:2px; height:43%; z-index:8; border-radius:10px 10px 50% 50%/9px 9px 38% 38%; background:linear-gradient(rgba(255,255,255,.72),rgba(255,255,255,.18) 70%,rgba(255,255,255,.02)); border-bottom:1px solid rgba(255,255,255,.2); }
 .system-app:hover .system-app-icon { transform:translateY(-2px); filter:brightness(1.06) saturate(1.04); }
 .system-app:active .system-app-icon { transform:scale(.9); }
+.system-app-icon.sys-authentic { width:59px; height:60px; flex-basis:60px; overflow:visible; border:0; border-radius:0; background:none; box-shadow:none; }
+.system-app-icon.sys-authentic::before,.system-app-icon.sys-authentic::after { content:none; }
+.system-app-icon.sys-authentic>img { position:absolute; inset:0; width:100%; height:100%; display:block; object-fit:fill; }
+.authentic-calendar .calendar-weekday { position:absolute; z-index:3; top:5px; left:4px; right:4px; overflow:hidden; color:#fff; font:700 6.5px/10px Helvetica,Arial,sans-serif; text-align:center; text-overflow:ellipsis; text-shadow:0 -1px rgba(94,0,0,.72); white-space:nowrap; }
+.authentic-calendar .calendar-icon-day { position:absolute; z-index:3; top:16px; left:4px; right:4px; color:#111; font:400 32px/38px "Helvetica Neue",Helvetica,Arial,sans-serif; letter-spacing:-1.5px; text-align:center; text-shadow:0 1px #fff; }
 
 .sys-messages { background:linear-gradient(145deg,#83f36c,#30b52d 54%,#12851a); }
 .sys-messages i { width:39px; height:29px; border-radius:50%; background:linear-gradient(#fff,#edf5e9); box-shadow:inset 0 -1px 2px #b7c8b3,0 2px 3px rgba(0,74,0,.45); }
@@ -469,6 +474,7 @@ img, video { display: block; max-width: 100%; }
 .desktop-dock { left:7px; right:7px; bottom:6px; height:76px; padding:8px 10px 6px; gap:5px; border-radius:17px 17px 10px 10px; background:linear-gradient(rgba(238,245,249,.57),rgba(87,105,119,.5) 56%,rgba(36,51,64,.58)); border:1px solid rgba(255,255,255,.38); box-shadow:inset 0 1px rgba(255,255,255,.63),0 2px 7px #07111a; backdrop-filter:blur(7px); }
 .desktop-dock::after { content:""; position:absolute; left:8px; right:8px; bottom:5px; height:9px; border-radius:50%; background:rgba(255,255,255,.12); filter:blur(3px); }
 .desktop-dock .dock-system-app > .system-app-icon { width:56px; height:56px; flex-basis:56px; z-index:2; }
+.desktop-dock .dock-system-app > .system-app-icon.sys-authentic { width:59px; height:60px; flex-basis:60px; }
 
 .work-titlebar { height:49px; grid-template-columns:35px 1fr; padding:0 12px; }
 .work-titlebar strong { padding-right:35px; text-align:center; font-size:15px; }
@@ -506,7 +512,7 @@ img, video { display: block; max-width: 100%; }
 
 .clock-app { height:100%; min-height:0; display:grid; grid-template-rows:1fr 54px; background:linear-gradient(#26292d,#08090b); }.world-clock-panel,.timer-panel{display:flex;flex-direction:column;align-items:center;justify-content:center;color:#fff}.analog-clock{width:142px;height:142px}.analog-clock::after{left:67px;top:67px}.analog-clock i,.analog-clock b{left:70px;bottom:71px}.analog-clock em{position:absolute;left:69px;bottom:71px;width:2px;height:54px;background:#c52d28;transform:rotate(140deg);transform-origin:bottom}.world-clock-panel>strong{margin-top:17px;font-size:27px;font-weight:300}.world-clock-panel>span{color:#999;font-size:9px}.clock-tabs{display:grid;grid-template-columns:repeat(2,1fr);border-top:1px solid #333;background:linear-gradient(#222,#080808)}.clock-tabs button{border:0;color:#888;background:transparent;font-size:7px}.clock-tabs button i{display:block;margin-bottom:3px;font-style:normal;font-size:19px}.clock-tabs button.active{color:#e6b83f}.timer-panel>p{color:#999;font-size:9px}.timer-panel>strong{font:300 58px/1 "Helvetica Neue",Arial,sans-serif}.timer-panel>input{width:75%;margin-top:25px;accent-color:#d49d2f}.timer-panel>span{margin-top:5px;color:#999;font-size:9px}.timer-panel>div{margin-top:22px;display:flex;gap:12px}.timer-panel button{width:74px;padding:8px;border:1px solid #111;border-radius:18px;color:#fff;background:linear-gradient(#5b5e62,#1d1f22);box-shadow:inset 0 1px rgba(255,255,255,.2)}.timer-panel button:first-child{color:#c7f7c4;background:linear-gradient(#47744b,#17391b)}
 
-.notes-app { height:100%; min-height:0; background:repeating-linear-gradient(#fffbd3 0 29px,#cfc58d 30px 31px); }.notes-app::before{content:"";display:block;height:20px;background:linear-gradient(#e6c85e,#98731e);border-bottom:1px solid #70500e}.notes-app textarea{min-height:calc(100% - 20px);padding:19px 16px;color:#30291b;font:17px/31px "Bradley Hand",cursive}
+.notes-app { height:100%; min-height:0; background:repeating-linear-gradient(#fffbd3 0 29px,#cfc58d 30px 31px); }.notes-app::before{content:"";display:block;height:20px;background:linear-gradient(#e6c85e,#98731e);border-bottom:1px solid #70500e}.notes-app textarea{min-height:calc(100% - 20px);padding:17px 18px;border:0;outline:0;resize:none;color:#30291b;background:transparent;font:19px/31px "Marker Felt","Bradley Hand",cursive;letter-spacing:.01em;white-space:pre-wrap}
 
 .contact-app { height:100%; min-height:0; padding:20px 14px; overflow:auto; background:linear-gradient(#f6f6f6,#d5d5d5); }.contact-photo{width:94px;height:94px;border-radius:8px;filter:saturate(.94) contrast(1.01)}.contact-app h2{margin:10px 0 3px;font-size:20px}.contact-app p{margin-bottom:14px}.contact-app a{padding:9px 10px;display:grid;grid-template-columns:85px 1fr;text-align:left}.contact-app a b{color:#222}.contact-app a span{overflow:hidden;text-overflow:ellipsis;color:#2875ad;white-space:nowrap}
 
@@ -524,6 +530,7 @@ img, video { display: block; max-width: 100%; }
 @media (max-width:560px) {
   .system-page { height:calc(100% - 84px); padding:clamp(23px,3.5vh,31px) 9px 10px; gap:clamp(20px,3vh,27px) 6px; }
   .system-app-icon,.desktop-dock .dock-system-app>.system-app-icon { width:min(14vw,60px); height:min(14vw,60px); flex-basis:min(14vw,60px); }
+  .system-app-icon.sys-authentic,.desktop-dock .dock-system-app>.system-app-icon.sys-authentic { width:min(14vw,59px); height:min(14.24vw,60px); flex-basis:min(14.24vw,60px); }
   .folder-screen .app-grid { padding:clamp(20px,3.3vh,29px) 18px 12px; gap:clamp(17px,2.8vh,23px) 11px; }
   .folder-screen .app-icon { --icon-art-scale:.865; width:64px; height:64px; border-radius:13px; }
   .photo-feature img { height:38vh; min-height:210px; }

@@ -161,7 +161,7 @@ export function PhoneExperience() {
         <div className={`screen phone-mode-${mode}`} ref={screenRef}>
           <StatusBar time={time} />
           <div className={`phone-home-layer ${mode === "home" ? "is-active" : "is-background"}`}>
-            <HomeScreen calendarDay={calendarDay} time={time} onOpenApp={openApp} />
+            <HomeScreen calendarDay={calendarDay} onOpenApp={openApp} />
           </div>
 
           {mode !== "home" && (
@@ -228,9 +228,8 @@ function FolderView() {
   );
 }
 
-function HomeScreen({ calendarDay, time, onOpenApp }: {
+function HomeScreen({ calendarDay, onOpenApp }: {
   calendarDay: string;
-  time: string;
   onOpenApp: (id: NativeApp | "folder", element?: HTMLElement | null) => void;
 }) {
   return (
@@ -238,7 +237,7 @@ function HomeScreen({ calendarDay, time, onOpenApp }: {
       <div className="system-page" aria-label="iPhone Home screen">
         {homeApps.map((app) => (
           <button className="system-app" key={app.id} onClick={(event) => onOpenApp(app.id, event.currentTarget)}>
-            <SystemAppIcon id={app.id} calendarDay={calendarDay} time={time} />
+            <SystemAppIcon id={app.id} calendarDay={calendarDay} />
             <span>{app.label}</span>
           </button>
         ))}
@@ -253,7 +252,7 @@ function HomeScreen({ calendarDay, time, onOpenApp }: {
             aria-label={app.label}
             title={app.label}
           >
-            <SystemAppIcon id={app.id} calendarDay={calendarDay} time={time} />
+            <SystemAppIcon id={app.id} calendarDay={calendarDay} />
           </button>
         ))}
       </div>
@@ -261,10 +260,9 @@ function HomeScreen({ calendarDay, time, onOpenApp }: {
   );
 }
 
-function SystemAppIcon({ id, calendarDay, time }: {
+function SystemAppIcon({ id, calendarDay }: {
   id: HomeApp["id"];
   calendarDay: string;
-  time: string;
 }) {
   if (id === "folder") {
     return (
@@ -273,22 +271,23 @@ function SystemAppIcon({ id, calendarDay, time }: {
       </span>
     );
   }
-  const month = new Date().toLocaleDateString([], { month: "short" }).toUpperCase();
-  const [hourText, minuteText] = time.replace(/\s.*/, "").split(":");
-  const hour = ((Number(hourText) % 12) * 30) + Number(minuteText) / 2;
-  const minute = Number(minuteText) * 6;
-
-  if (id === "messages") return <span className="system-app-icon sys-messages"><i /></span>;
-  if (id === "calendar") return <span className="system-app-icon sys-calendar"><b>{month}</b><i>{calendarDay}</i></span>;
-  if (id === "photos") return <span className="system-app-icon sys-photos"><i>{Array.from({ length: 8 }, (_, index) => <b key={index} />)}</i><em /></span>;
-  if (id === "camera") return <span className="system-app-icon sys-camera"><b /><i /><em /></span>;
-  if (id === "weather") return <span className="system-app-icon sys-weather"><b /><i /><em>73°</em></span>;
-  if (id === "clock") return <span className="system-app-icon sys-clock"><i><b style={{ transform: `rotate(${hour}deg)` }} /><em style={{ transform: `rotate(${minute}deg)` }} /></i></span>;
-  if (id === "notes") return <span className="system-app-icon sys-notes"><i /><b /><em /></span>;
-  if (id === "phone") return <span className="system-app-icon sys-phone"><i>☎</i></span>;
-  if (id === "mail") return <span className="system-app-icon sys-mail"><i /><b /></span>;
-  if (id === "safari") return <span className="system-app-icon sys-safari"><i><b /><em /></i></span>;
-  return <span className="system-app-icon sys-music"><i>♫</i></span>;
+  const base = process.env.NEXT_PUBLIC_BASE_PATH ?? "";
+  const icon = id === "music" ? "music" : id;
+  if (id === "calendar") {
+    const weekday = new Date().toLocaleDateString([], { weekday: "long" });
+    return (
+      <span className="system-app-icon sys-authentic authentic-calendar">
+        <img src={`${base}/media/ios4/icons/calendar.png`} alt="" aria-hidden="true" />
+        <span className="calendar-weekday">{weekday}</span>
+        <span className="calendar-icon-day">{calendarDay}</span>
+      </span>
+    );
+  }
+  return (
+    <span className={`system-app-icon sys-authentic sys-${id}`}>
+      <img src={`${base}/media/ios4/icons/${icon}.png`} alt="" aria-hidden="true" />
+    </span>
+  );
 }
 
 function NativeAppView({ app, base, time, captures, onCapture, onDeleteCapture, onOpenWork }: {
@@ -727,7 +726,7 @@ function ClockApp({ time }: { time: string }) {
 }
 
 function NotesApp() {
-  return <div className="notes-app"><textarea aria-label="A note from Tian Xing" defaultValue={"Happiness comes from solving problems--Mark Manson"} /></div>;
+  return <div className="notes-app"><textarea aria-label="A note from Tian Xing" defaultValue={"Happiness comes from\nsolving problems.\n\n— Mark Manson"} /></div>;
 }
 
 function ContactApp({ base }: { base: string }) {
@@ -735,7 +734,7 @@ function ContactApp({ base }: { base: string }) {
     <div className="contact-app">
       <img className="contact-photo" src={`${base}/media/about/tian-xing-iphone4.jpg`} alt="Tian Xing" />
       <h2>Tian Xing</h2><p>Visual artist · filmmaker · builder</p>
-      <a href="https://xingpicture.myportfolio.com" target="_blank" rel="noreferrer"><b>Photo Portfolio</b><span>xingpicture.myportfolio.com</span></a>
+      <a href="https://xingpicture.myportfolio.com" target="_blank" rel="noreferrer"><b>Photo</b><span>xingpicture.myportfolio.com</span></a>
       <a href="https://github.com/lovejzzz" target="_blank" rel="noreferrer"><b>GitHub</b><span>lovejzzz</span></a>
       <a href="https://www.youtube.com/@HereWeGoFilmStudio" target="_blank" rel="noreferrer"><b>Film Studio</b><span>Here We Go</span></a>
     </div>
@@ -762,7 +761,7 @@ function SafariApp({ onOpenWork }: { onOpenWork: () => void }) {
       <div className="safari-address"><span>https://</span><b>tian.fun</b><i>↻</i></div>
       <section><h2>Bookmarks</h2>
         <button onClick={onOpenWork}><i className="bookmark-work">TX</i><span><b>Selected Work</b>Nine projects</span><em>›</em></button>
-        <a href="https://xingpicture.myportfolio.com" target="_blank" rel="noreferrer"><i className="bookmark-photo">▣</i><span><b>Photo Portfolio</b>xingpicture.myportfolio.com</span><em>›</em></a>
+        <a href="https://xingpicture.myportfolio.com" target="_blank" rel="noreferrer"><i className="bookmark-photo">▣</i><span><b>Photo</b>xingpicture.myportfolio.com</span><em>›</em></a>
         <a href="https://github.com/lovejzzz" target="_blank" rel="noreferrer"><i className="bookmark-github">GH</i><span><b>GitHub</b>lovejzzz</span><em>›</em></a>
       </section>
       <nav><span>‹</span><span>›</span><span>＋</span><span>▤</span></nav>

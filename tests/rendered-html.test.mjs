@@ -1,5 +1,5 @@
 import assert from "node:assert/strict";
-import { readFile } from "node:fs/promises";
+import { access, readFile } from "node:fs/promises";
 import test from "node:test";
 
 async function render(path = "/") {
@@ -54,13 +54,18 @@ test("keeps the iPhone interactive and time-aware", async () => {
   assert.match(source, /navigator\.mediaDevices\.getUserMedia/);
   assert.match(source, /xingpicture@gmail\.com/);
   assert.match(source, /xing_tian_lifeitself/);
-  assert.match(source, /Happiness comes from solving problems--Mark Manson/);
+  assert.match(source, /Happiness comes from\\nsolving problems\.\\n\\n— Mark Manson/);
   assert.doesNotMatch(source, /\| "maps"|MapsApp/);
   assert.equal((photoManifest.match(/media\/photos\/all\//g) ?? []).length, 28);
   const photoPaths = [...photoManifest.matchAll(/"src": "(\/media\/photos\/all\/[^"]+)"/g)].map((match) => match[1]);
   assert.equal(new Set(photoPaths).size, photoPaths.length);
   assert.match(source, /Delete Photo/);
   assert.match(source, /onDeleteCapture/);
+  assert.equal((source.match(/media\/ios4\/icons\//g) ?? []).length, 2);
+  assert.doesNotMatch(source, /Photo Portfolio/);
+  for (const icon of ["messages", "calendar", "photos", "camera", "weather", "clock", "notes", "phone", "mail", "safari", "music"]) {
+    await access(new URL(`../public/media/ios4/icons/${icon}.png`, import.meta.url));
+  }
   assert.match(projectSource, /slug: "edutool"[\s\S]{0,180}year: "2026"/);
   assert.match(projectSource, /slug: "start-where-you-are"[\s\S]{0,180}year: "2025"/);
   assert.match(projectSource, /slug: "texas-jack"[\s\S]{0,180}year: "2024"/);
