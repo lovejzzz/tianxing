@@ -66,6 +66,12 @@ test("keeps the iPhone interactive and time-aware", async () => {
   assert.match(source, /PHOTO_HIDDEN_KEY/);
   assert.match(source, /setPointerCapture/);
   assert.match(source, /script\.google\.com\/macros\/s\/AKfycby/);
+  assert.match(source, /MESSAGE_DRAFT_KEY/);
+  assert.match(source, /MESSAGE_THREAD_KEY/);
+  assert.match(source, /Message sent\./);
+  assert.match(source, /Try Again/);
+  assert.match(source, /enterKeyHint="send"/);
+  assert.doesNotMatch(source, /Delivered ✓/);
   assert.match(source, /Photo Booth effects/);
   assert.match(source, /photo-viewer/);
   assert.match(source, /WeatherScene/);

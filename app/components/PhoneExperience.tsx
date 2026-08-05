@@ -72,7 +72,16 @@ const dockApps: HomeApp[] = [
 
 const PHOTO_STORAGE_KEY = "tian-iphone-camera-roll";
 const PHOTO_HIDDEN_KEY = "tian-iphone-hidden-photos";
+const MESSAGE_DRAFT_KEY = "tian-iphone-message-draft";
+const MESSAGE_THREAD_KEY = "tian-iphone-message-thread";
+const MESSAGE_ENDPOINT = "https://script.google.com/macros/s/AKfycbyXBqJ3mfDqYPFESbxJTi6TXbwpQIh_59aGxw-lP_lxn7EyTrFS2wSR0spqosGWDM1EbQ/exec";
 type Origin = { x: number; y: number };
+type MessageBubble = {
+  id: string;
+  text: string;
+  time: string;
+  state: "sending" | "sent" | "error";
+};
 
 export function PhoneExperience() {
   const [mode, setMode] = useState<"folder" | "home" | "native">("folder");
@@ -336,7 +345,7 @@ function NativeAppView({ app, base, time, captures, onCapture, onDeleteCapture, 
   onGoHome: () => void;
 }) {
   const titles: Record<NativeApp, string> = {
-    messages: "New Message",
+    messages: "Tian",
     calendar: "Calendar",
     photos: "Photos",
     camera: "Photo Booth",
@@ -373,38 +382,140 @@ function NativeAppView({ app, base, time, captures, onCapture, onDeleteCapture, 
 }
 
 function MessagesApp() {
-  const [message, setMessage] = useState("");
+  const [message, setMessage] = useState(() => {
+    if (typeof window === "undefined") return "";
+    try { return window.localStorage.getItem(MESSAGE_DRAFT_KEY) ?? ""; } catch { return ""; }
+  });
+  const [thread, setThread] = useState<MessageBubble[]>(() => {
+    if (typeof window === "undefined") return [];
+    try {
+      const saved = window.sessionStorage.getItem(MESSAGE_THREAD_KEY);
+      return saved ? JSON.parse(saved) as MessageBubble[] : [];
+    } catch { return []; }
+  });
   const [status, setStatus] = useState<"idle" | "sending" | "sent" | "error">("idle");
+  const threadRef = useRef<HTMLDivElement>(null);
+  const textareaRef = useRef<HTMLTextAreaElement>(null);
+
+  useEffect(() => {
+    try {
+      if (message) window.localStorage.setItem(MESSAGE_DRAFT_KEY, message);
+      else window.localStorage.removeItem(MESSAGE_DRAFT_KEY);
+    } catch { /* Draft persistence is optional in private browsing. */ }
+    if (textareaRef.current) {
+      textareaRef.current.style.height = "34px";
+      textareaRef.current.style.height = `${Math.min(textareaRef.current.scrollHeight, 104)}px`;
+    }
+  }, [message]);
+
+  useEffect(() => {
+    try { window.sessionStorage.setItem(MESSAGE_THREAD_KEY, JSON.stringify(thread)); } catch { /* Session history remains in memory. */ }
+    threadRef.current?.scrollTo({ top: threadRef.current.scrollHeight, behavior: "smooth" });
+  }, [thread]);
+
+  const resizeComposer = (element: HTMLTextAreaElement) => {
+    element.style.height = "34px";
+    element.style.height = `${Math.min(element.scrollHeight, 104)}px`;
+  };
+
+  const retry = (bubble: MessageBubble) => {
+    setThread((current) => current.filter((item) => item.id !== bubble.id));
+    setMessage(bubble.text);
+    setStatus("idle");
+    window.requestAnimationFrame(() => {
+      if (!textareaRef.current) return;
+      textareaRef.current.focus();
+      resizeComposer(textareaRef.current);
+    });
+  };
+
   const submit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
-    if (!message.trim() || status === "sending") return;
+    const cleanMessage = message.trim();
+    if (!cleanMessage || status === "sending") return;
+    const id = crypto.randomUUID();
+    const bubble: MessageBubble = {
+      id,
+      text: cleanMessage,
+      time: new Date().toLocaleTimeString([], { hour: "numeric", minute: "2-digit" }),
+      state: "sending",
+    };
+    setThread((current) => [...current, bubble]);
+    setMessage("");
     setStatus("sending");
     const form = new URLSearchParams();
-    form.set("message", message.trim());
+    form.set("message", cleanMessage);
     form.set("website", "");
     form.set("site_key", "tian-heart-2026");
+    const controller = new AbortController();
+    const timeout = window.setTimeout(() => controller.abort(), 12_000);
     try {
-      await fetch("https://script.google.com/macros/s/AKfycbyXBqJ3mfDqYPFESbxJTi6TXbwpQIh_59aGxw-lP_lxn7EyTrFS2wSR0spqosGWDM1EbQ/exec", {
+      await fetch(MESSAGE_ENDPOINT, {
         method: "POST",
         mode: "no-cors",
+        cache: "no-store",
+        keepalive: true,
+        signal: controller.signal,
         headers: { "Content-Type": "application/x-www-form-urlencoded;charset=UTF-8" },
         body: form.toString(),
       });
-      setMessage("");
+      setThread((current) => current.map((item) => item.id === id ? { ...item, state: "sent" } : item));
       setStatus("sent");
-      window.setTimeout(() => setStatus("idle"), 3500);
+      textareaRef.current?.focus();
+      window.setTimeout(() => setStatus("idle"), 2400);
     } catch {
+      setThread((current) => current.map((item) => item.id === id ? { ...item, state: "error" } : item));
       setStatus("error");
+    } finally {
+      window.clearTimeout(timeout);
     }
   };
   return (
     <form className="message-compose" onSubmit={submit}>
-      <div className="message-thread"><p>Hi—I’m Tian. Say something.</p>{status === "sent" && <p className="message-sent-bubble">Delivered ✓</p>}</div>
-      <div className="message-composer">
-        <textarea value={message} onChange={(event) => { setMessage(event.target.value); if (status === "error") setStatus("idle"); }} required maxLength={1200} placeholder="Message" aria-label="Message Tian" />
-        <button type="submit" disabled={!message.trim() || status === "sending"} aria-label="Send message">{status === "sending" ? "…" : "Send"}</button>
+      <div className="message-thread" ref={threadRef} aria-label="Conversation with Tian">
+        <div className="message-intro">
+          <i aria-hidden="true">TX</i>
+          <strong>Tian Xing</strong>
+          <span>Your message goes straight to my email.</span>
+        </div>
+        <p className="message-received">Hi—I’m Tian. Say something.</p>
+        {thread.map((bubble) => (
+          <div className={`message-outgoing message-${bubble.state}`} key={bubble.id}>
+            <p>{bubble.text}</p>
+            <span>
+              {bubble.time} · {bubble.state === "sending" ? "Sending…" : bubble.state === "sent" ? "Sent" : "Not sent"}
+            </span>
+            {bubble.state === "error" && <button type="button" onClick={() => retry(bubble)}>Try Again</button>}
+          </div>
+        ))}
       </div>
-      <small>{status === "error" ? "Couldn’t send. Please try again." : "No account needed · sent privately to Tian"}</small>
+      <div className="message-composer">
+        <textarea
+          ref={textareaRef}
+          value={message}
+          onChange={(event) => {
+            setMessage(event.target.value);
+            resizeComposer(event.currentTarget);
+            if (status === "error") setStatus("idle");
+          }}
+          onKeyDown={(event) => {
+            if (event.key === "Enter" && !event.shiftKey && !event.nativeEvent.isComposing) {
+              event.preventDefault();
+              event.currentTarget.form?.requestSubmit();
+            }
+          }}
+          required
+          maxLength={1200}
+          rows={1}
+          enterKeyHint="send"
+          placeholder="Message"
+          aria-label="Message Tian"
+        />
+        <button type="submit" disabled={!message.trim() || status === "sending"} aria-label="Send message">Send</button>
+      </div>
+      <div className={`message-status status-${status}`} role="status" aria-live="polite">
+        {status === "sending" ? "Sending…" : status === "sent" ? "Message sent." : status === "error" ? "No connection. Your message is safe above." : "No account needed · private to Tian"}
+      </div>
     </form>
   );
 }
