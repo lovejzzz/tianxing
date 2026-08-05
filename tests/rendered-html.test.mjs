@@ -104,6 +104,8 @@ test("keeps the iPhone interactive and time-aware", async () => {
   assert.match(source, /RITUAL POWER/);
   assert.match(source, /MYTHIC/);
   assert.match(styles, /dragon-rarity-forecast/);
+  assert.match(source, /--ritual-charge/);
+  assert.match(styles, /overflow:clip/);
   assert.match(source, /DRAGON_TRAITS/);
   assert.match(source, /visitDragon/);
   assert.match(source, /data-dragon-id/);
@@ -113,6 +115,7 @@ test("keeps the iPhone interactive and time-aware", async () => {
   assert.match(styles, /fun-shared-open/);
   assert.match(source, /fun-icon-shell/);
   assert.match(source, /--launch-scale-x/);
+  assert.match(styles, /device-stage\.is-immersive\{translate:none/);
   assert.match(styles, /prefers-reduced-motion/);
   assert.match(source, /Draw on this note/);
   assert.match(source, /NOTES_STORAGE_KEY/);

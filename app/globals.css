@@ -1075,6 +1075,7 @@ body:has(.home-shell){overflow:hidden}
 .heart-note{transition:opacity 720ms cubic-bezier(.4,0,.2,1),transform 920ms cubic-bezier(.16,.76,.2,1),filter 720ms ease}
 .heart-note.is-fluid-complete{opacity:0!important;transition:none}
 .device-stage.is-immersive{animation:none;translate:var(--immersive-shift) 0;transition:translate 1080ms cubic-bezier(.55,.05,.45,.95)}
+@media (max-width:560px){.device-stage.is-immersive{translate:none;transition:none}}
 @media (min-width:961px){
   .home-shell:has(.device-stage.is-immersive) .heart-note:not(.is-fluid-active){opacity:0;transform:translate3d(-54px,0,0) scale(.98);filter:blur(7px);pointer-events:none}
   .home-shell:has(.device-stage.is-immersive) .heart-note.is-fluid-active{pointer-events:none}
@@ -1496,8 +1497,8 @@ body:has(.home-shell){overflow:hidden}
   z-index:12;
   left:9px;
   top:11px;
-  width:72px;
-  padding:6px 6px 5px;
+  width:88px;
+  padding:7px 7px 6px;
   color:#c8bd8e;
   background:linear-gradient(145deg,rgba(61,67,57,.94),rgba(24,29,26,.96));
   border:1px solid #51482e;
@@ -1505,12 +1506,19 @@ body:has(.home-shell){overflow:hidden}
   box-shadow:inset 2px 2px rgba(225,218,168,.09),2px 3px 0 rgba(0,0,0,.42);
   font-family:"Courier New",monospace;
   pointer-events:none;
+  filter:drop-shadow(0 0 calc(var(--ritual-charge) * 7px) rgba(192,132,225,.45));
 }
-.dragon-rarity-forecast>span{display:block;font-size:4px;line-height:1;letter-spacing:.13em}
-.dragon-rarity-forecast>strong{display:block;margin-top:3px;color:#f2d169;font-size:7px;line-height:1;letter-spacing:.07em;text-shadow:0 0 5px rgba(239,194,72,.32)}
-.dragon-rarity-forecast>i{height:4px;margin-top:5px;display:flex;overflow:hidden;background:#111;border:1px solid #4b4430;border-radius:1px}
+.dragon-rarity-forecast>span{display:block;font-size:5px;line-height:1;letter-spacing:.13em}
+.dragon-rarity-forecast>strong{display:block;margin-top:4px;color:#f2d169;font-size:9px;line-height:1;letter-spacing:.07em;text-shadow:0 0 5px rgba(239,194,72,.32)}
+.dragon-rarity-forecast>i{height:5px;margin-top:6px;display:flex;overflow:hidden;background:#111;border:1px solid #4b4430;border-radius:1px}
 .dragon-rarity-forecast>i>b{height:100%;display:block;transition:width .2s steps(4,end)}
 .dragon-rarity-forecast .chance-common{background:#71865c}
 .dragon-rarity-forecast .chance-rare{background:#6d9eb6}
 .dragon-rarity-forecast .chance-mythic{background:#ba82d0;box-shadow:0 0 4px #c99ae2}
-.dragon-rarity-forecast>em{display:block;margin-top:3px;color:#cabde0;font:700 5px/1 Arial,sans-serif;letter-spacing:.07em}
+.dragon-rarity-forecast>small{margin-top:4px;display:flex;justify-content:space-between;font:700 5px/1 Arial,sans-serif;letter-spacing:.04em}
+.dragon-rarity-forecast>small b:nth-child(1){color:#9faf8a}.dragon-rarity-forecast>small b:nth-child(2){color:#a4ccdc}.dragon-rarity-forecast>small b:nth-child(3){color:#d4a4e7}
+
+/* A focused slider must never scroll and crop the ritual chamber. */
+.timer-panel.timer-mechanical.dragon-timer{overflow:clip}
+.dragon-timer .egg-aura{transform:translate(-50%,-50%) scale(calc(.82 + var(--egg-progress) * .28 + var(--ritual-charge) * .08));opacity:calc(.28 + var(--egg-progress) * .58 + var(--ritual-charge) * .16)}
+.dragon-timer .egg-rune{opacity:calc(.48 + var(--egg-progress) * .35 + var(--ritual-charge) * .17);filter:drop-shadow(0 0 calc(var(--ritual-charge) * 5px) #c67bea)}

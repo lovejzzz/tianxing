@@ -1816,7 +1816,7 @@ function ClockApp({ time }: { time: string }) {
       ) : (
         <div
           className={`timer-panel timer-mechanical dragon-timer timer-${timerState.toLowerCase()} egg-stage-${eggStage} dragon-variant-${activeKind.id} ${finished && activeDragon ? `dragon-pattern-${activeDragon.pattern}` : ""} ${dragonView === "codex" ? "codex-open" : ""}`}
-          style={{ "--egg-progress": timerProgress, "--dial-angle": `${handAngle}deg`, "--dragon-hue": `${activeDragon ? (activeDragon.seed % 19) - 9 : 0}deg` } as CSSProperties}
+          style={{ "--egg-progress": timerProgress, "--ritual-charge": rarityOdds.charge, "--dial-angle": `${handAngle}deg`, "--dragon-hue": `${activeDragon ? (activeDragon.seed % 19) - 9 : 0}deg` } as CSSProperties}
         >
           {dragonView === "codex" ? (
             <section className="dragon-codex" aria-label="Dragon card collection">
@@ -1891,7 +1891,7 @@ function ClockApp({ time }: { time: string }) {
                   <div className="dragon-rarity-forecast" aria-label={`Ritual power ${rarityOdds.ritual}. Common chance ${rarityPercent.common} percent, rare chance ${rarityPercent.rare} percent, mythic chance ${rarityPercent.mythic} percent.`}>
                     <span>RITUAL POWER</span><strong>{rarityOdds.ritual}</strong>
                     <i aria-hidden="true"><b className="chance-common" style={{ width: `${rarityPercent.common}%` }} /><b className="chance-rare" style={{ width: `${rarityPercent.rare}%` }} /><b className="chance-mythic" style={{ width: `${rarityPercent.mythic}%` }} /></i>
-                    <em>{rarityPercent.mythic}% MYTHIC</em>
+                    <small aria-hidden="true"><b>C {rarityPercent.common}</b><b>R {rarityPercent.rare}</b><b>M {rarityPercent.mythic}</b></small>
                   </div>
                 )}
                 <div className="dragon-time-readout" aria-hidden="true"><span>{timerText}</span><b>{finished ? `${activeKind.name} · ${activeTrait?.label ?? activeKind.rarity}` : running ? "INCUBATING" : timerState}</b></div>
