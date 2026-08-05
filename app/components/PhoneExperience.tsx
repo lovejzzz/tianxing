@@ -1392,12 +1392,20 @@ function uvLabel(value: number) {
 }
 
 function ClockApp({ time }: { time: string }) {
+  const dragonKinds = [
+    { id: "moss", name: "Mossling", rarity: "COMMON" },
+    { id: "ember", name: "Emberkin", rarity: "COMMON" },
+    { id: "moon", name: "Moonwhisk", rarity: "RARE" },
+    { id: "storm", name: "Stormtail", rarity: "RARE" },
+    { id: "crystal", name: "Starshard", rarity: "MYTHIC" },
+  ] as const;
   const [tab, setTab] = useState<"clock" | "timer">("clock");
   const [seconds, setSeconds] = useState(5 * 60);
   const [lastSetSeconds, setLastSetSeconds] = useState(5 * 60);
   const [running, setRunning] = useState(false);
   const [draggingHand, setDraggingHand] = useState(false);
   const [finished, setFinished] = useState(false);
+  const [dragonKind, setDragonKind] = useState(0);
   const endTimeRef = useRef<number | null>(null);
   const audioRef = useRef<AudioContext | null>(null);
   const lastHapticMinute = useRef(5);
@@ -1442,6 +1450,12 @@ function ClockApp({ time }: { time: string }) {
       if (remaining === 0) {
         endTimeRef.current = null;
         setRunning(false);
+        setDragonKind((previous) => {
+          const roll = Math.random();
+          let next = roll > .96 ? 4 : roll > .76 ? 3 : roll > .58 ? 2 : roll > .28 ? 1 : 0;
+          if (next === previous) next = (next + 1 + Math.floor(Math.random() * (dragonKinds.length - 1))) % dragonKinds.length;
+          return next;
+        });
         setFinished(true);
         ringTimer();
       }
@@ -1453,8 +1467,9 @@ function ClockApp({ time }: { time: string }) {
 
   const timerText = `${String(Math.floor(seconds / 60)).padStart(2, "0")}:${String(seconds % 60).padStart(2, "0")}`;
   const handAngle = seconds / 10;
-  const secondHandAngle = -(lastSetSeconds - seconds) * 6;
   const timerState = finished ? "TIME" : running ? "RUNNING" : seconds < lastSetSeconds ? "PAUSED" : "READY";
+  const timerProgress = Math.max(0, Math.min(1, 1 - seconds / Math.max(1, lastSetSeconds)));
+  const eggStage = finished ? 4 : timerProgress > .82 ? 3 : timerProgress > .5 ? 2 : timerProgress > .18 ? 1 : 0;
   const applyTimerSeconds = (nextSeconds: number, haptic = false) => {
     const next = Math.max(30, Math.min(3600, Math.round(nextSeconds / 30) * 30));
     setSeconds(next);
@@ -1513,13 +1528,40 @@ function ClockApp({ time }: { time: string }) {
           <strong>{time}</strong><span>New York</span>
         </div>
       ) : (
-        <div className={`timer-panel timer-mechanical timer-${timerState.toLowerCase()}`}>
-          <div className={`stopwatch ${running ? "is-ticking" : ""} ${finished ? "is-finished" : ""}`} aria-label={`Mechanical timer, ${timerText} remaining`}>
-            <i className="stopwatch-loop" />
-            <button className={`stopwatch-crown ${running ? "is-running" : ""}`} onClick={toggleTimer} aria-label={running ? "Stop timer" : "Start timer"} />
-            <button className="stopwatch-pusher" onClick={resetTimer} aria-label="Reset timer to the last setting" />
+        <div
+          className={`timer-panel timer-mechanical dragon-timer timer-${timerState.toLowerCase()} egg-stage-${eggStage} dragon-variant-${dragonKinds[dragonKind].id}`}
+          style={{ "--egg-progress": timerProgress, "--dial-angle": `${handAngle}deg` } as CSSProperties}
+        >
+          <div className="dragon-chamber" aria-label={`Dragon egg timer, ${timerText} remaining`}>
+            <div className="dragon-sky" aria-hidden="true">
+              <i /><i /><i /><i /><i /><i /><i /><i />
+            </div>
+            <button
+              className={`dragon-egg-button ${running ? "is-incubating" : ""} ${finished ? "is-hatched" : ""}`}
+              onClick={toggleTimer}
+              aria-label={finished ? "Hatch again with the same timer" : running ? "Pause dragon egg timer" : "Start dragon egg timer"}
+            >
+              <span className="egg-aura" />
+              <span className="egg-shadow" />
+              <span className="dragon-egg">
+                <i className="egg-facet egg-facet-one" /><i className="egg-facet egg-facet-two" /><i className="egg-facet egg-facet-three" />
+                <i className="egg-rune">◇</i>
+                <i className="egg-crack crack-one" /><i className="egg-crack crack-two" /><i className="egg-crack crack-three" />
+              </span>
+              <span className="egg-shell egg-shell-left" /><span className="egg-shell egg-shell-right" />
+              <span className="baby-dragon" aria-hidden="true">
+                <i className="dragon-tail" /><i className="dragon-wing wing-left" /><i className="dragon-wing wing-right" />
+                <i className="dragon-body" />
+                <i className="dragon-head"><b className="dragon-horn horn-left" /><b className="dragon-horn horn-right" /><b className="dragon-eye eye-left" /><b className="dragon-eye eye-right" /><b className="dragon-snout" /></i>
+                <i className="dragon-spark spark-one" /><i className="dragon-spark spark-two" /><i className="dragon-spark spark-three" />
+              </span>
+            </button>
+            <div className="dragon-time-readout" aria-hidden="true"><span>{timerText}</span><b>{finished ? `${dragonKinds[dragonKind].rarity} · ${dragonKinds[dragonKind].name}` : running ? "INCUBATING" : timerState}</b></div>
+          </div>
+
+          <div className="stone-dial-wrap">
             <div
-              className={`stopwatch-face ${draggingHand ? "is-dragging" : ""}`}
+              className={`stone-dial ${draggingHand ? "is-dragging" : ""}`}
               onPointerDown={(event) => { if (running) return; setDraggingHand(true); event.currentTarget.setPointerCapture(event.pointerId); setTimerFromPointer(event); }}
               onPointerMove={(event) => { if (draggingHand) setTimerFromPointer(event); }}
               onPointerUp={() => setDraggingHand(false)}
@@ -1528,23 +1570,22 @@ function ClockApp({ time }: { time: string }) {
               onKeyDown={adjustTimerFromKeyboard}
               role="slider"
               tabIndex={0}
-              aria-label="Timer hand"
+              aria-label="Ancient stone timer dial"
               aria-valuemin={.5}
               aria-valuemax={60}
               aria-valuenow={Math.round(seconds / 30) / 2}
               aria-valuetext={timerText}
-              style={{ "--timer-progress": `${(seconds / Math.max(1, lastSetSeconds)) * 360}deg` } as CSSProperties}
             >
-              <span className="dial-number dial-60">60</span><span className="dial-number dial-5">5</span><span className="dial-number dial-10">10</span><span className="dial-number dial-15">15</span><span className="dial-number dial-20">20</span><span className="dial-number dial-25">25</span><span className="dial-number dial-30">30</span><span className="dial-number dial-35">35</span><span className="dial-number dial-40">40</span><span className="dial-number dial-45">45</span><span className="dial-number dial-50">50</span><span className="dial-number dial-55">55</span>
-              <span className="stopwatch-brand">TIAN<br /><b>MECHANICAL</b></span>
-              <span className="stopwatch-subdial"><i style={{ transform: `rotate(${secondHandAngle}deg)` }} /><b>30</b><em>15</em><strong>45</strong></span>
-              <i className="stopwatch-hand" style={{ transform: `rotate(${handAngle}deg)` }} /><i className="stopwatch-pin" />
-              <span className="stopwatch-readout">{timerText}</span>
-              <span className={`stopwatch-state state-${timerState.toLowerCase()}`}>{timerState}</span>
+              <i className="stone-ring ring-outer" /><i className="stone-ring ring-inner" />
+              <i className="stone-rune rune-north">ᛉ</i><i className="stone-rune rune-east">ᚱ</i><i className="stone-rune rune-south">ᛟ</i><i className="stone-rune rune-west">ᚲ</i>
+              <span className="stone-number stone-zero">60</span><span className="stone-number stone-fifteen">15</span><span className="stone-number stone-thirty">30</span><span className="stone-number stone-fortyfive">45</span>
+              <i className="stone-dial-hand"><b /></i>
+              <span className="stone-center"><i>✦</i><b>MIN</b></span>
             </div>
+            <button className="stone-reset" onClick={resetTimer} aria-label="Reset timer"><i>↺</i><span>RESET</span></button>
           </div>
-          <p className="timer-instruction">{finished ? "Time’s up · press the crown to run it again" : running ? "Press the crown to pause · side pusher resets" : "Drag the red hand to set · press the crown to start"}</p>
-          <p className="timer-live" role="status" aria-live="assertive">{finished ? "Timer complete" : ""}</p>
+          <p className="timer-instruction">{finished ? "A new little fire has entered the world" : running ? "Tap the egg to pause the ritual" : "Drag the amber pin · tap the egg to begin"}</p>
+          <p className="timer-live" role="status" aria-live="assertive">{finished ? "The dragon has hatched" : ""}</p>
         </div>
       )}
       <nav className="clock-tabs"><button className={tab === "clock" ? "active" : ""} onClick={() => setTab("clock")}><i>◷</i>World Clock</button><button className={tab === "timer" ? "active" : ""} onClick={() => setTab("timer")}><i>◴</i>Timer</button></nav>
