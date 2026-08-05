@@ -17,7 +17,7 @@ export default function Home() {
         </p>
         <div className="intro-rule">
           <span>Selected work</span>
-          <span>2017—2026</span>
+          <span>2024—2026</span>
         </div>
       </section>
 
