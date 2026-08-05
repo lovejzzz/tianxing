@@ -672,22 +672,67 @@ function PhotosApp({ base, captures, onDeleteCapture }: { base: string; captures
     if (typeof window === "undefined") return [];
     try { return JSON.parse(localStorage.getItem(PHOTO_HIDDEN_KEY) ?? "[]"); } catch { return []; }
   });
-  const allPhotos = useMemo(() => [
-    ...captures.map((photo) => ({ id: photo.id, src: photo.src, alt: `Camera photo taken ${new Date(photo.createdAt).toLocaleString()}`, captured: true })),
-    ...portfolioPhotos.map((photo) => ({ ...photo, id: photo.src, src: `${base}${photo.src}`, captured: false })),
-  ], [base, captures]);
+  const allPhotos = useMemo(() => {
+    const cameraPhotos = captures.map((photo) => ({ id: photo.id, src: photo.src, alt: `Camera photo taken ${new Date(photo.createdAt).toLocaleString()}`, captured: true }));
+    const seenPortfolioSources = new Set<string>();
+    const libraryPhotos = portfolioPhotos
+      .filter((photo) => {
+        if (seenPortfolioSources.has(photo.src)) return false;
+        seenPortfolioSources.add(photo.src);
+        return true;
+      })
+      .map((photo) => ({ ...photo, id: photo.src, src: `${base}${photo.src}`, captured: false }));
+    return [...cameraPhotos, ...libraryPhotos];
+  }, [base, captures]);
   const photos = useMemo(() => allPhotos.filter((photo) => !hiddenPhotos.includes(photo.id)), [allPhotos, hiddenPhotos]);
   const [selected, setSelected] = useState(photos[0]?.id ?? "");
   const [viewing, setViewing] = useState(false);
+  const [confirmingDelete, setConfirmingDelete] = useState(false);
+  const [notice, setNotice] = useState("");
+  const [stageOffset, setStageOffset] = useState(0);
   const stripRef = useRef<HTMLDivElement>(null);
+  const viewerRef = useRef<HTMLDivElement>(null);
+  const confirmDeleteRef = useRef<HTMLButtonElement>(null);
+  const cancelDeleteRef = useRef<HTMLButtonElement>(null);
+  const noticeTimer = useRef<number | null>(null);
   const stripDrag = useRef({ active: false, startX: 0, startScroll: 0, moved: false });
+  const stageDrag = useRef({ active: false, startX: 0, moved: false });
   const selectedPhoto = photos.find((photo) => photo.id === selected) ?? photos[0];
   const selectedIndex = Math.max(0, photos.findIndex((photo) => photo.id === selectedPhoto?.id));
 
+  useEffect(() => () => {
+    if (noticeTimer.current) window.clearTimeout(noticeTimer.current);
+  }, []);
+
+  useEffect(() => {
+    if (!viewing) return;
+    const frame = window.requestAnimationFrame(() => viewerRef.current?.focus());
+    return () => window.cancelAnimationFrame(frame);
+  }, [viewing]);
+
+  useEffect(() => {
+    if (!viewing || !stripRef.current) return;
+    const thumbnail = stripRef.current.children[selectedIndex] as HTMLElement | undefined;
+    thumbnail?.scrollIntoView({ behavior: stripDrag.current.active ? "auto" : "smooth", inline: "center", block: "nearest" });
+  }, [selectedIndex, viewing]);
+
+  useEffect(() => {
+    if (!confirmingDelete) return;
+    const frame = window.requestAnimationFrame(() => cancelDeleteRef.current?.focus());
+    return () => window.cancelAnimationFrame(frame);
+  }, [confirmingDelete]);
+
+  const showNotice = (message: string) => {
+    setNotice(message);
+    if (noticeTimer.current) window.clearTimeout(noticeTimer.current);
+    noticeTimer.current = window.setTimeout(() => setNotice(""), 2600);
+  };
   const movePhoto = (direction: number) => {
     if (!photos.length) return;
     const next = (selectedIndex + direction + photos.length) % photos.length;
     setSelected(photos[next].id);
+    setConfirmingDelete(false);
+    setStageOffset(0);
   };
   const deleteSelected = () => {
     if (!selectedPhoto) return;
@@ -695,15 +740,29 @@ function PhotosApp({ base, captures, onDeleteCapture }: { base: string; captures
     if (selectedPhoto.captured) {
       onDeleteCapture(selectedPhoto.id);
     } else {
-      const nextHidden = [...hiddenPhotos, selectedPhoto.id];
+      const nextHidden = Array.from(new Set([...hiddenPhotos, selectedPhoto.id]));
       setHiddenPhotos(nextHidden);
       try { localStorage.setItem(PHOTO_HIDDEN_KEY, JSON.stringify(nextHidden)); } catch { /* local album only */ }
     }
+    setConfirmingDelete(false);
     if (nextPhoto) setSelected(nextPhoto.id); else setViewing(false);
+    showNotice(selectedPhoto.captured ? "Photo deleted from this device." : "Moved to Recently Deleted.");
+    navigator.vibrate?.(16);
   };
   const restorePhotos = () => {
     setHiddenPhotos([]);
     try { localStorage.removeItem(PHOTO_HIDDEN_KEY); } catch { /* local album only */ }
+    showNotice(`${hiddenPhotos.length} ${hiddenPhotos.length === 1 ? "photo" : "photos"} restored.`);
+  };
+  const closeViewer = () => {
+    setConfirmingDelete(false);
+    setStageOffset(0);
+    setViewing(false);
+  };
+  const choosePhoto = (id: string) => {
+    setSelected(id);
+    setConfirmingDelete(false);
+    setStageOffset(0);
   };
   const startStripDrag = (event: ReactPointerEvent<HTMLDivElement>) => {
     if (!stripRef.current) return;
@@ -720,32 +779,99 @@ function PhotosApp({ base, captures, onDeleteCapture }: { base: string; captures
     stripDrag.current.active = false;
     window.setTimeout(() => { stripDrag.current.moved = false; }, 0);
   };
+  const startStageDrag = (event: ReactPointerEvent<HTMLDivElement>) => {
+    if ((event.target as HTMLElement).closest("button")) return;
+    stageDrag.current = { active: true, startX: event.clientX, moved: false };
+    event.currentTarget.setPointerCapture(event.pointerId);
+  };
+  const moveStageDrag = (event: ReactPointerEvent<HTMLDivElement>) => {
+    if (!stageDrag.current.active) return;
+    const delta = Math.max(-86, Math.min(86, event.clientX - stageDrag.current.startX));
+    if (Math.abs(delta) > 5) stageDrag.current.moved = true;
+    setStageOffset(delta);
+  };
+  const endStageDrag = () => {
+    if (!stageDrag.current.active) return;
+    const delta = stageOffset;
+    stageDrag.current.active = false;
+    if (Math.abs(delta) > 42) movePhoto(delta < 0 ? 1 : -1);
+    setStageOffset(0);
+  };
+  const handleViewerKey = (event: ReactKeyboardEvent<HTMLDivElement>) => {
+    if (event.key === "Escape") {
+      event.preventDefault();
+      if (confirmingDelete) setConfirmingDelete(false); else closeViewer();
+      return;
+    }
+    if (!confirmingDelete && event.key === "ArrowLeft") { event.preventDefault(); movePhoto(-1); }
+    if (!confirmingDelete && event.key === "ArrowRight") { event.preventDefault(); movePhoto(1); }
+    if ((event.key === "Backspace" || event.key === "Delete") && !confirmingDelete) { event.preventDefault(); setConfirmingDelete(true); }
+  };
+  const handleDeleteDialogKey = (event: ReactKeyboardEvent<HTMLElement>) => {
+    if (event.key === "Escape") { event.preventDefault(); event.stopPropagation(); setConfirmingDelete(false); return; }
+    if (event.key !== "Tab") return;
+    event.preventDefault();
+    event.stopPropagation();
+    const buttons = [confirmDeleteRef.current, cancelDeleteRef.current].filter(Boolean) as HTMLButtonElement[];
+    const currentIndex = Math.max(0, buttons.indexOf(document.activeElement as HTMLButtonElement));
+    buttons[(currentIndex + (event.shiftKey ? buttons.length - 1 : 1)) % buttons.length]?.focus();
+  };
 
   return (
-    <div className="photos-app">
-      <div className="photo-album-bar"><strong>Camera Roll</strong>{hiddenPhotos.length > 0 && <button onClick={restorePhotos}>Restore {hiddenPhotos.length}</button>}<span>{photos.length} Photos</span></div>
-      <div className="photo-grid">
-        {photos.map((photo) => (
-          <button key={photo.id} className={selected === photo.id ? "selected" : ""} onClick={() => { setSelected(photo.id); setViewing(true); }} aria-label={`View ${photo.alt}`}>
-            <img src={photo.src} alt="" />{photo.captured && <i>NEW</i>}
-          </button>
-        ))}
-      </div>
+    <div className="photos-app photos-library">
+      <header className="photo-album-bar">
+        <span><small>ALBUM</small><strong>Camera Roll</strong></span>
+        <b>{photos.length}</b>
+      </header>
+      {photos.length ? (
+        <>
+          <div className="photo-section-label"><strong>All Photos</strong><span>Tap to view · drag the filmstrip</span></div>
+          <div className="photo-grid" role="group" aria-label="Camera Roll photos">
+            {photos.map((photo, index) => (
+              <button key={photo.id} onClick={() => { choosePhoto(photo.id); setViewing(true); }} aria-label={`View photo ${index + 1}: ${photo.alt}`}>
+                <img src={photo.src} alt="" loading={index > 7 ? "lazy" : "eager"} draggable={false} />
+                {photo.captured && <i aria-hidden="true"><b /></i>}
+              </button>
+            ))}
+          </div>
+        </>
+      ) : (
+        <div className="photo-empty"><i>▧</i><strong>No Photos</strong><span>Your Photo Booth pictures will appear here.</span>{hiddenPhotos.length > 0 && <button onClick={restorePhotos}>Restore Photos</button>}</div>
+      )}
+      {hiddenPhotos.length > 0 && photos.length > 0 && (
+        <section className="photo-recently-deleted">
+          <i>⌫</i><span><strong>Recently Deleted</strong><small>{hiddenPhotos.length} recoverable {hiddenPhotos.length === 1 ? "photo" : "photos"}</small></span><button onClick={restorePhotos}>Restore All</button>
+        </section>
+      )}
+      {notice && <p className="photo-notice" role="status" aria-live="polite">{notice}</p>}
       {viewing && selectedPhoto && (
-        <div className="photo-viewer" role="dialog" aria-modal="true" aria-label="Photo viewer">
+        <div className="photo-viewer" ref={viewerRef} role="dialog" aria-modal="true" aria-label="Photo viewer" tabIndex={-1} onKeyDown={handleViewerKey}>
           <div className="photo-viewer-bar">
-            <button onClick={() => setViewing(false)}>Camera Roll</button>
-            <strong>{selectedIndex + 1} of {photos.length}</strong>
-            <button className="photo-trash" onClick={deleteSelected} aria-label="Delete this photo"><i />Trash</button>
+            <button className="photo-back" onClick={closeViewer}><i>‹</i>Camera Roll</button>
+            <span><strong>{selectedIndex + 1} of {photos.length}</strong><small>{selectedPhoto.captured ? "Photo Booth" : "Tian Xing"}</small></span>
+            <button className="photo-trash" onClick={() => setConfirmingDelete(true)} aria-label="Delete this photo"><i /><span>Delete</span></button>
           </div>
-          <div className="photo-viewer-stage">
-            <button onClick={() => movePhoto(-1)} aria-label="Previous photo">‹</button>
-            <img src={selectedPhoto.src} alt={selectedPhoto.alt} />
-            <button onClick={() => movePhoto(1)} aria-label="Next photo">›</button>
+          <div className={`photo-viewer-stage ${stageOffset ? "is-dragging" : ""}`} onPointerDown={startStageDrag} onPointerMove={moveStageDrag} onPointerUp={endStageDrag} onPointerCancel={endStageDrag} onLostPointerCapture={endStageDrag}>
+            <button className="photo-step photo-step-previous" onClick={() => movePhoto(-1)} aria-label="Previous photo">‹</button>
+            <figure style={{ "--photo-drag-x": `${stageOffset}px` } as CSSProperties}>
+              <img src={selectedPhoto.src} alt={selectedPhoto.alt} draggable={false} />
+              <figcaption>{selectedPhoto.alt}</figcaption>
+            </figure>
+            <button className="photo-step photo-step-next" onClick={() => movePhoto(1)} aria-label="Next photo">›</button>
           </div>
-          <div className="photo-viewer-strip" ref={stripRef} onPointerDown={startStripDrag} onPointerMove={moveStripDrag} onPointerUp={endStripDrag} onPointerCancel={endStripDrag}>
-            {photos.map((photo) => <button key={photo.id} className={selectedPhoto.id === photo.id ? "selected" : ""} onClick={() => { if (!stripDrag.current.moved) setSelected(photo.id); }} aria-label={`View ${photo.alt}`}><img src={photo.src} alt="" /></button>)}
+          <div className="photo-viewer-strip" ref={stripRef} onPointerDown={startStripDrag} onPointerMove={moveStripDrag} onPointerUp={endStripDrag} onPointerCancel={endStripDrag} onLostPointerCapture={endStripDrag} aria-label="Draggable photo filmstrip">
+            {photos.map((photo, index) => <button key={photo.id} data-photo-index={index} className={selectedPhoto.id === photo.id ? "selected" : ""} onClick={() => { if (!stripDrag.current.moved) choosePhoto(photo.id); }} aria-label={`View photo ${index + 1}: ${photo.alt}`}><img src={photo.src} alt="" draggable={false} /></button>)}
           </div>
+          {confirmingDelete && (
+            <div className="photo-delete-backdrop" onPointerDown={(event) => { if (event.target === event.currentTarget) setConfirmingDelete(false); }}>
+              <section className="photo-delete-alert" role="alertdialog" aria-modal="true" aria-labelledby="delete-photo-title" aria-describedby="delete-photo-message" onKeyDown={handleDeleteDialogKey}>
+                <img src={selectedPhoto.src} alt="" />
+                <h2 id="delete-photo-title">Delete Photo?</h2>
+                <p id="delete-photo-message">{selectedPhoto.captured ? "This Photo Booth picture will be permanently removed from this device." : "This photo will move to Recently Deleted, where you can restore it later."}</p>
+                <div><button ref={confirmDeleteRef} className="confirm-photo-delete" onClick={deleteSelected}>Delete Photo</button><button ref={cancelDeleteRef} onClick={() => setConfirmingDelete(false)}>Cancel</button></div>
+              </section>
+            </div>
+          )}
         </div>
       )}
     </div>
