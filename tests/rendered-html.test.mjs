@@ -97,6 +97,14 @@ test("keeps the iPhone interactive and time-aware", async () => {
   assert.match(source, /watchDragon/);
   assert.match(source, /dragonCombo/);
   assert.match(styles, /dragon-bond-chip/);
+  assert.match(source, /createDragonCard/);
+  assert.match(source, /hydrateDragonCard/);
+  assert.match(source, /DRAGON_TRAITS/);
+  assert.match(source, /visitDragon/);
+  assert.match(source, /data-dragon-id/);
+  assert.match(source, /BOND \+\$\{bondGain\}/);
+  assert.match(styles, /dragon-pattern-speckle/);
+  assert.match(styles, /is-active-dragon/);
   assert.match(styles, /fun-shared-open/);
   assert.match(source, /fun-icon-shell/);
   assert.match(source, /--launch-scale-x/);

@@ -87,9 +87,64 @@ const DRAGON_KINDS = [
   { id: "storm", name: "Stormtail", rarity: "RARE", number: "004", element: "SKY", heart: 68, spark: 96, lore: "A tiny thunderstorm follows wherever its tail points." },
   { id: "crystal", name: "Starshard", rarity: "MYTHIC", number: "005", element: "STAR", heart: 99, spark: 99, lore: "Born once in a hundred rituals from a piece of fallen night." },
 ] as const;
+const DRAGON_TRAITS = [
+  { id: "brave", label: "BRAVE", heart: 5, spark: 2, greeting: "READY!", lore: "Runs toward thunder, then looks back to make sure you followed." },
+  { id: "curious", label: "CURIOUS", heart: 2, spark: 5, greeting: "WHAT'S THAT?", lore: "Inspects every pebble twice and every mystery three times." },
+  { id: "dreamy", label: "DREAMY", heart: 4, spark: 3, greeting: "I DREAMED OF YOU", lore: "Keeps a pocket of starlight for the quiet part of the day." },
+  { id: "mischief", label: "MISCHIEF", heart: 1, spark: 7, greeting: "CATCH ME!", lore: "Can hide one sock, two keys, and itself before breakfast." },
+  { id: "gentle", label: "GENTLE", heart: 7, spark: 1, greeting: "HI, FRIEND", lore: "Its warm little forehead makes difficult thoughts feel smaller." },
+] as const;
+const DRAGON_PATTERNS = ["stripe", "speckle", "crest", "glow"] as const;
 type DragonKindId = (typeof DRAGON_KINDS)[number]["id"];
-type DragonCard = { id: string; kind: DragonKindId; hatchedAt: string; minutes: number; bond: number };
+type DragonKind = (typeof DRAGON_KINDS)[number];
+type DragonTraitId = (typeof DRAGON_TRAITS)[number]["id"];
+type DragonPatternId = (typeof DRAGON_PATTERNS)[number];
+type DragonCard = { id: string; kind: DragonKindId; hatchedAt: string; minutes: number; bond: number; trait: DragonTraitId; pattern: DragonPatternId; seed: number };
 type DragonReaction = "happy" | "fire" | "spin" | "sleep" | null;
+
+function dragonHash(value: string) {
+  let hash = 2166136261;
+  for (let index = 0; index < value.length; index += 1) hash = Math.imul(hash ^ value.charCodeAt(index), 16777619);
+  return Math.abs(hash >>> 0);
+}
+
+function hydrateDragonCard(value: unknown): DragonCard | null {
+  if (!value || typeof value !== "object") return null;
+  const raw = value as Partial<DragonCard>;
+  if (typeof raw.id !== "string" || !DRAGON_KINDS.some((kind) => kind.id === raw.kind)) return null;
+  const seed = typeof raw.seed === "number" ? raw.seed : dragonHash(raw.id);
+  const trait = DRAGON_TRAITS.some((item) => item.id === raw.trait) ? raw.trait as DragonTraitId : DRAGON_TRAITS[seed % DRAGON_TRAITS.length].id;
+  const pattern = DRAGON_PATTERNS.includes(raw.pattern as DragonPatternId) ? raw.pattern as DragonPatternId : DRAGON_PATTERNS[Math.floor(seed / 7) % DRAGON_PATTERNS.length];
+  return {
+    id: raw.id,
+    kind: raw.kind as DragonKindId,
+    hatchedAt: typeof raw.hatchedAt === "string" ? raw.hatchedAt : new Date().toISOString(),
+    minutes: typeof raw.minutes === "number" ? raw.minutes : 5,
+    bond: typeof raw.bond === "number" ? Math.max(1, Math.min(99, raw.bond)) : 1,
+    trait,
+    pattern,
+    seed,
+  };
+}
+
+function createDragonCard(kind: DragonKindId, minutes: number): DragonCard {
+  const id = `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
+  const seed = dragonHash(`${id}-${kind}-${minutes}`);
+  return {
+    id,
+    kind,
+    hatchedAt: new Date().toISOString(),
+    minutes,
+    bond: 1,
+    trait: DRAGON_TRAITS[seed % DRAGON_TRAITS.length].id,
+    pattern: DRAGON_PATTERNS[Math.floor(seed / 7) % DRAGON_PATTERNS.length],
+    seed,
+  };
+}
+
+function dragonTrait(card: DragonCard) {
+  return DRAGON_TRAITS.find((trait) => trait.id === card.trait) ?? DRAGON_TRAITS[0];
+}
 type Origin = {
   x: number;
   y: number;
@@ -1426,9 +1481,9 @@ function uvLabel(value: number) {
   return "Very high";
 }
 
-function DragonSprite({ reaction = null, card = false }: { reaction?: DragonReaction; card?: boolean }) {
+function DragonSprite({ reaction = null, card = false, pattern }: { reaction?: DragonReaction; card?: boolean; pattern?: DragonPatternId }) {
   return (
-    <span className={`baby-dragon ${card ? "card-dragon" : ""} ${reaction ? `dragon-reaction-${reaction}` : ""}`} aria-hidden="true">
+    <span className={`baby-dragon ${card ? "card-dragon" : ""} ${pattern ? `dragon-pattern-${pattern}` : ""} ${reaction ? `dragon-reaction-${reaction}` : ""}`} aria-hidden="true">
       <i className="dragon-tail" /><i className="dragon-wing wing-left" /><i className="dragon-wing wing-right" />
       <i className="dragon-body" />
       <i className="dragon-head"><b className="dragon-horn horn-left" /><b className="dragon-horn horn-right" /><b className="dragon-eye eye-left" /><b className="dragon-eye eye-right" /><b className="dragon-snout" /></i>
@@ -1452,9 +1507,13 @@ function ClockApp({ time }: { time: string }) {
   const [dragonCombo, setDragonCombo] = useState(0);
   const [dragonCollection, setDragonCollection] = useState<DragonCard[]>(() => {
     if (typeof window === "undefined") return [];
-    try { const saved = JSON.parse(window.localStorage.getItem(DRAGON_COLLECTION_KEY) ?? "[]"); return Array.isArray(saved) ? saved : []; }
+    try {
+      const saved = JSON.parse(window.localStorage.getItem(DRAGON_COLLECTION_KEY) ?? "[]");
+      return Array.isArray(saved) ? saved.map(hydrateDragonCard).filter((card): card is DragonCard => card !== null) : [];
+    }
     catch { return []; }
   });
+  const [activeDragonId, setActiveDragonId] = useState<string | null>(null);
   const endTimeRef = useRef<number | null>(null);
   const audioRef = useRef<AudioContext | null>(null);
   const lastHapticMinute = useRef(5);
@@ -1466,6 +1525,14 @@ function ClockApp({ time }: { time: string }) {
   const now = new Date();
   const minute = now.getMinutes() * 6;
   const hour = (now.getHours() % 12) * 30 + now.getMinutes() / 2;
+  const activeDragon = dragonCollection.find((card) => card.id === activeDragonId) ?? dragonCollection[0] ?? null;
+  const activeTrait = activeDragon ? dragonTrait(activeDragon) : null;
+  const activeKind = activeDragon ? DRAGON_KINDS.find((kind) => kind.id === activeDragon.kind) ?? DRAGON_KINDS[dragonKind] : DRAGON_KINDS[dragonKind];
+  const undiscoveredKinds = DRAGON_KINDS.filter((kind) => !dragonCollection.some((card) => card.kind === kind.id));
+  const codexEntries: Array<{ card: DragonCard | null; kind: DragonKind }> = [
+    ...dragonCollection.map((card) => ({ card, kind: DRAGON_KINDS.find((kind) => kind.id === card.kind) ?? DRAGON_KINDS[0] })),
+    ...undiscoveredKinds.map((kind) => ({ card: null, kind })),
+  ];
 
   const playTone = useCallback((frequency: number, duration: number, delay = 0, volume = .035) => {
     try {
@@ -1514,14 +1581,17 @@ function ClockApp({ time }: { time: string }) {
         endTimeRef.current = null;
         setRunning(false);
         const roll = Math.random();
-        let next = roll > .96 ? 4 : roll > .76 ? 3 : roll > .58 ? 2 : roll > .28 ? 1 : 0;
+        const focusLuck = Math.min(.1, (lastSetSeconds / 3600) * .1);
+        let next = roll > .96 - focusLuck ? 4 : roll > .76 - focusLuck ? 3 : roll > .58 - focusLuck * .6 ? 2 : roll > .28 ? 1 : 0;
         if (next === dragonKindRef.current) next = (next + 1 + Math.floor(Math.random() * (DRAGON_KINDS.length - 1))) % DRAGON_KINDS.length;
         dragonKindRef.current = next;
         setDragonKind(next);
         setDragonReaction(null);
-        setDragonMessage("HELLO!");
         setDragonCombo(0);
-        setDragonCollection((cards) => [{ id: `${Date.now()}-${Math.random().toString(36).slice(2, 7)}`, kind: DRAGON_KINDS[next].id, hatchedAt: new Date().toISOString(), minutes: Math.max(.5, lastSetSeconds / 60), bond: 1 }, ...cards].slice(0, 60));
+        const hatchling = createDragonCard(DRAGON_KINDS[next].id, Math.max(.5, lastSetSeconds / 60));
+        setActiveDragonId(hatchling.id);
+        setDragonMessage(dragonTrait(hatchling).greeting);
+        setDragonCollection((cards) => [hatchling, ...cards].slice(0, 60));
         setFinished(true);
         ringTimer();
       }
@@ -1529,7 +1599,7 @@ function ClockApp({ time }: { time: string }) {
     update();
     const timer = window.setInterval(update, 125);
     return () => window.clearInterval(timer);
-  }, [ringTimer, running]);
+  }, [lastSetSeconds, ringTimer, running]);
 
   const timerText = `${String(Math.floor(seconds / 60)).padStart(2, "0")}:${String(seconds % 60).padStart(2, "0")}`;
   const handAngle = seconds / 10;
@@ -1603,11 +1673,16 @@ function ClockApp({ time }: { time: string }) {
       message = nextCombo >= 4 ? "ZOOM!" : "HEHE!";
     }
 
+    const bondGain = nextCombo === 3 ? 1 : nextCombo === 5 ? 2 : 0;
+    if (bondGain > 0) message = `${message}  BOND +${bondGain}`;
+
     if (reactionTimerRef.current !== null) window.clearTimeout(reactionTimerRef.current);
     setDragonReaction(next);
     setDragonMessage(message);
     setDragonCombo(nextCombo);
-    setDragonCollection((cards) => cards.map((card, index) => index === 0 ? { ...card, bond: Math.min(99, card.bond + 1) } : card));
+    if (bondGain > 0 && activeDragon) {
+      setDragonCollection((cards) => cards.map((card) => card.id === activeDragon.id ? { ...card, bond: Math.min(99, card.bond + bondGain) } : card));
+    }
     if (next === "fire") { playTone(330, .09, 0, .025); playTone(520, .12, .08, .025); }
     else if (next === "happy") { playTone(660, .08, 0, .022); playTone(880, .12, .1, .025); }
     else if (next === "spin") playTone(740, .16, 0, .024);
@@ -1635,11 +1710,32 @@ function ClockApp({ time }: { time: string }) {
     setDragonView("codex");
     window.requestAnimationFrame(() => window.requestAnimationFrame(() => {
       const track = codexTrackRef.current;
-      const kind = dragonCollection[0]?.kind ?? DRAGON_KINDS[dragonKind].id;
-      const card = track?.querySelector<HTMLElement>(`[data-dragon-kind="${kind}"]`);
+      const card = activeDragonId
+        ? track?.querySelector<HTMLElement>(`[data-dragon-id="${activeDragonId}"]`)
+        : track?.querySelector<HTMLElement>("[data-dragon-id]");
       if (!track || !card) return;
       track.scrollTo({ left: card.offsetLeft - (track.clientWidth - card.clientWidth) / 2, behavior: "smooth" });
     }));
+  };
+  const visitDragon = (card: DragonCard) => {
+    const kindIndex = DRAGON_KINDS.findIndex((kind) => kind.id === card.kind);
+    setActiveDragonId(card.id);
+    setDragonKind(Math.max(0, kindIndex));
+    dragonKindRef.current = Math.max(0, kindIndex);
+    setSeconds(0);
+    setFinished(true);
+    setDragonReaction("happy");
+    setDragonMessage(dragonTrait(card).greeting);
+    setDragonCombo(0);
+    setDragonView("ritual");
+    playTone(620, .08, 0, .02);
+    playTone(820, .12, .09, .024);
+    navigator.vibrate?.(12);
+    if (reactionTimerRef.current !== null) window.clearTimeout(reactionTimerRef.current);
+    reactionTimerRef.current = window.setTimeout(() => {
+      setDragonReaction(null);
+      setDragonMessage("");
+    }, 1500);
   };
   const moveDragonCard = (event: ReactPointerEvent<HTMLElement>) => {
     if (event.pointerType === "touch") return;
@@ -1692,40 +1788,51 @@ function ClockApp({ time }: { time: string }) {
         </div>
       ) : (
         <div
-          className={`timer-panel timer-mechanical dragon-timer timer-${timerState.toLowerCase()} egg-stage-${eggStage} dragon-variant-${DRAGON_KINDS[dragonKind].id} ${dragonView === "codex" ? "codex-open" : ""}`}
-          style={{ "--egg-progress": timerProgress, "--dial-angle": `${handAngle}deg` } as CSSProperties}
+          className={`timer-panel timer-mechanical dragon-timer timer-${timerState.toLowerCase()} egg-stage-${eggStage} dragon-variant-${activeKind.id} ${finished && activeDragon ? `dragon-pattern-${activeDragon.pattern}` : ""} ${dragonView === "codex" ? "codex-open" : ""}`}
+          style={{ "--egg-progress": timerProgress, "--dial-angle": `${handAngle}deg`, "--dragon-hue": `${activeDragon ? (activeDragon.seed % 19) - 9 : 0}deg` } as CSSProperties}
         >
           {dragonView === "codex" ? (
             <section className="dragon-codex" aria-label="Dragon card collection">
               <header><button onClick={() => setDragonView("ritual")}>‹ EGG</button><div><strong>DRAGON CODEX</strong><span>{dragonCollection.length} HATCHED</span></div><i>✦</i></header>
               <div ref={codexTrackRef} className="dragon-card-track">
-                {DRAGON_KINDS.map((kind) => {
-                  const hatches = dragonCollection.filter((card) => card.kind === kind.id);
-                  const latest = hatches[0];
-                  const locked = hatches.length === 0;
+                {codexEntries.map(({ card, kind }) => {
+                  const locked = card === null;
+                  const trait = card ? dragonTrait(card) : null;
+                  const hue = card ? (card.seed % 19) - 9 : 0;
+                  const heart = card ? Math.min(99, kind.heart + trait!.heart + Math.floor(card.bond / 10)) : kind.heart;
+                  const spark = card ? Math.min(99, kind.spark + trait!.spark + Math.floor(card.minutes / 10)) : kind.spark;
                   return (
                     <article
                       data-dragon-kind={kind.id}
-                      key={kind.id}
-                      className={`dragon-card dragon-variant-${kind.id} rarity-${kind.rarity.toLowerCase()} ${locked ? "is-undiscovered" : ""}`}
+                      data-dragon-id={card?.id}
+                      key={card?.id ?? `locked-${kind.id}`}
+                      className={`dragon-card dragon-variant-${kind.id} ${card ? `dragon-pattern-${card.pattern}` : ""} rarity-${kind.rarity.toLowerCase()} ${locked ? "is-undiscovered" : ""} ${card?.id === activeDragon?.id ? "is-active-dragon" : ""}`}
+                      style={{ "--dragon-hue": `${hue}deg` } as CSSProperties}
                       onPointerMove={moveDragonCard}
                       onPointerLeave={restDragonCard}
                       onBlur={restDragonCard}
+                      onClick={() => card && visitDragon(card)}
+                      onKeyDown={(event) => {
+                        if (!card || (event.key !== "Enter" && event.key !== " ")) return;
+                        event.preventDefault();
+                        visitDragon(card);
+                      }}
                       tabIndex={0}
-                      aria-label={`${locked ? "Undiscovered" : kind.name}, ${kind.rarity} ${kind.element.toLowerCase()} dragon card`}
+                      role={card ? "button" : undefined}
+                      aria-label={`${locked ? "Undiscovered" : `Visit ${kind.name}, ${trait!.label.toLowerCase()} personality,`} ${kind.rarity} ${kind.element.toLowerCase()} dragon card`}
                     >
                       <div className="dragon-card-foil" /><div className="dragon-card-grain" />
-                      <header><span>{kind.element} HATCHLING</span><b>№ {kind.number}</b></header>
-                      <div className="dragon-card-art"><i className="card-moon" /><DragonSprite card /><b>{locked ? "?" : hatches.length}</b></div>
+                      <header><span>{kind.element} · {trait?.label ?? "UNKNOWN"}</span><b>№ {card ? String(card.seed % 1000).padStart(3, "0") : kind.number}</b></header>
+                      <div className="dragon-card-art"><i className="card-moon" /><DragonSprite card pattern={card?.pattern} /><b>{locked ? "?" : `${Math.round(card.minutes)}m`}</b></div>
                       <div className="dragon-card-name"><strong>{locked ? "UNDISCOVERED" : kind.name}</strong><span>{kind.rarity}</span></div>
-                      <div className="dragon-card-stats"><span>HEART <b>{kind.heart}</b></span><i /><span>SPARK <b>{kind.spark}</b></span></div>
-                      <p>{kind.lore}</p>
-                      <footer><span>{latest ? `HATCHED ${new Date(latest.hatchedAt).toLocaleDateString("en-US", { month: "short", day: "numeric" }).toUpperCase()}` : "COMPLETE A TIMER TO MEET"}</span><b>{latest ? `BOND ${latest.bond}` : "LOCKED"}</b></footer>
+                      <div className="dragon-card-stats"><span>HEART <b>{heart}</b></span><i /><span>SPARK <b>{spark}</b></span></div>
+                      <p>{trait?.lore ?? kind.lore}</p>
+                      <footer><span>{card ? `HATCHED ${new Date(card.hatchedAt).toLocaleDateString("en-US", { month: "short", day: "numeric" }).toUpperCase()}` : "COMPLETE A TIMER TO MEET"}</span><b>{card ? `BOND ${card.bond}` : "LOCKED"}</b></footer>
                     </article>
                   );
                 })}
               </div>
-              <p>Swipe the cards · each completed ritual strengthens the bond</p>
+              <p>Swipe the cards · tap a hatchling to visit · focus time shapes its spark</p>
             </section>
           ) : (
             <>
@@ -1737,23 +1844,23 @@ function ClockApp({ time }: { time: string }) {
                   onClick={(event) => finished ? interactDragon(event) : toggleTimer()}
                   onPointerMove={watchDragon}
                   onPointerLeave={restDragonGaze}
-                  aria-label={finished ? `Play with ${DRAGON_KINDS[dragonKind].name}` : running ? "Pause dragon egg timer" : "Start dragon egg timer"}
+                  aria-label={finished ? `Play with ${activeKind.name}` : running ? "Pause dragon egg timer" : "Start dragon egg timer"}
                 >
                   <span className="egg-creature">
                     <span className="egg-aura" /><span className="egg-shadow" />
                     <span className="dragon-egg"><i className="egg-facet egg-facet-one" /><i className="egg-facet egg-facet-two" /><i className="egg-facet egg-facet-three" /><i className="egg-rune">◇</i><i className="egg-crack crack-one" /><i className="egg-crack crack-two" /><i className="egg-crack crack-three" /></span>
                     <span className="egg-shell egg-shell-left" /><span className="egg-shell egg-shell-right" />
-                    <DragonSprite reaction={dragonReaction} />
+                    <DragonSprite reaction={dragonReaction} pattern={activeDragon?.pattern} />
                     {finished && dragonMessage && <span className="dragon-dialogue" aria-hidden="true">{dragonMessage}</span>}
                   </span>
                 </button>
                 {finished && (
                   <div className="dragon-bond-chip" aria-hidden="true">
-                    <span>BOND</span><i><b style={{ width: `${dragonCollection[0]?.bond ?? 1}%` }} /></i><strong>{dragonCollection[0]?.bond ?? 1}</strong>
+                    <span>BOND</span><i><b style={{ width: `${activeDragon?.bond ?? 1}%` }} /></i><strong>{activeDragon?.bond ?? 1}</strong>
                     {dragonCombo > 1 && <em>×{dragonCombo}</em>}
                   </div>
                 )}
-                <div className="dragon-time-readout" aria-hidden="true"><span>{timerText}</span><b>{finished ? `${DRAGON_KINDS[dragonKind].rarity} · ${DRAGON_KINDS[dragonKind].name}` : running ? "INCUBATING" : timerState}</b></div>
+                <div className="dragon-time-readout" aria-hidden="true"><span>{timerText}</span><b>{finished ? `${activeKind.name} · ${activeTrait?.label ?? activeKind.rarity}` : running ? "INCUBATING" : timerState}</b></div>
               </div>
               <div className="stone-dial-wrap">
                 <div className={`stone-dial ${draggingHand ? "is-dragging" : ""}`} onPointerDown={(event) => { if (running) return; setDraggingHand(true); event.currentTarget.setPointerCapture(event.pointerId); setTimerFromPointer(event); }} onPointerMove={(event) => { if (draggingHand) setTimerFromPointer(event); }} onPointerUp={() => setDraggingHand(false)} onPointerCancel={() => setDraggingHand(false)} onLostPointerCapture={() => setDraggingHand(false)} onKeyDown={adjustTimerFromKeyboard} role="slider" tabIndex={0} aria-label="Ancient stone timer dial" aria-valuemin={.5} aria-valuemax={60} aria-valuenow={Math.round(seconds / 30) / 2} aria-valuetext={timerText}>
@@ -1761,10 +1868,10 @@ function ClockApp({ time }: { time: string }) {
                 </div>
                 <button className="stone-reset" onClick={resetTimer} aria-label="Reset timer"><i>↺</i><span>RESET</span></button>
               </div>
-              <p className="timer-instruction">{finished ? "Tap your dragon to play · open the Codex to see its card" : running ? "Tap the egg to pause the ritual" : "Drag the amber pin · tap the egg to begin"}</p>
+              <p className="timer-instruction">{finished ? "Pet the head · tap either side · reach ×3 to earn Bond" : running ? "Tap the egg to pause the ritual" : "Drag the amber pin · longer focus improves rare-egg luck"}</p>
             </>
           )}
-          <p className="timer-live" role="status" aria-live="assertive">{finished ? dragonMessage ? `${DRAGON_KINDS[dragonKind].name}: ${dragonMessage}` : `${DRAGON_KINDS[dragonKind].name} has hatched` : ""}</p>
+          <p className="timer-live" role="status" aria-live="assertive">{finished ? dragonMessage ? `${activeKind.name}: ${dragonMessage}` : `${activeKind.name} has hatched` : ""}</p>
         </div>
       )}
       <nav className="clock-tabs"><button className={tab === "clock" ? "active" : ""} onClick={() => setTab("clock")}><i>◷</i>World Clock</button><button className={tab === "timer" ? "active" : ""} onClick={() => setTab("timer")}><i>◴</i>Timer</button></nav>
