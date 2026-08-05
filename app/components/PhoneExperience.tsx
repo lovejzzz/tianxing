@@ -79,7 +79,14 @@ const WEATHER_LOCATION_KEY = "tian-iphone-weather-location";
 const WEATHER_UNIT_KEY = "tian-iphone-weather-unit";
 const WEATHER_CACHE_KEY = "tian-iphone-weather-cache-v2";
 const NOTES_STORAGE_KEY = "tian-iphone-notes-v2";
-type Origin = { x: number; y: number };
+type Origin = {
+  x: number;
+  y: number;
+  left: number;
+  top: number;
+  scaleX: number;
+  scaleY: number;
+};
 type MessageBubble = {
   id: string;
   text: string;
@@ -101,7 +108,9 @@ export function PhoneExperience() {
   const [mode, setMode] = useState<"folder" | "home" | "native">("folder");
   const [activeApp, setActiveApp] = useState<NativeApp | null>(null);
   const [closing, setClosing] = useState(false);
-  const [origin, setOrigin] = useState<Origin>({ x: 50, y: 58 });
+  const [origin, setOrigin] = useState<Origin>({ x: 50, y: 58, left: 134, top: 260, scaleX: .16, scaleY: .09 });
+  const [launchFromIcon, setLaunchFromIcon] = useState(false);
+  const [motionInspectionMs, setMotionInspectionMs] = useState<number | null>(null);
   const [time, setTime] = useState("9:41 AM");
   const [calendarDay, setCalendarDay] = useState("1");
   const [calendarWeekday, setCalendarWeekday] = useState("Today");
@@ -142,6 +151,18 @@ export function PhoneExperience() {
     };
   }, []);
 
+  useEffect(() => {
+    if (process.env.NODE_ENV === "production") return;
+    const requestedValue = new URLSearchParams(window.location.search).get("funFrame");
+    if (requestedValue === null) return;
+    const requestedFrame = Number(requestedValue);
+    if (!Number.isFinite(requestedFrame)) return;
+    const timer = window.setTimeout(() => setMotionInspectionMs(Math.max(0, Math.min(720, requestedFrame))), 0);
+    return () => window.clearTimeout(timer);
+  }, []);
+
+  const motionProgress = (motionInspectionMs ?? 0) / 720;
+
   const saveCapture = (src: string) => {
     setCaptures((current) => {
       const next = [{ id: crypto.randomUUID(), src, createdAt: new Date().toISOString() }, ...current].slice(0, 12);
@@ -168,16 +189,26 @@ export function PhoneExperience() {
 
   const rememberOrigin = (element?: HTMLElement | null) => {
     const screen = screenRef.current?.getBoundingClientRect();
-    const icon = element?.getBoundingClientRect();
-    if (!screen || !icon) return;
+    const iconTarget = element?.querySelector<HTMLElement>(".system-app-icon") ?? element;
+    const icon = iconTarget?.getBoundingClientRect();
+    const statusBar = screenRef.current?.querySelector<HTMLElement>(".status-bar")?.getBoundingClientRect();
+    if (!screen || !icon) return false;
+    const layerTop = statusBar?.height ?? 21;
+    const layerHeight = Math.max(1, screen.height - layerTop);
     setOrigin({
       x: ((icon.left + icon.width / 2 - screen.left) / screen.width) * 100,
-      y: ((icon.top + icon.height / 2 - screen.top) / screen.height) * 100,
+      y: ((icon.top + icon.height / 2 - screen.top - layerTop) / layerHeight) * 100,
+      left: icon.left - screen.left,
+      top: icon.top - screen.top - layerTop,
+      scaleX: icon.width / screen.width,
+      scaleY: icon.height / layerHeight,
     });
+    return true;
   };
 
   const openApp = (id: NativeApp | "folder", element?: HTMLElement | null) => {
-    rememberOrigin(element);
+    const fromIcon = rememberOrigin(element);
+    setLaunchFromIcon(Boolean(fromIcon));
     setClosing(false);
     if (id === "folder") {
       setActiveApp(null);
@@ -195,7 +226,8 @@ export function PhoneExperience() {
       setMode("home");
       setActiveApp(null);
       setClosing(false);
-    }, 390);
+      setLaunchFromIcon(false);
+    }, mode === "folder" && launchFromIcon ? 560 : 390);
   };
 
   return (
@@ -212,16 +244,33 @@ export function PhoneExperience() {
           <span className="camera" aria-hidden="true" />
         </div>
 
-        <div className={`screen phone-mode-${mode}`} ref={screenRef}>
+        <div
+          className={`screen phone-mode-${mode} ${motionInspectionMs !== null ? "is-fun-motion-inspection" : ""}`}
+          ref={screenRef}
+          style={motionInspectionMs === null ? undefined : {
+            "--fun-inspection-offset": `${-motionInspectionMs}ms`,
+            "--fun-home-scale": 1 + motionProgress * .105,
+            "--fun-home-opacity": 1 - motionProgress * .48,
+            "--fun-home-brightness": 1 - motionProgress * .5,
+            "--fun-home-saturation": 1 - motionProgress * .28,
+          } as CSSProperties}
+        >
           <StatusBar time={time} />
-          <div className={`phone-home-layer ${mode === "home" ? "is-active" : "is-background"}`}>
+          <div className={`phone-home-layer ${mode === "home" || closing ? "is-active" : "is-background"} ${mode === "folder" && launchFromIcon ? "is-fun-background" : ""}`}>
             <HomeScreen calendarDay={calendarDay} calendarWeekday={calendarWeekday} onOpenApp={openApp} />
           </div>
 
           {mode !== "home" && (
             <div
-              className={`phone-app-layer ${mode === "folder" ? "is-fun-app" : ""} ${closing ? "is-closing" : "is-opening"}`}
-              style={{ "--origin-x": `${origin.x}%`, "--origin-y": `${origin.y}%` } as CSSProperties}
+              className={`phone-app-layer ${mode === "folder" ? "is-fun-app" : ""} ${launchFromIcon ? "is-from-icon" : ""} ${closing ? "is-closing" : "is-opening"}`}
+              style={{
+                "--origin-x": `${origin.x}%`,
+                "--origin-y": `${origin.y}%`,
+                "--launch-x": `${origin.left}px`,
+                "--launch-y": `${origin.top}px`,
+                "--launch-scale-x": origin.scaleX,
+                "--launch-scale-y": origin.scaleY,
+              } as CSSProperties}
             >
               {mode === "folder" && <FolderView onGoHome={goHome} />}
               {mode === "native" && activeApp && (
@@ -261,6 +310,9 @@ function StatusBar({ time }: { time: string }) {
 function FolderView({ onGoHome }: { onGoHome: () => void }) {
   return (
     <div className="folder-screen">
+      <div className="fun-icon-shell" aria-hidden="true">
+        <span>{Array.from({ length: 9 }, (_, index) => <i key={index} />)}</span>
+      </div>
       <div className="fun-dolly" aria-hidden="true"><i /><i /><i /><i /></div>
       <div className="screen-titlebar work-titlebar">
         <span className="mini-mark">TX</span>

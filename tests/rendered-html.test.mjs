@@ -45,6 +45,7 @@ test("embeds playable projects and full-resolution screenshots", async () => {
 
 test("keeps the iPhone interactive and time-aware", async () => {
   const source = await readFile(new URL("../app/components/PhoneExperience.tsx", import.meta.url), "utf8");
+  const styles = await readFile(new URL("../app/globals.css", import.meta.url), "utf8");
   const photoManifest = await readFile(new URL("../app/photoManifest.ts", import.meta.url), "utf8");
   const projectSource = await readFile(new URL("../app/projects.ts", import.meta.url), "utf8");
   assert.match(source, /toLocaleTimeString/);
@@ -87,6 +88,10 @@ test("keeps the iPhone interactive and time-aware", async () => {
   assert.match(source, /role="slider"/);
   assert.match(source, /Timer complete/);
   assert.match(source, /AudioContext/);
+  assert.match(styles, /fun-shared-open/);
+  assert.match(source, /fun-icon-shell/);
+  assert.match(source, /--launch-scale-x/);
+  assert.match(styles, /prefers-reduced-motion/);
   assert.match(source, /Draw on this note/);
   assert.match(source, /NOTES_STORAGE_KEY/);
   assert.match(source, /Search notes/);
