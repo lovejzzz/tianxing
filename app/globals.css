@@ -1075,3 +1075,78 @@ body:has(.home-shell){overflow:hidden}
   .home-shell:has(.device-stage.is-immersive) .heart-note.is-fluid-active{pointer-events:none}
 }
 @media (prefers-reduced-motion:reduce){.heart-note{transition:none}.device-stage.is-immersive{animation:none;transition:none}}
+
+/* Dragon Codex cards: restrained, pointer-driven foil and physical card depth. */
+.dragon-card-track{
+  perspective:980px;
+  perspective-origin:50% 44%;
+}
+.dragon-card{
+  --card-rx:0deg;
+  --card-ry:0deg;
+  --card-light-x:50%;
+  --card-light-y:42%;
+  --card-light-angle:135deg;
+  --card-glare:0;
+  --card-foil-strength:.42;
+  animation-fill-mode:backwards;
+  transform:perspective(860px) rotateX(var(--card-rx)) rotateY(var(--card-ry)) translateY(0) scale(1);
+  transform-style:preserve-3d;
+  transform-origin:50% 50%;
+  transition:transform 220ms cubic-bezier(.2,.78,.2,1),box-shadow 260ms ease,filter 260ms ease;
+  will-change:transform;
+  -webkit-tap-highlight-color:transparent;
+}
+.dragon-card.rarity-rare{--card-foil-strength:.58}
+.dragon-card.rarity-mythic{--card-foil-strength:.72}
+.dragon-card:hover,
+.dragon-card:focus-visible{
+  z-index:8;
+  outline:0;
+  transform:perspective(860px) rotateX(var(--card-rx)) rotateY(var(--card-ry)) translateY(-4px) scale(1.035);
+  box-shadow:inset 0 0 0 2px #6d5728,inset 0 0 0 5px #f8e7a4,0 18px 30px rgba(0,0,0,.62),0 5px 10px rgba(0,0,0,.28);
+}
+.dragon-card.rarity-mythic:hover,
+.dragon-card.rarity-mythic:focus-visible{
+  box-shadow:inset 0 0 0 2px #67527c,inset 0 0 0 5px #fff0ff,0 18px 32px rgba(0,0,0,.62),0 0 19px rgba(202,160,255,.2);
+}
+.dragon-card::after{
+  content:"";
+  position:absolute;
+  z-index:6;
+  inset:-1px;
+  border:1px solid rgba(255,255,255,.16);
+  border-radius:inherit;
+  box-shadow:inset 1px 1px rgba(255,255,255,.18),inset -1px -1px rgba(30,24,15,.26);
+  pointer-events:none;
+  transform:translateZ(15px);
+}
+.dragon-card-foil{
+  inset:0;
+  border-radius:inherit;
+  background:
+    radial-gradient(circle at var(--card-light-x) var(--card-light-y),rgba(255,255,255,.66) 0,rgba(255,255,255,.28) 8%,rgba(183,226,238,.11) 18%,transparent 34%),
+    linear-gradient(var(--card-light-angle),transparent 22%,rgba(255,255,255,.04) 35%,rgba(202,231,239,.22) 45%,rgba(255,225,234,.13) 51%,rgba(255,249,214,.08) 56%,transparent 68%);
+  mix-blend-mode:screen;
+  opacity:calc(var(--card-glare) * var(--card-foil-strength));
+  transform:translateZ(18px);
+  animation:none;
+  transition:opacity 230ms ease-out;
+  will-change:opacity,background;
+}
+.dragon-card-grain{transform:translateZ(4px)}
+.dragon-card>*:not(.dragon-card-foil):not(.dragon-card-grain){transform:translateZ(7px)}
+.dragon-card .dragon-card-art{transform:translateZ(10px)}
+
+@media (hover:none),(pointer:coarse){
+  .dragon-card,
+  .dragon-card:hover,
+  .dragon-card:focus-visible{transform:none;transition:none}
+  .dragon-card-foil{display:none}
+}
+@media (prefers-reduced-motion:reduce){
+  .dragon-card,
+  .dragon-card:hover,
+  .dragon-card:focus-visible{transform:none;transition:none;animation:none}
+  .dragon-card-foil{display:none}
+}

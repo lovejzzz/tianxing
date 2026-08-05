@@ -4,7 +4,7 @@
 
 import Link from "next/link";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import type { CSSProperties, FormEvent, KeyboardEvent as ReactKeyboardEvent, PointerEvent as ReactPointerEvent } from "react";
+import type { CSSProperties, FocusEvent as ReactFocusEvent, FormEvent, KeyboardEvent as ReactKeyboardEvent, PointerEvent as ReactPointerEvent } from "react";
 import { projects } from "../projects";
 import { portfolioPhotos } from "../photoManifest";
 import { AppIcon } from "./AppIcon";
@@ -1458,6 +1458,7 @@ function ClockApp({ time }: { time: string }) {
   const lastHapticMinute = useRef(5);
   const dragonKindRef = useRef(0);
   const reactionTimerRef = useRef<number | null>(null);
+  const cardGlareTimerRef = useRef<number | null>(null);
   const codexTrackRef = useRef<HTMLDivElement>(null);
   const now = new Date();
   const minute = now.getMinutes() * 6;
@@ -1497,6 +1498,7 @@ function ClockApp({ time }: { time: string }) {
 
   useEffect(() => () => {
     if (reactionTimerRef.current !== null) window.clearTimeout(reactionTimerRef.current);
+    if (cardGlareTimerRef.current !== null) window.clearTimeout(cardGlareTimerRef.current);
   }, []);
 
   useEffect(() => {
@@ -1595,6 +1597,41 @@ function ClockApp({ time }: { time: string }) {
       track.scrollTo({ left: card.offsetLeft - (track.clientWidth - card.clientWidth) / 2, behavior: "smooth" });
     }));
   };
+  const moveDragonCard = (event: ReactPointerEvent<HTMLElement>) => {
+    if (event.pointerType === "touch") return;
+    const card = event.currentTarget;
+    const bounds = card.getBoundingClientRect();
+    const x = Math.max(0, Math.min(1, (event.clientX - bounds.left) / bounds.width));
+    const y = Math.max(0, Math.min(1, (event.clientY - bounds.top) / bounds.height));
+    const tiltX = (0.5 - y) * 9;
+    const tiltY = (x - 0.5) * 11;
+    const lightAngle = Math.atan2(y - 0.5, x - 0.5) * 180 / Math.PI + 90;
+
+    card.style.setProperty("--card-rx", `${tiltX.toFixed(2)}deg`);
+    card.style.setProperty("--card-ry", `${tiltY.toFixed(2)}deg`);
+    card.style.setProperty("--card-light-x", `${(x * 100).toFixed(1)}%`);
+    card.style.setProperty("--card-light-y", `${(y * 100).toFixed(1)}%`);
+    card.style.setProperty("--card-light-angle", `${lightAngle.toFixed(1)}deg`);
+    card.style.setProperty("--card-glare", "1");
+
+    if (cardGlareTimerRef.current !== null) window.clearTimeout(cardGlareTimerRef.current);
+    cardGlareTimerRef.current = window.setTimeout(() => {
+      card.style.setProperty("--card-glare", "0");
+      cardGlareTimerRef.current = null;
+    }, 150);
+  };
+  const restDragonCard = (event: ReactPointerEvent<HTMLElement> | ReactFocusEvent<HTMLElement>) => {
+    if (cardGlareTimerRef.current !== null) {
+      window.clearTimeout(cardGlareTimerRef.current);
+      cardGlareTimerRef.current = null;
+    }
+    const card = event.currentTarget;
+    card.style.setProperty("--card-rx", "0deg");
+    card.style.setProperty("--card-ry", "0deg");
+    card.style.setProperty("--card-light-x", "50%");
+    card.style.setProperty("--card-light-y", "42%");
+    card.style.setProperty("--card-glare", "0");
+  };
   const adjustTimerFromKeyboard = (event: ReactKeyboardEvent<HTMLDivElement>) => {
     if (running) return;
     const changes: Record<string, number> = { ArrowUp: 30, ArrowRight: 30, ArrowDown: -30, ArrowLeft: -30, PageUp: 300, PageDown: -300 };
@@ -1623,7 +1660,16 @@ function ClockApp({ time }: { time: string }) {
                   const latest = hatches[0];
                   const locked = hatches.length === 0;
                   return (
-                    <article data-dragon-kind={kind.id} key={kind.id} className={`dragon-card dragon-variant-${kind.id} rarity-${kind.rarity.toLowerCase()} ${locked ? "is-undiscovered" : ""}`}>
+                    <article
+                      data-dragon-kind={kind.id}
+                      key={kind.id}
+                      className={`dragon-card dragon-variant-${kind.id} rarity-${kind.rarity.toLowerCase()} ${locked ? "is-undiscovered" : ""}`}
+                      onPointerMove={moveDragonCard}
+                      onPointerLeave={restDragonCard}
+                      onBlur={restDragonCard}
+                      tabIndex={0}
+                      aria-label={`${locked ? "Undiscovered" : kind.name}, ${kind.rarity} ${kind.element.toLowerCase()} dragon card`}
+                    >
                       <div className="dragon-card-foil" /><div className="dragon-card-grain" />
                       <header><span>{kind.element} HATCHLING</span><b>№ {kind.number}</b></header>
                       <div className="dragon-card-art"><i className="card-moon" /><DragonSprite card /><b>{locked ? "?" : hatches.length}</b></div>
