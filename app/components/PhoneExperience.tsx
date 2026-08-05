@@ -78,12 +78,23 @@ const MESSAGE_ENDPOINT = "https://script.google.com/macros/s/AKfycbyXBqJ3mfDqYPF
 const WEATHER_LOCATION_KEY = "tian-iphone-weather-location";
 const WEATHER_UNIT_KEY = "tian-iphone-weather-unit";
 const WEATHER_CACHE_KEY = "tian-iphone-weather-cache-v2";
+const NOTES_STORAGE_KEY = "tian-iphone-notes-v2";
 type Origin = { x: number; y: number };
 type MessageBubble = {
   id: string;
   text: string;
   time: string;
   state: "sending" | "sent" | "error";
+};
+type NotePoint = { x: number; y: number };
+type NoteStroke = { color: string; width: number; erase: boolean; points: NotePoint[] };
+type NoteDocument = {
+  id: string;
+  text: string;
+  updatedAt: string;
+  strokes: NoteStroke[];
+  doodleSeed: boolean;
+  background?: string;
 };
 
 export function PhoneExperience() {
@@ -1273,8 +1284,36 @@ function ClockApp({ time }: { time: string }) {
 
 function NotesApp() {
   const canvasRef = useRef<HTMLCanvasElement>(null);
-  const drawing = useRef(false);
+  const activeStroke = useRef<NoteStroke | null>(null);
+  const canvasSize = useRef({ width: 1, height: 1 });
+  const [notes, setNotes] = useState<NoteDocument[]>(() => {
+    if (typeof window === "undefined") return [createWelcomeNote()];
+    try {
+      const saved = JSON.parse(window.localStorage.getItem(NOTES_STORAGE_KEY) ?? "null");
+      if (Array.isArray(saved) && saved.length) return saved;
+      const legacyDrawing = window.localStorage.getItem("tian-iphone-note-drawing") ?? undefined;
+      return [createWelcomeNote(legacyDrawing)];
+    } catch { return [createWelcomeNote()]; }
+  });
+  const [activeNoteId, setActiveNoteId] = useState(() => notes[0].id);
+  const [view, setView] = useState<"editor" | "list">("editor");
+  const [mode, setMode] = useState<"write" | "draw">("write");
+  const [search, setSearch] = useState("");
   const [ink, setInk] = useState("#263c8f");
+  const [brushSize, setBrushSize] = useState(3);
+  const [eraser, setEraser] = useState(false);
+  const [redoStrokes, setRedoStrokes] = useState<NoteStroke[]>([]);
+  const [saveStatus, setSaveStatus] = useState("Saved");
+  const activeNote = notes.find((note) => note.id === activeNoteId) ?? notes[0];
+
+  useEffect(() => {
+    const statusTimer = window.setTimeout(() => setSaveStatus("Saving…"), 0);
+    const timer = window.setTimeout(() => {
+      try { window.localStorage.setItem(NOTES_STORAGE_KEY, JSON.stringify(notes)); } catch { /* Notes remain available for this session. */ }
+      setSaveStatus("Saved");
+    }, 320);
+    return () => { window.clearTimeout(statusTimer); window.clearTimeout(timer); };
+  }, [notes]);
 
   const drawSmiley = useCallback((context: CanvasRenderingContext2D, width: number, height: number) => {
     context.strokeStyle = "#263c8f";
@@ -1299,70 +1338,209 @@ function NotesApp() {
     context.restore();
   }, []);
 
+  const paintStroke = useCallback((context: CanvasRenderingContext2D, stroke: NoteStroke, fromIndex = 1) => {
+    const width = canvasSize.current.width;
+    const height = canvasSize.current.height;
+    if (stroke.points.length < 2) return;
+    context.save();
+    context.globalCompositeOperation = stroke.erase ? "destination-out" : "source-over";
+    context.strokeStyle = stroke.color;
+    context.lineWidth = stroke.width;
+    context.lineCap = "round";
+    context.lineJoin = "round";
+    const start = Math.max(1, fromIndex);
+    context.beginPath();
+    context.moveTo(stroke.points[start - 1].x * width, stroke.points[start - 1].y * height);
+    for (let index = start; index < stroke.points.length; index += 1) context.lineTo(stroke.points[index].x * width, stroke.points[index].y * height);
+    context.stroke();
+    context.restore();
+  }, []);
+
   useEffect(() => {
     const canvas = canvasRef.current;
-    if (!canvas) return;
+    if (!canvas || mode !== "draw" || !activeNote) return;
     const bounds = canvas.getBoundingClientRect();
     const ratio = Math.min(2, window.devicePixelRatio || 1);
     canvas.width = Math.round(bounds.width * ratio);
     canvas.height = Math.round(bounds.height * ratio);
+    canvasSize.current = { width: bounds.width, height: bounds.height };
     const context = canvas.getContext("2d");
     if (!context) return;
     context.scale(ratio, ratio);
     context.lineCap = "round";
     context.lineJoin = "round";
-    const saved = localStorage.getItem("tian-iphone-note-drawing");
-    if (saved) {
-      const image = new Image();
-      image.onload = () => context.drawImage(image, 0, 0, bounds.width, bounds.height);
-      image.src = saved;
-    } else {
-      drawSmiley(context, bounds.width, bounds.height);
-    }
-  }, [drawSmiley]);
+    if (activeNote.doodleSeed) drawSmiley(context, bounds.width, bounds.height);
+    activeNote.strokes.forEach((stroke) => paintStroke(context, stroke));
+  }, [activeNote, drawSmiley, mode, paintStroke]);
 
-  const drawAt = (event: ReactPointerEvent<HTMLCanvasElement>) => {
+  const pointFromEvent = (event: ReactPointerEvent<HTMLCanvasElement>): NotePoint => {
     const canvas = canvasRef.current;
-    const context = canvas?.getContext("2d");
-    if (!canvas || !context) return;
+    if (!canvas) return { x: 0, y: 0 };
     const bounds = canvas.getBoundingClientRect();
-    const x = event.clientX - bounds.left;
-    const y = event.clientY - bounds.top;
-    context.strokeStyle = ink;
-    context.lineWidth = 3;
-    if (!drawing.current) {
-      drawing.current = true;
-      context.beginPath();
-      context.moveTo(x, y);
-    } else {
-      context.lineTo(x, y);
-      context.stroke();
-    }
+    return { x: Math.min(1, Math.max(0, (event.clientX - bounds.left) / bounds.width)), y: Math.min(1, Math.max(0, (event.clientY - bounds.top) / bounds.height)) };
   };
-  const finishDrawing = () => {
-    drawing.current = false;
-    try { if (canvasRef.current) localStorage.setItem("tian-iphone-note-drawing", canvasRef.current.toDataURL("image/png")); } catch { /* local drawing only */ }
+
+  const beginStroke = (event: ReactPointerEvent<HTMLCanvasElement>) => {
+    event.currentTarget.setPointerCapture(event.pointerId);
+    const point = pointFromEvent(event);
+    activeStroke.current = { color: ink, width: eraser ? Math.max(10, brushSize * 3) : brushSize, erase: eraser, points: [point, { ...point, x: Math.min(1, point.x + .0001) }] };
+    const context = canvasRef.current?.getContext("2d");
+    if (context) paintStroke(context, activeStroke.current);
   };
-  const resetDrawing = () => {
-    const canvas = canvasRef.current;
-    const context = canvas?.getContext("2d");
-    if (!canvas || !context) return;
-    const bounds = canvas.getBoundingClientRect();
-    context.clearRect(0, 0, canvas.width, canvas.height);
-    drawSmiley(context, bounds.width, bounds.height);
-    finishDrawing();
+
+  const continueStroke = (event: ReactPointerEvent<HTMLCanvasElement>) => {
+    const stroke = activeStroke.current;
+    const context = canvasRef.current?.getContext("2d");
+    if (!stroke || !context) return;
+    const point = pointFromEvent(event);
+    const previous = stroke.points[stroke.points.length - 1];
+    if (Math.hypot(point.x - previous.x, point.y - previous.y) < .003) return;
+    stroke.points.push(point);
+    paintStroke(context, stroke, stroke.points.length - 1);
   };
+
+  const finishStroke = () => {
+    const stroke = activeStroke.current;
+    activeStroke.current = null;
+    if (!stroke || stroke.points.length < 2 || !activeNote) return;
+    setNotes((current) => current.map((note) => note.id === activeNote.id ? { ...note, strokes: [...note.strokes, stroke], updatedAt: new Date().toISOString() } : note));
+    setRedoStrokes([]);
+  };
+
+  const updateActiveText = (text: string) => {
+    setNotes((current) => current.map((note) => note.id === activeNote.id ? { ...note, text, updatedAt: new Date().toISOString() } : note));
+  };
+
+  const createNote = () => {
+    const note = createBlankNote();
+    setNotes((current) => [note, ...current]);
+    setActiveNoteId(note.id);
+    setView("editor");
+    setMode("write");
+    setRedoStrokes([]);
+  };
+
+  const deleteNote = (id: string) => {
+    const remaining = notes.filter((note) => note.id !== id);
+    const next = remaining.length ? remaining : [createBlankNote()];
+    setNotes(next);
+    if (id === activeNoteId) setActiveNoteId(next[0].id);
+    setRedoStrokes([]);
+  };
+
+  const undoDrawing = () => {
+    if (!activeNote?.strokes.length) return;
+    const removed = activeNote.strokes[activeNote.strokes.length - 1];
+    setNotes((current) => current.map((note) => note.id === activeNote.id ? { ...note, strokes: note.strokes.slice(0, -1), updatedAt: new Date().toISOString() } : note));
+    setRedoStrokes((current) => [...current, removed]);
+  };
+
+  const redoDrawing = () => {
+    const stroke = redoStrokes[redoStrokes.length - 1];
+    if (!stroke || !activeNote) return;
+    setNotes((current) => current.map((note) => note.id === activeNote.id ? { ...note, strokes: [...note.strokes, stroke], updatedAt: new Date().toISOString() } : note));
+    setRedoStrokes((current) => current.slice(0, -1));
+  };
+
+  const clearDrawing = () => {
+    if (!activeNote) return;
+    setNotes((current) => current.map((note) => note.id === activeNote.id ? { ...note, strokes: [], doodleSeed: false, background: undefined, updatedAt: new Date().toISOString() } : note));
+    setRedoStrokes([]);
+  };
+
+  const copyNote = async () => {
+    try { await navigator.clipboard.writeText(activeNote.text); setSaveStatus("Copied"); window.setTimeout(() => setSaveStatus("Saved"), 1400); } catch { setSaveStatus("Copy failed"); }
+  };
+
+  const filteredNotes = notes.filter((note) => note.text.toLowerCase().includes(search.trim().toLowerCase()));
+  const characterCount = activeNote?.text.length ?? 0;
 
   return (
-    <div className="notes-app">
-      <textarea aria-label="A note from Tian Xing" defaultValue={"Happiness comes from\nsolving problems.\n\n— Mark Manson"} />
-      <canvas ref={canvasRef} aria-label="Draw on this note" onPointerDown={(event) => { event.currentTarget.setPointerCapture(event.pointerId); drawAt(event); }} onPointerMove={(event) => { if (drawing.current) drawAt(event); }} onPointerUp={finishDrawing} onPointerCancel={finishDrawing} />
-      <div className="notes-drawing-tools" aria-label="Drawing colors">
-        {["#263c8f", "#c52c31", "#27804a", "#191919"].map((color) => <button key={color} className={ink === color ? "active" : ""} style={{ background: color }} onClick={() => setInk(color)} aria-label={`Draw in ${color}`} />)}
-        <button className="notes-redraw" onClick={resetDrawing} aria-label="Reset smiley drawing">☺</button>
-      </div>
+    <div className="notes-app notes-studio">
+      {view === "list" ? (
+        <div className="notes-list-view">
+          <header><strong>Notes</strong><button onClick={createNote} aria-label="Create a new note">＋</button></header>
+          <div className="notes-search"><span>⌕</span><input value={search} onChange={(event) => setSearch(event.target.value)} placeholder="Search notes" aria-label="Search notes" /></div>
+          <div className="notes-list" role="list">
+            {filteredNotes.map((note) => (
+              <div className="notes-list-row" role="listitem" key={note.id}>
+                <button className="notes-open" onClick={() => { setActiveNoteId(note.id); setView("editor"); setRedoStrokes([]); }}>
+                  <strong>{noteTitle(note)}</strong><span>{notePreview(note)}</span><time dateTime={note.updatedAt}>{formatNoteDate(note.updatedAt)}</time>
+                </button>
+                <button className="notes-delete-row" onClick={() => deleteNote(note.id)} aria-label={`Delete ${noteTitle(note)}`}>×</button>
+              </div>
+            ))}
+            {!filteredNotes.length && <p className="notes-empty">No notes found.</p>}
+          </div>
+          <footer>{notes.length} {notes.length === 1 ? "note" : "notes"} · stored on this device</footer>
+        </div>
+      ) : (
+        <div className={`notes-editor notes-mode-${mode}`}>
+          <header className="notes-editor-bar">
+            <button onClick={() => setView("list")} aria-label="Back to all notes">‹ Notes</button>
+            <span>{saveStatus}</span>
+            <button onClick={createNote} aria-label="Create a new note">＋</button>
+          </header>
+          <div className="notes-paper">
+            {mode === "write" ? (
+              <textarea aria-label="Edit note" value={activeNote.text} onChange={(event) => updateActiveText(event.target.value)} placeholder="Start writing…" />
+            ) : (
+              <div className="notes-canvas-wrap">
+                {activeNote.background && <img src={activeNote.background} alt="Earlier saved sketch" />}
+                <canvas ref={canvasRef} aria-label="Draw on this note" onPointerDown={beginStroke} onPointerMove={continueStroke} onPointerUp={finishStroke} onPointerCancel={finishStroke} />
+                {!activeNote.strokes.length && !activeNote.doodleSeed && !activeNote.background && <span>Draw anything.</span>}
+              </div>
+            )}
+          </div>
+          <div className="notes-meta"><span>{mode === "write" ? `${characterCount} characters` : `${activeNote.strokes.length} strokes`}</span><time dateTime={activeNote.updatedAt}>{formatNoteDate(activeNote.updatedAt)}</time></div>
+          <div className="notes-toolbar" aria-label="Note tools">
+            <button className={mode === "write" ? "active" : ""} onClick={() => setMode("write")} aria-label="Write text"><b>Aa</b><span>Write</span></button>
+            <button className={mode === "draw" ? "active" : ""} onClick={() => setMode("draw")} aria-label="Draw"><b>✎</b><span>Draw</span></button>
+            {mode === "write" ? (
+              <><button onClick={copyNote} aria-label="Copy note"><b>⧉</b><span>Copy</span></button><button onClick={() => deleteNote(activeNote.id)} aria-label="Delete note"><b>⌫</b><span>Delete</span></button></>
+            ) : (
+              <>
+                {["#263c8f", "#c52c31", "#27804a", "#191919"].map((color) => <button key={color} className={`notes-ink ${ink === color && !eraser ? "active" : ""}`} onClick={() => { setInk(color); setEraser(false); }} aria-label={`Draw in ${noteColorName(color)}`}><i style={{ background: color }} /></button>)}
+                <button className={eraser ? "active" : ""} onClick={() => setEraser((value) => !value)} aria-label="Toggle eraser"><b>▱</b></button>
+                <button onClick={() => setBrushSize((value) => value >= 7 ? 2 : value + 2)} aria-label={`Brush size ${brushSize}`}><i className="notes-brush-size" style={{ width: brushSize + 4, height: brushSize + 4 }} /></button>
+                <button onClick={undoDrawing} disabled={!activeNote.strokes.length} aria-label="Undo drawing"><b>↶</b></button>
+                <button onClick={redoDrawing} disabled={!redoStrokes.length} aria-label="Redo drawing"><b>↷</b></button>
+                <button onClick={clearDrawing} aria-label="Clear drawing"><b>×</b></button>
+              </>
+            )}
+          </div>
+        </div>
+      )}
     </div>
   );
+}
+
+function createWelcomeNote(background?: string): NoteDocument {
+  return { id: "welcome-note", text: "Happiness comes from\nsolving problems.\n\n— Mark Manson", updatedAt: new Date().toISOString(), strokes: [], doodleSeed: !background, background };
+}
+
+function createBlankNote(): NoteDocument {
+  return { id: crypto.randomUUID(), text: "", updatedAt: new Date().toISOString(), strokes: [], doodleSeed: false };
+}
+
+function noteTitle(note: NoteDocument) {
+  return note.text.split("\n").map((line) => line.trim()).find(Boolean) ?? "New Note";
+}
+
+function notePreview(note: NoteDocument) {
+  const lines = note.text.split("\n").map((line) => line.trim()).filter(Boolean);
+  return lines.slice(1).join(" ") || (note.strokes.length || note.doodleSeed || note.background ? "Sketch" : "No additional text");
+}
+
+function formatNoteDate(value: string) {
+  const date = new Date(value);
+  const today = new Date();
+  if (date.toDateString() === today.toDateString()) return date.toLocaleTimeString([], { hour: "numeric", minute: "2-digit" });
+  return date.toLocaleDateString([], { month: "short", day: "numeric" });
+}
+
+function noteColorName(color: string) {
+  return ({ "#263c8f": "blue", "#c52c31": "red", "#27804a": "green", "#191919": "black" } as Record<string, string>)[color] ?? color;
 }
 
 function ContactApp({ base }: { base: string }) {
