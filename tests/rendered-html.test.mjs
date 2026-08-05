@@ -50,7 +50,7 @@ test("keeps the iPhone interactive and time-aware", async () => {
   const projectSource = await readFile(new URL("../app/projects.ts", import.meta.url), "utf8");
   assert.match(source, /toLocaleTimeString/);
   assert.match(source, /Go to iPhone Home screen/);
-  assert.match(source, /Selected Work/);
+  assert.match(source, /label: "Fun"/);
   assert.match(source, /media\/about\/tian-xing-iphone4\.jpg/);
   assert.match(source, /navigator\.mediaDevices\.getUserMedia/);
   assert.match(source, /xingpicture@gmail\.com/);
@@ -62,10 +62,15 @@ test("keeps the iPhone interactive and time-aware", async () => {
   assert.equal(new Set(photoPaths).size, photoPaths.length);
   assert.match(source, /Delete Photo/);
   assert.match(source, /onDeleteCapture/);
+  assert.match(source, /PHOTO_HIDDEN_KEY/);
+  assert.match(source, /setPointerCapture/);
+  assert.match(source, /formsubmit\.co\/ajax\/xingpicture@gmail\.com/);
   assert.match(source, /Photo Booth effects/);
   assert.match(source, /photo-viewer/);
   assert.match(source, /WeatherScene/);
   assert.match(source, /Mechanical timer/);
+  assert.match(source, /Draw on this note/);
+  assert.doesNotMatch(source, /type="range"/);
   assert.match(source, /radio\.garden/);
   assert.match(source, /Surprise me again/);
   assert.equal((source.match(/media\/ios4\/icons\//g) ?? []).length, 2);

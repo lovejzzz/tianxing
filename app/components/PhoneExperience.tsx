@@ -4,7 +4,7 @@
 
 import Link from "next/link";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import type { CSSProperties, FormEvent } from "react";
+import type { CSSProperties, FormEvent, PointerEvent as ReactPointerEvent } from "react";
 import { projects } from "../projects";
 import { portfolioPhotos } from "../photoManifest";
 import { AppIcon } from "./AppIcon";
@@ -60,7 +60,7 @@ const homeApps: HomeApp[] = [
   { id: "weather", label: "Weather" },
   { id: "clock", label: "Clock" },
   { id: "notes", label: "Notes" },
-  { id: "folder", label: "Selected Work" },
+  { id: "folder", label: "Fun" },
 ];
 
 const dockApps: HomeApp[] = [
@@ -71,6 +71,7 @@ const dockApps: HomeApp[] = [
 ];
 
 const PHOTO_STORAGE_KEY = "tian-iphone-camera-roll";
+const PHOTO_HIDDEN_KEY = "tian-iphone-hidden-photos";
 type Origin = { x: number; y: number };
 
 export function PhoneExperience() {
@@ -185,7 +186,7 @@ export function PhoneExperience() {
 
           {mode !== "home" && (
             <div
-              className={`phone-app-layer ${closing ? "is-closing" : "is-opening"}`}
+              className={`phone-app-layer ${mode === "folder" ? "is-fun-app" : ""} ${closing ? "is-closing" : "is-opening"}`}
               style={{ "--origin-x": `${origin.x}%`, "--origin-y": `${origin.y}%` } as CSSProperties}
             >
               {mode === "folder" && <FolderView />}
@@ -225,9 +226,10 @@ function StatusBar({ time }: { time: string }) {
 function FolderView() {
   return (
     <div className="folder-screen">
+      <div className="fun-dolly" aria-hidden="true"><i /><i /><i /><i /></div>
       <div className="screen-titlebar work-titlebar">
         <span className="mini-mark">TX</span>
-        <strong>Selected Work</strong>
+        <strong>Fun</strong>
       </div>
 
       <nav className="app-grid" aria-label="Selected projects">
@@ -338,7 +340,7 @@ function NativeAppView({ app, base, time, captures, onCapture, onDeleteCapture, 
       <div className="native-content">
         {app === "messages" && <MessagesApp />}
         {app === "calendar" && <CalendarApp />}
-        {app === "photos" && <PhotosApp base={base} captures={captures} />}
+        {app === "photos" && <PhotosApp base={base} captures={captures} onDeleteCapture={onDeleteCapture} />}
         {app === "camera" && <CameraApp captures={captures} onCapture={onCapture} onDeleteCapture={onDeleteCapture} />}
         {app === "weather" && <WeatherApp />}
         {app === "clock" && <ClockApp time={time} />}
@@ -353,31 +355,47 @@ function NativeAppView({ app, base, time, captures, onCapture, onDeleteCapture, 
 }
 
 function MessagesApp() {
-  const [sent, setSent] = useState(false);
-  const submit = (event: FormEvent<HTMLFormElement>) => {
+  const [message, setMessage] = useState("");
+  const [status, setStatus] = useState<"idle" | "sending" | "sent" | "error">("idle");
+  const submit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
-    const form = new FormData(event.currentTarget);
-    const name = String(form.get("name") ?? "Portfolio visitor");
-    const email = String(form.get("email") ?? "");
-    const message = String(form.get("message") ?? "");
-    const subject = encodeURIComponent(`Message from ${name} via tian.fun`);
-    const body = encodeURIComponent(`${message}\n\nReply to: ${email}`);
-    setSent(true);
-    window.location.href = `mailto:xingpicture@gmail.com?subject=${subject}&body=${body}`;
+    if (!message.trim() || status === "sending") return;
+    setStatus("sending");
+    const form = new FormData();
+    form.set("message", message.trim());
+    form.set("_subject", "New message from tian.fun");
+    form.set("_template", "table");
+    form.set("_captcha", "false");
+    form.set("_url", window.location.href);
+    try {
+      const response = await fetch("https://formsubmit.co/ajax/xingpicture@gmail.com", {
+        method: "POST",
+        headers: { Accept: "application/json" },
+        body: form,
+      });
+      const result = await response.json().catch(() => ({}));
+      if (!response.ok || result.success === "false") throw new Error("send");
+      setMessage("");
+      setStatus("sent");
+      window.setTimeout(() => setStatus("idle"), 3500);
+    } catch {
+      setStatus("error");
+    }
   };
   return (
     <form className="message-compose" onSubmit={submit}>
-      <div className="compose-recipient"><span>To:</span><b>Tian Xing</b></div>
-      <label><span>Your name</span><input name="name" required autoComplete="name" /></label>
-      <label><span>Your email</span><input name="email" required type="email" autoComplete="email" /></label>
-      <label className="message-body"><span>Message</span><textarea name="message" required placeholder="Say hello…" /></label>
-      <button type="submit">Send</button>
-      <small>{sent ? "Your mail app is ready—press Send there to finish." : "This opens your email app with the message addressed to Tian."}</small>
+      <div className="message-thread"><p>Hi—I’m Tian. Say something.</p>{status === "sent" && <p className="message-sent-bubble">Delivered ✓</p>}</div>
+      <div className="message-composer">
+        <textarea value={message} onChange={(event) => { setMessage(event.target.value); if (status === "error") setStatus("idle"); }} required maxLength={1200} placeholder="Message" aria-label="Message Tian" />
+        <button type="submit" disabled={!message.trim() || status === "sending"} aria-label="Send message">{status === "sending" ? "…" : "Send"}</button>
+      </div>
+      <small>{status === "error" ? "Couldn’t send. Please try again." : "No account needed · sent privately to Tian"}</small>
     </form>
   );
 }
 
-type CalendarEvents = Record<string, string[]>;
+type CalendarItem = { text: string; color: string };
+type CalendarEvents = Record<string, CalendarItem[]>;
 
 function CalendarApp() {
   const today = new Date();
@@ -387,12 +405,14 @@ function CalendarApp() {
     if (typeof window === "undefined") return {};
     try {
       const stored = window.localStorage.getItem("tian-iphone-calendar");
-      return stored ? JSON.parse(stored) : {};
+      const parsed = stored ? JSON.parse(stored) as Record<string, Array<string | CalendarItem>> : {};
+      return Object.fromEntries(Object.entries(parsed).map(([key, items]) => [key, items.map((item) => typeof item === "string" ? { text: item, color: "#df3d36" } : item)]));
     } catch {
       return {};
     }
   });
   const [draft, setDraft] = useState("");
+  const [eventColor, setEventColor] = useState("#df3d36");
 
   const firstDay = month.getDay();
   const dayCount = new Date(month.getFullYear(), month.getMonth() + 1, 0).getDate();
@@ -412,9 +432,15 @@ function CalendarApp() {
   const addEvent = (event: FormEvent) => {
     event.preventDefault();
     if (!draft.trim()) return;
-    const next = { ...events, [key]: [...(events[key] ?? []), draft.trim()] };
+    const next = { ...events, [key]: [...(events[key] ?? []), { text: draft.trim(), color: eventColor }] };
     setEvents(next);
     setDraft("");
+    try { localStorage.setItem("tian-iphone-calendar", JSON.stringify(next)); } catch { /* local-only calendar */ }
+  };
+  const deleteEvent = (index: number) => {
+    const nextItems = (events[key] ?? []).filter((_, itemIndex) => itemIndex !== index);
+    const next = { ...events, [key]: nextItems };
+    setEvents(next);
     try { localStorage.setItem("tian-iphone-calendar", JSON.stringify(next)); } catch { /* local-only calendar */ }
   };
 
@@ -440,21 +466,29 @@ function CalendarApp() {
       </div>
       <section className="calendar-agenda">
         <h3>{new Date(month.getFullYear(), month.getMonth(), selected).toLocaleDateString([], { weekday: "long", month: "short", day: "numeric" })}</h3>
-        {(events[key] ?? []).map((item, index) => <p key={`${item}-${index}`}><i />{item}</p>)}
+        {(events[key] ?? []).map((item, index) => <p key={`${item.text}-${index}`}><i style={{ background: item.color }} /><span>{item.text}</span><button onClick={() => deleteEvent(index)} aria-label={`Delete ${item.text}`}>×</button></p>)}
         {!events[key]?.length && <p className="no-events">No events</p>}
-        <form onSubmit={addEvent}><input value={draft} onChange={(event) => setDraft(event.target.value)} placeholder="Add an event" aria-label="Add event" /><button>Add</button></form>
+        <div className="calendar-colors" aria-label="Event color">{["#df3d36", "#e0a52c", "#4e9d63", "#4c78a8"].map((color) => <button key={color} className={eventColor === color ? "active" : ""} style={{ background: color }} onClick={() => setEventColor(color)} aria-label={`Use ${color} event color`} />)}</div>
+        <form onSubmit={addEvent}><input value={draft} onChange={(event) => setDraft(event.target.value)} placeholder="Make a plan…" aria-label="Add event" /><button>Add</button></form>
       </section>
     </div>
   );
 }
 
-function PhotosApp({ base, captures }: { base: string; captures: CapturedPhoto[] }) {
-  const photos = useMemo(() => [
+function PhotosApp({ base, captures, onDeleteCapture }: { base: string; captures: CapturedPhoto[]; onDeleteCapture: (id: string) => void }) {
+  const [hiddenPhotos, setHiddenPhotos] = useState<string[]>(() => {
+    if (typeof window === "undefined") return [];
+    try { return JSON.parse(localStorage.getItem(PHOTO_HIDDEN_KEY) ?? "[]"); } catch { return []; }
+  });
+  const allPhotos = useMemo(() => [
     ...captures.map((photo) => ({ id: photo.id, src: photo.src, alt: `Camera photo taken ${new Date(photo.createdAt).toLocaleString()}`, captured: true })),
     ...portfolioPhotos.map((photo) => ({ ...photo, id: photo.src, src: `${base}${photo.src}`, captured: false })),
   ], [base, captures]);
+  const photos = useMemo(() => allPhotos.filter((photo) => !hiddenPhotos.includes(photo.id)), [allPhotos, hiddenPhotos]);
   const [selected, setSelected] = useState(photos[0]?.id ?? "");
   const [viewing, setViewing] = useState(false);
+  const stripRef = useRef<HTMLDivElement>(null);
+  const stripDrag = useRef({ active: false, startX: 0, startScroll: 0, moved: false });
   const selectedPhoto = photos.find((photo) => photo.id === selected) ?? photos[0];
   const selectedIndex = Math.max(0, photos.findIndex((photo) => photo.id === selectedPhoto?.id));
 
@@ -463,10 +497,41 @@ function PhotosApp({ base, captures }: { base: string; captures: CapturedPhoto[]
     const next = (selectedIndex + direction + photos.length) % photos.length;
     setSelected(photos[next].id);
   };
+  const deleteSelected = () => {
+    if (!selectedPhoto) return;
+    const nextPhoto = photos[selectedIndex + 1] ?? photos[selectedIndex - 1];
+    if (selectedPhoto.captured) {
+      onDeleteCapture(selectedPhoto.id);
+    } else {
+      const nextHidden = [...hiddenPhotos, selectedPhoto.id];
+      setHiddenPhotos(nextHidden);
+      try { localStorage.setItem(PHOTO_HIDDEN_KEY, JSON.stringify(nextHidden)); } catch { /* local album only */ }
+    }
+    if (nextPhoto) setSelected(nextPhoto.id); else setViewing(false);
+  };
+  const restorePhotos = () => {
+    setHiddenPhotos([]);
+    try { localStorage.removeItem(PHOTO_HIDDEN_KEY); } catch { /* local album only */ }
+  };
+  const startStripDrag = (event: ReactPointerEvent<HTMLDivElement>) => {
+    if (!stripRef.current) return;
+    stripDrag.current = { active: true, startX: event.clientX, startScroll: stripRef.current.scrollLeft, moved: false };
+    event.currentTarget.setPointerCapture(event.pointerId);
+  };
+  const moveStripDrag = (event: ReactPointerEvent<HTMLDivElement>) => {
+    if (!stripDrag.current.active || !stripRef.current) return;
+    const delta = event.clientX - stripDrag.current.startX;
+    if (Math.abs(delta) > 5) stripDrag.current.moved = true;
+    stripRef.current.scrollLeft = stripDrag.current.startScroll - delta;
+  };
+  const endStripDrag = () => {
+    stripDrag.current.active = false;
+    window.setTimeout(() => { stripDrag.current.moved = false; }, 0);
+  };
 
   return (
     <div className="photos-app">
-      <div className="photo-album-bar"><strong>Camera Roll</strong><span>{photos.length} Photos</span></div>
+      <div className="photo-album-bar"><strong>Camera Roll</strong>{hiddenPhotos.length > 0 && <button onClick={restorePhotos}>Restore {hiddenPhotos.length}</button>}<span>{photos.length} Photos</span></div>
       <div className="photo-grid">
         {photos.map((photo) => (
           <button key={photo.id} className={selected === photo.id ? "selected" : ""} onClick={() => { setSelected(photo.id); setViewing(true); }} aria-label={`View ${photo.alt}`}>
@@ -479,15 +544,15 @@ function PhotosApp({ base, captures }: { base: string; captures: CapturedPhoto[]
           <div className="photo-viewer-bar">
             <button onClick={() => setViewing(false)}>Camera Roll</button>
             <strong>{selectedIndex + 1} of {photos.length}</strong>
-            <span>{selectedPhoto.captured ? "Today" : "Portfolio"}</span>
+            <button className="photo-trash" onClick={deleteSelected} aria-label="Delete this photo"><i />Trash</button>
           </div>
           <div className="photo-viewer-stage">
             <button onClick={() => movePhoto(-1)} aria-label="Previous photo">‹</button>
             <img src={selectedPhoto.src} alt={selectedPhoto.alt} />
             <button onClick={() => movePhoto(1)} aria-label="Next photo">›</button>
           </div>
-          <div className="photo-viewer-strip">
-            {photos.map((photo) => <button key={photo.id} className={selectedPhoto.id === photo.id ? "selected" : ""} onClick={() => setSelected(photo.id)} aria-label={`View ${photo.alt}`}><img src={photo.src} alt="" /></button>)}
+          <div className="photo-viewer-strip" ref={stripRef} onPointerDown={startStripDrag} onPointerMove={moveStripDrag} onPointerUp={endStripDrag} onPointerCancel={endStripDrag}>
+            {photos.map((photo) => <button key={photo.id} className={selectedPhoto.id === photo.id ? "selected" : ""} onClick={() => { if (!stripDrag.current.moved) setSelected(photo.id); }} aria-label={`View ${photo.alt}`}><img src={photo.src} alt="" /></button>)}
           </div>
         </div>
       )}
@@ -669,6 +734,7 @@ type WeatherData = {
 function WeatherApp() {
   const [weather, setWeather] = useState<WeatherData | null>(null);
   const [error, setError] = useState("");
+  const [tilt, setTilt] = useState({ x: 0, y: 0 });
 
   const loadWeather = useCallback(async (latitude: number, longitude: number, location: string) => {
     setError("");
@@ -721,7 +787,12 @@ function WeatherApp() {
   };
 
   return (
-    <div className={`weather-app weather-code-${weather?.code ?? 0} ${weather?.isDay === false ? "weather-night" : "weather-day"}`}>
+    <div
+      className={`weather-app weather-code-${weather?.code ?? 0} ${weather?.isDay === false ? "weather-night" : "weather-day"}`}
+      style={{ "--weather-rx": `${tilt.y}deg`, "--weather-ry": `${tilt.x}deg` } as CSSProperties}
+      onPointerMove={(event) => { const bounds = event.currentTarget.getBoundingClientRect(); setTilt({ x: ((event.clientX - bounds.left) / bounds.width - .5) * 9, y: -((event.clientY - bounds.top) / bounds.height - .5) * 7 }); }}
+      onPointerLeave={() => setTilt({ x: 0, y: 0 })}
+    >
       <WeatherScene code={weather?.code ?? 0} isDay={weather?.isDay ?? true} />
       <button className="weather-location" onClick={useCurrentLocation}>◎ Use My Location</button>
       <p>{weather?.location ?? "Updating"}</p>
@@ -747,6 +818,8 @@ function WeatherScene({ code, isDay }: { code: number; isDay: boolean }) {
   const cloudy = code >= 1;
   return (
     <div className="weather-scene" aria-hidden="true">
+      <div className="weather-atmosphere"><i /><i /><i /></div>
+      <div className="weather-orb"><i className="weather-orb-glass" /><i className="weather-orb-land" /><span /></div>
       <i className={isDay ? "weather-sun" : "weather-moon"} />
       {cloudy && <><i className="weather-cloud weather-cloud-one" /><i className="weather-cloud weather-cloud-two" /></>}
       {precipitation && <div className={snow ? "weather-snow" : "weather-rain"}>{Array.from({ length: 16 }, (_, index) => <i key={index} style={{ "--drop": index } as CSSProperties} />)}</div>}
@@ -778,9 +851,9 @@ function weatherSymbol(code: number) {
 
 function ClockApp({ time }: { time: string }) {
   const [tab, setTab] = useState<"clock" | "timer">("clock");
-  const [duration, setDuration] = useState(5 * 60);
   const [seconds, setSeconds] = useState(5 * 60);
   const [running, setRunning] = useState(false);
+  const [draggingHand, setDraggingHand] = useState(false);
   const now = new Date();
   const minute = now.getMinutes() * 6;
   const hour = (now.getHours() % 12) * 30 + now.getMinutes() / 2;
@@ -800,7 +873,20 @@ function ClockApp({ time }: { time: string }) {
   }, [running]);
 
   const timerText = `${String(Math.floor(seconds / 60)).padStart(2, "0")}:${String(seconds % 60).padStart(2, "0")}`;
-  const elapsed = Math.max(0, duration - seconds);
+  const handAngle = seconds / 10;
+  const setTimerFromPointer = (event: ReactPointerEvent<HTMLDivElement>) => {
+    if (running) return;
+    const bounds = event.currentTarget.getBoundingClientRect();
+    const dx = event.clientX - (bounds.left + bounds.width / 2);
+    const dy = event.clientY - (bounds.top + bounds.height / 2);
+    let angle = Math.atan2(dx, -dy) * 180 / Math.PI;
+    if (angle <= 0) angle += 360;
+    setSeconds(Math.max(30, Math.min(3600, Math.round((angle * 10) / 30) * 30)));
+  };
+  const toggleTimer = () => {
+    if (seconds === 0) setSeconds(5 * 60);
+    setRunning((value) => !value);
+  };
   return (
     <div className="clock-app">
       {tab === "clock" ? (
@@ -811,15 +897,20 @@ function ClockApp({ time }: { time: string }) {
       ) : (
         <div className="timer-panel">
           <div className="stopwatch" aria-label={`Mechanical timer, ${timerText} remaining`}>
-            <i className="stopwatch-loop" /><i className="stopwatch-crown" /><i className="stopwatch-pusher" />
-            <div className="stopwatch-face">
+            <i className="stopwatch-loop" /><button className={`stopwatch-crown ${running ? "is-running" : ""}`} onClick={toggleTimer} aria-label={running ? "Stop timer" : "Start timer"} /><i className="stopwatch-pusher" />
+            <div
+              className={`stopwatch-face ${draggingHand ? "is-dragging" : ""}`}
+              onPointerDown={(event) => { if (running) return; setDraggingHand(true); event.currentTarget.setPointerCapture(event.pointerId); setTimerFromPointer(event); }}
+              onPointerMove={(event) => { if (draggingHand) setTimerFromPointer(event); }}
+              onPointerUp={() => setDraggingHand(false)}
+              onPointerCancel={() => setDraggingHand(false)}
+            >
               <span className="dial-number dial-60">60</span><span className="dial-number dial-5">5</span><span className="dial-number dial-10">10</span><span className="dial-number dial-15">15</span><span className="dial-number dial-20">20</span><span className="dial-number dial-25">25</span><span className="dial-number dial-30">30</span><span className="dial-number dial-35">35</span><span className="dial-number dial-40">40</span><span className="dial-number dial-45">45</span><span className="dial-number dial-50">50</span><span className="dial-number dial-55">55</span>
-              <i className="stopwatch-hand" style={{ transform: `rotate(${elapsed * 6}deg)` }} /><i className="stopwatch-pin" />
+              <i className="stopwatch-hand" style={{ transform: `rotate(${handAngle}deg)` }} /><i className="stopwatch-pin" />
               <span className="stopwatch-readout">{timerText}</span>
             </div>
           </div>
-          <label className="timer-setting"><span>SET</span><input type="range" min="60" max="3600" step="60" value={duration} disabled={running} onChange={(event) => { const next = Number(event.target.value); setDuration(next); setSeconds(next); }} aria-label="Timer duration" /><b>{Math.round(duration / 60)} MIN</b></label>
-          <div className="timer-actions"><button onClick={() => setRunning((value) => !value)}>{running ? "Pause" : "Start"}</button><button onClick={() => { setRunning(false); setSeconds(duration); }}>Reset</button></div>
+          <p className="timer-instruction">Drag the red hand to set · press the crown to {running ? "stop" : "start"}</p>
         </div>
       )}
       <nav className="clock-tabs"><button className={tab === "clock" ? "active" : ""} onClick={() => setTab("clock")}><i>◷</i>World Clock</button><button className={tab === "timer" ? "active" : ""} onClick={() => setTab("timer")}><i>◴</i>Timer</button></nav>
@@ -828,7 +919,97 @@ function ClockApp({ time }: { time: string }) {
 }
 
 function NotesApp() {
-  return <div className="notes-app"><textarea aria-label="A note from Tian Xing" defaultValue={"Happiness comes from\nsolving problems.\n\n— Mark Manson"} /></div>;
+  const canvasRef = useRef<HTMLCanvasElement>(null);
+  const drawing = useRef(false);
+  const [ink, setInk] = useState("#263c8f");
+
+  const drawSmiley = useCallback((context: CanvasRenderingContext2D, width: number, height: number) => {
+    context.strokeStyle = "#263c8f";
+    context.fillStyle = "#263c8f";
+    context.lineWidth = 3;
+    context.lineCap = "round";
+    context.beginPath();
+    context.arc(width * .73, height * .46, Math.min(width, height) * .19, -.1, Math.PI * 2 + .08);
+    context.stroke();
+    context.beginPath();
+    context.arc(width * .67, height * .41, 2.4, 0, Math.PI * 2);
+    context.arc(width * .79, height * .40, 2.4, 0, Math.PI * 2);
+    context.fill();
+    context.beginPath();
+    context.arc(width * .73, height * .47, Math.min(width, height) * .105, .15, Math.PI - .08);
+    context.stroke();
+    context.save();
+    context.translate(width * .14, height * .73);
+    context.rotate(-.08);
+    context.font = '18px "Marker Felt", "Bradley Hand", cursive';
+    context.fillText("have fun!", 0, 0);
+    context.restore();
+  }, []);
+
+  useEffect(() => {
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+    const bounds = canvas.getBoundingClientRect();
+    const ratio = Math.min(2, window.devicePixelRatio || 1);
+    canvas.width = Math.round(bounds.width * ratio);
+    canvas.height = Math.round(bounds.height * ratio);
+    const context = canvas.getContext("2d");
+    if (!context) return;
+    context.scale(ratio, ratio);
+    context.lineCap = "round";
+    context.lineJoin = "round";
+    const saved = localStorage.getItem("tian-iphone-note-drawing");
+    if (saved) {
+      const image = new Image();
+      image.onload = () => context.drawImage(image, 0, 0, bounds.width, bounds.height);
+      image.src = saved;
+    } else {
+      drawSmiley(context, bounds.width, bounds.height);
+    }
+  }, [drawSmiley]);
+
+  const drawAt = (event: ReactPointerEvent<HTMLCanvasElement>) => {
+    const canvas = canvasRef.current;
+    const context = canvas?.getContext("2d");
+    if (!canvas || !context) return;
+    const bounds = canvas.getBoundingClientRect();
+    const x = event.clientX - bounds.left;
+    const y = event.clientY - bounds.top;
+    context.strokeStyle = ink;
+    context.lineWidth = 3;
+    if (!drawing.current) {
+      drawing.current = true;
+      context.beginPath();
+      context.moveTo(x, y);
+    } else {
+      context.lineTo(x, y);
+      context.stroke();
+    }
+  };
+  const finishDrawing = () => {
+    drawing.current = false;
+    try { if (canvasRef.current) localStorage.setItem("tian-iphone-note-drawing", canvasRef.current.toDataURL("image/png")); } catch { /* local drawing only */ }
+  };
+  const resetDrawing = () => {
+    const canvas = canvasRef.current;
+    const context = canvas?.getContext("2d");
+    if (!canvas || !context) return;
+    const bounds = canvas.getBoundingClientRect();
+    context.clearRect(0, 0, canvas.width, canvas.height);
+    drawSmiley(context, bounds.width, bounds.height);
+    finishDrawing();
+  };
+
+  return (
+    <div className="notes-app">
+      <textarea aria-label="A note from Tian Xing" defaultValue={"Happiness comes from\nsolving problems.\n\n— Mark Manson"} />
+      <canvas ref={canvasRef} aria-label="Draw on this note" onPointerDown={(event) => { event.currentTarget.setPointerCapture(event.pointerId); drawAt(event); }} onPointerMove={(event) => { if (drawing.current) drawAt(event); }} onPointerUp={finishDrawing} onPointerCancel={finishDrawing} />
+      <div className="notes-drawing-tools" aria-label="Drawing colors">
+        {["#263c8f", "#c52c31", "#27804a", "#191919"].map((color) => <button key={color} className={ink === color ? "active" : ""} style={{ background: color }} onClick={() => setInk(color)} aria-label={`Draw in ${color}`} />)}
+        <button className="notes-redraw" onClick={resetDrawing} aria-label="Reset smiley drawing">☺</button>
+      </div>
+    </div>
+  );
 }
 
 function ContactApp({ base }: { base: string }) {
@@ -874,7 +1055,7 @@ function SafariApp({ onOpenWork }: { onOpenWork: () => void }) {
           <button onClick={shufflePortal}>Surprise me again</button>
         </div>
         <h2>Keep close</h2>
-        <button onClick={onOpenWork}><i className="bookmark-work">TX</i><span><b>Selected Work</b>Nine projects</span><em>›</em></button>
+        <button onClick={onOpenWork}><i className="bookmark-work">TX</i><span><b>Fun</b>Nine projects</span><em>›</em></button>
         <a href="https://xingpicture.myportfolio.com" target="_blank" rel="noreferrer"><i className="bookmark-photo">▣</i><span><b>Photo</b>xingpicture.myportfolio.com</span><em>›</em></a>
       </section>
       <nav><span>‹</span><span>›</span><button onClick={shufflePortal} aria-label="New surprise">＋</button><span>▤</span></nav>
