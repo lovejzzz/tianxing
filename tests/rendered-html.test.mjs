@@ -75,6 +75,12 @@ test("keeps the iPhone interactive and time-aware", async () => {
   assert.match(source, /Photo Booth effects/);
   assert.match(source, /photo-viewer/);
   assert.match(source, /WeatherScene/);
+  assert.match(source, /geocoding-api\.open-meteo\.com/);
+  assert.match(source, /7-DAY FORECAST/);
+  assert.match(source, /Switch to degrees/);
+  assert.match(source, /WEATHER_CACHE_KEY/);
+  assert.match(source, /precipitation_probability/);
+  assert.match(source, /SUNRISE & SUNSET/);
   assert.match(source, /Mechanical timer/);
   assert.match(source, /Draw on this note/);
   assert.doesNotMatch(source, /type="range"/);

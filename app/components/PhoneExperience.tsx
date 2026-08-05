@@ -75,6 +75,9 @@ const PHOTO_HIDDEN_KEY = "tian-iphone-hidden-photos";
 const MESSAGE_DRAFT_KEY = "tian-iphone-message-draft";
 const MESSAGE_THREAD_KEY = "tian-iphone-message-thread";
 const MESSAGE_ENDPOINT = "https://script.google.com/macros/s/AKfycbyXBqJ3mfDqYPFESbxJTi6TXbwpQIh_59aGxw-lP_lxn7EyTrFS2wSR0spqosGWDM1EbQ/exec";
+const WEATHER_LOCATION_KEY = "tian-iphone-weather-location";
+const WEATHER_UNIT_KEY = "tian-iphone-weather-unit";
+const WEATHER_CACHE_KEY = "tian-iphone-weather-cache-v2";
 type Origin = { x: number; y: number };
 type MessageBubble = {
   id: string;
@@ -844,112 +847,288 @@ function CameraApp({ captures, onCapture, onDeleteCapture }: {
   );
 }
 
+type WeatherUnit = "fahrenheit" | "celsius";
+type WeatherPlace = {
+  name: string;
+  country?: string;
+  admin?: string;
+  latitude: number;
+  longitude: number;
+};
+type WeatherHour = { time: string; code: number; temperature: number; precipitation: number; isDay: boolean };
+type WeatherDay = { date: string; day: string; code: number; high: number; low: number; precipitation: number; uv: number; sunrise: string; sunset: string };
 type WeatherData = {
-  location: string;
+  place: WeatherPlace;
   isDay: boolean;
+  updatedAt: string;
+  timezone: string;
   temperature: number;
   apparent: number;
   humidity: number;
   wind: number;
+  windDirection: number;
+  pressure: number;
+  visibility: number;
+  precipitation: number;
   code: number;
   high: number;
   low: number;
-  daily: Array<{ day: string; code: number; high: number; low: number }>;
+  hourly: WeatherHour[];
+  daily: WeatherDay[];
 };
 
-function WeatherApp() {
-  const [weather, setWeather] = useState<WeatherData | null>(null);
-  const [error, setError] = useState("");
-  const [tilt, setTilt] = useState({ x: 0, y: 0 });
+const defaultWeatherPlace: WeatherPlace = { name: "New York", country: "United States", admin: "New York", latitude: 40.7128, longitude: -74.006 };
 
-  const loadWeather = useCallback(async (latitude: number, longitude: number, location: string) => {
+function WeatherApp() {
+  const [place, setPlace] = useState<WeatherPlace>(() => {
+    if (typeof window === "undefined") return defaultWeatherPlace;
+    try { return JSON.parse(window.localStorage.getItem(WEATHER_LOCATION_KEY) ?? "null") ?? defaultWeatherPlace; } catch { return defaultWeatherPlace; }
+  });
+  const [unit, setUnit] = useState<WeatherUnit>(() => {
+    if (typeof window === "undefined") return "fahrenheit";
+    return window.localStorage.getItem(WEATHER_UNIT_KEY) === "celsius" ? "celsius" : "fahrenheit";
+  });
+  const [weather, setWeather] = useState<WeatherData | null>(() => {
+    if (typeof window === "undefined") return null;
+    try {
+      const cached = JSON.parse(window.localStorage.getItem(WEATHER_CACHE_KEY) ?? "null");
+      return cached && Date.now() - cached.savedAt < 3_600_000 ? cached.weather : null;
+    } catch { return null; }
+  });
+  const [error, setError] = useState("");
+  const [loading, setLoading] = useState(!weather);
+  const [pickerOpen, setPickerOpen] = useState(false);
+  const [query, setQuery] = useState("");
+  const [results, setResults] = useState<WeatherPlace[]>([]);
+  const [searching, setSearching] = useState(false);
+  const [locating, setLocating] = useState(false);
+  const [tilt, setTilt] = useState({ x: 0, y: 0 });
+  const weatherRef = useRef(weather);
+
+  useEffect(() => { weatherRef.current = weather; }, [weather]);
+
+  const loadWeather = useCallback(async (nextPlace: WeatherPlace) => {
     setError("");
+    setLoading(true);
     try {
       const url = new URL("https://api.open-meteo.com/v1/forecast");
-      url.searchParams.set("latitude", String(latitude));
-      url.searchParams.set("longitude", String(longitude));
-      url.searchParams.set("current", "temperature_2m,apparent_temperature,relative_humidity_2m,weather_code,wind_speed_10m,is_day");
-      url.searchParams.set("daily", "weather_code,temperature_2m_max,temperature_2m_min");
-      url.searchParams.set("temperature_unit", "fahrenheit");
-      url.searchParams.set("wind_speed_unit", "mph");
+      url.searchParams.set("latitude", String(nextPlace.latitude));
+      url.searchParams.set("longitude", String(nextPlace.longitude));
+      url.searchParams.set("current", "temperature_2m,apparent_temperature,relative_humidity_2m,weather_code,wind_speed_10m,wind_direction_10m,is_day,precipitation,pressure_msl,visibility");
+      url.searchParams.set("hourly", "temperature_2m,weather_code,precipitation_probability,is_day");
+      url.searchParams.set("daily", "weather_code,temperature_2m_max,temperature_2m_min,precipitation_probability_max,uv_index_max,sunrise,sunset");
+      url.searchParams.set("temperature_unit", unit);
+      url.searchParams.set("wind_speed_unit", unit === "fahrenheit" ? "mph" : "kmh");
+      url.searchParams.set("precipitation_unit", unit === "fahrenheit" ? "inch" : "mm");
       url.searchParams.set("timezone", "auto");
-      const response = await fetch(url);
+      url.searchParams.set("forecast_days", "8");
+      const response = await fetch(url, { cache: "no-store" });
       if (!response.ok) throw new Error("weather");
       const data = await response.json();
-      setWeather({
-        location,
+      const currentHour = data.hourly.time.findIndex((time: string) => time >= data.current.time.slice(0, 13));
+      const startHour = Math.max(0, currentHour);
+      const nextWeather: WeatherData = {
+        place: nextPlace,
         isDay: Boolean(data.current.is_day),
+        updatedAt: data.current.time,
+        timezone: data.timezone_abbreviation,
         temperature: data.current.temperature_2m,
         apparent: data.current.apparent_temperature,
         humidity: data.current.relative_humidity_2m,
         wind: data.current.wind_speed_10m,
+        windDirection: data.current.wind_direction_10m,
+        pressure: data.current.pressure_msl,
+        visibility: data.current.visibility,
+        precipitation: data.current.precipitation,
         code: data.current.weather_code,
         high: data.daily.temperature_2m_max[0],
         low: data.daily.temperature_2m_min[0],
-        daily: data.daily.time.slice(1, 6).map((date: string, index: number) => ({
-          day: new Date(`${date}T12:00:00`).toLocaleDateString([], { weekday: "short" }),
-          code: data.daily.weather_code[index + 1],
-          high: data.daily.temperature_2m_max[index + 1],
-          low: data.daily.temperature_2m_min[index + 1],
+        hourly: data.hourly.time.slice(startHour, startHour + 12).map((time: string, index: number) => ({
+          time,
+          code: data.hourly.weather_code[startHour + index],
+          temperature: data.hourly.temperature_2m[startHour + index],
+          precipitation: data.hourly.precipitation_probability[startHour + index] ?? 0,
+          isDay: Boolean(data.hourly.is_day[startHour + index]),
         })),
-      });
+        daily: data.daily.time.slice(0, 7).map((date: string, index: number) => ({
+          date,
+          day: index === 0 ? "Today" : new Date(`${date}T12:00:00`).toLocaleDateString([], { weekday: "short" }),
+          code: data.daily.weather_code[index],
+          high: data.daily.temperature_2m_max[index],
+          low: data.daily.temperature_2m_min[index],
+          precipitation: data.daily.precipitation_probability_max[index] ?? 0,
+          uv: data.daily.uv_index_max[index] ?? 0,
+          sunrise: data.daily.sunrise[index],
+          sunset: data.daily.sunset[index],
+        })),
+      };
+      setWeather(nextWeather);
+      try { window.localStorage.setItem(WEATHER_CACHE_KEY, JSON.stringify({ savedAt: Date.now(), weather: nextWeather })); } catch { /* Live weather still works without a cache. */ }
     } catch {
-      setError("Weather is temporarily unavailable.");
+      setError(weatherRef.current ? "Couldn’t refresh. Showing the last forecast." : "Weather is temporarily unavailable.");
+    } finally {
+      setLoading(false);
     }
-  }, []);
+  }, [unit]);
 
   useEffect(() => {
-    const timer = window.setTimeout(() => { void loadWeather(40.7128, -74.0060, "New York"); }, 0);
+    const timer = window.setTimeout(() => { void loadWeather(place); }, 0);
     return () => window.clearTimeout(timer);
-  }, [loadWeather]);
+  }, [loadWeather, place]);
+
+  useEffect(() => {
+    try {
+      window.localStorage.setItem(WEATHER_LOCATION_KEY, JSON.stringify(place));
+      window.localStorage.setItem(WEATHER_UNIT_KEY, unit);
+    } catch { /* Preferences are optional in private browsing. */ }
+  }, [place, unit]);
+
+  const searchLocations = async (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    if (query.trim().length < 2) return;
+    setSearching(true);
+    setError("");
+    try {
+      const url = new URL("https://geocoding-api.open-meteo.com/v1/search");
+      url.searchParams.set("name", query.trim());
+      url.searchParams.set("count", "6");
+      url.searchParams.set("language", "en");
+      url.searchParams.set("format", "json");
+      const response = await fetch(url);
+      if (!response.ok) throw new Error("search");
+      const data = await response.json();
+      setResults((data.results ?? []).map((item: { name: string; country?: string; admin1?: string; latitude: number; longitude: number }) => ({
+        name: item.name,
+        country: item.country,
+        admin: item.admin1,
+        latitude: item.latitude,
+        longitude: item.longitude,
+      })));
+      if (!data.results?.length) setError("No places found. Try a nearby city.");
+    } catch {
+      setError("City search is unavailable right now.");
+    } finally {
+      setSearching(false);
+    }
+  };
 
   const useCurrentLocation = () => {
-    if (!navigator.geolocation) return;
+    if (!navigator.geolocation) { setError("Location is not available on this device."); return; }
+    setLocating(true);
+    setError("");
     navigator.geolocation.getCurrentPosition(
-      (position) => loadWeather(position.coords.latitude, position.coords.longitude, "Current Location"),
-      () => setError("Location permission was not granted."),
+      (position) => {
+        setPlace({ name: "My Location", latitude: position.coords.latitude, longitude: position.coords.longitude });
+        setPickerOpen(false);
+        setLocating(false);
+      },
+      () => { setError("Location permission was not granted."); setLocating(false); },
       { timeout: 10_000, maximumAge: 300_000 },
     );
   };
 
+  const changeUnit = (nextUnit: WeatherUnit) => {
+    if (nextUnit === unit) return;
+    setWeather(null);
+    setUnit(nextUnit);
+  };
+
+  const today = weather?.daily[0];
+  const peakRain = weather ? Math.max(...weather.hourly.map((hour) => hour.precipitation)) : 0;
+  const theme = weatherTheme(weather?.code ?? 0, weather?.isDay ?? true);
+
   return (
     <div
-      className={`weather-app weather-code-${weather?.code ?? 0} ${weather?.isDay === false ? "weather-night" : "weather-day"}`}
+      className={`weather-app ${theme} ${pickerOpen ? "weather-picker-open" : ""}`}
       style={{ "--weather-rx": `${tilt.y}deg`, "--weather-ry": `${tilt.x}deg` } as CSSProperties}
-      onPointerMove={(event) => { const bounds = event.currentTarget.getBoundingClientRect(); setTilt({ x: ((event.clientX - bounds.left) / bounds.width - .5) * 9, y: -((event.clientY - bounds.top) / bounds.height - .5) * 7 }); }}
+      onPointerMove={(event) => { if (event.pointerType === "touch") return; const bounds = event.currentTarget.getBoundingClientRect(); setTilt({ x: ((event.clientX - bounds.left) / bounds.width - .5) * 7, y: -((event.clientY - bounds.top) / bounds.height - .5) * 5 }); }}
       onPointerLeave={() => setTilt({ x: 0, y: 0 })}
+      aria-busy={loading}
     >
       <WeatherScene code={weather?.code ?? 0} isDay={weather?.isDay ?? true} />
-      <button className="weather-location" onClick={useCurrentLocation}>◎ Use My Location</button>
-      <p>{weather?.location ?? "Updating"}</p>
-      <div className="weather-now"><i>{weatherSymbol(weather?.code ?? 0)}</i><strong>{weather ? `${Math.round(weather.temperature)}°` : "—"}</strong></div>
-      <span>{weather ? weatherLabel(weather.code) : "Loading live conditions"}</span>
-      {weather && <b>H:{Math.round(weather.high)}° &nbsp; L:{Math.round(weather.low)}°</b>}
-      <div className="weather-details">
-        <i>FEELS LIKE<br /><b>{weather ? `${Math.round(weather.apparent)}°` : "—"}</b></i>
-        <i>HUMIDITY<br /><b>{weather ? `${Math.round(weather.humidity)}%` : "—"}</b></i>
-        <i>WIND<br /><b>{weather ? `${Math.round(weather.wind)} mph` : "—"}</b></i>
-      </div>
-      <div className="weather-forecast">
-        {weather?.daily.map((day) => <i key={day.day}><strong>{day.day}</strong><em>{weatherSymbol(day.code)}</em><b>{Math.round(day.high)}°</b><span>{Math.round(day.low)}°</span></i>)}
-      </div>
-      {error && <small>{error}</small>}
+      <header className="weather-topbar">
+        <button className="weather-place-button" onClick={() => setPickerOpen(true)} aria-label="Choose weather location">
+          <strong>{weather?.place.name ?? place.name}</strong><span>{weather?.place.admin || weather?.place.country || "Live forecast"} ▾</span>
+        </button>
+        <div className="weather-actions">
+          <button onClick={() => changeUnit(unit === "fahrenheit" ? "celsius" : "fahrenheit")} aria-label={`Switch to degrees ${unit === "fahrenheit" ? "Celsius" : "Fahrenheit"}`}>°{unit === "fahrenheit" ? "F" : "C"}</button>
+          <button className={loading ? "is-loading" : ""} onClick={() => void loadWeather(place)} aria-label="Refresh weather">↻</button>
+        </div>
+      </header>
+
+      <section className="weather-hero" aria-label="Current weather">
+        <p>{weather ? weatherLabel(weather.code) : "Loading live conditions"}</p>
+        <div className="weather-temperature"><i>{weatherSymbol(weather?.code ?? 0, weather?.isDay ?? true)}</i><strong>{weather ? Math.round(weather.temperature) : "—"}<sup>°</sup></strong></div>
+        <span>{weather ? `Feels like ${Math.round(weather.apparent)}° · H:${Math.round(weather.high)}° L:${Math.round(weather.low)}°` : "Finding the sky above you…"}</span>
+        {weather && <small>{peakRain >= 30 ? `Rain chance peaks at ${peakRain}% in the next 12 hours.` : weatherNarrative(weather.code, weather.isDay)}</small>}
+      </section>
+
+      <section className="weather-glass-card weather-hourly-card" aria-label="Hourly forecast">
+        <header><strong>HOURLY</strong><span>{weather ? `Updated ${formatWeatherTime(weather.updatedAt)} ${weather.timezone}` : "Updating"}</span></header>
+        <div className="weather-hourly" role="list">
+          {weather?.hourly.map((hour, index) => (
+            <div key={hour.time} role="listitem">
+              <strong>{index === 0 ? "Now" : formatWeatherHour(hour.time)}</strong>
+              <i>{weatherSymbol(hour.code, hour.isDay)}</i>
+              <em>{hour.precipitation ? `${Math.round(hour.precipitation)}%` : ""}</em>
+              <b>{Math.round(hour.temperature)}°</b>
+            </div>
+          )) ?? Array.from({ length: 6 }, (_, index) => <div className="weather-skeleton" key={index} />)}
+        </div>
+      </section>
+
+      <section className="weather-glass-card weather-daily-card" aria-label="Seven day forecast">
+        <header><strong>7-DAY FORECAST</strong></header>
+        {weather?.daily.map((day) => (
+          <div className="weather-day-row" key={day.date}>
+            <strong>{day.day}</strong><i>{weatherSymbol(day.code, true)}</i><em>{day.precipitation ? `${Math.round(day.precipitation)}%` : ""}</em>
+            <span>{Math.round(day.low)}°</span><div><i style={{ "--low": `${Math.min(80, Math.max(4, day.low - weather.low + 8))}%`, "--high": `${Math.min(96, Math.max(22, day.high - weather.low + 38))}%` } as CSSProperties} /></div><b>{Math.round(day.high)}°</b>
+          </div>
+        ))}
+      </section>
+
+      <section className="weather-metrics" aria-label="Weather details">
+        <article><span>PRECIPITATION</span><strong>{weather ? `${Math.round(weather.precipitation * (unit === "fahrenheit" ? 100 : 10)) / (unit === "fahrenheit" ? 100 : 10)} ${unit === "fahrenheit" ? "in" : "mm"}` : "—"}</strong><small>Right now</small></article>
+        <article><span>HUMIDITY</span><strong>{weather ? `${Math.round(weather.humidity)}%` : "—"}</strong><small>{weather && weather.humidity > 70 ? "Air feels humid" : "Comfortable"}</small></article>
+        <article><span>WIND</span><strong>{weather ? `${windCompass(weather.windDirection)} ${Math.round(weather.wind)}` : "—"}</strong><small>{unit === "fahrenheit" ? "mph" : "km/h"}</small></article>
+        <article><span>VISIBILITY</span><strong>{weather ? formatVisibility(weather.visibility, unit) : "—"}</strong><small>{weather && weather.visibility > (unit === "fahrenheit" ? 32808 : 10000) ? "Perfectly clear" : "Reduced"}</small></article>
+        <article><span>PRESSURE</span><strong>{weather ? `${Math.round(weather.pressure)}` : "—"}</strong><small>hPa</small></article>
+        <article><span>UV INDEX</span><strong>{today ? `${Math.round(today.uv)}` : "—"}</strong><small>{today ? uvLabel(today.uv) : ""}</small></article>
+        <article className="weather-sun-card"><span>SUNRISE & SUNSET</span><div><i /><b /></div><strong>{today ? `${formatWeatherTime(today.sunrise)} — ${formatWeatherTime(today.sunset)}` : "—"}</strong></article>
+      </section>
+
+      {error && <div className="weather-error" role="status">{error}</div>}
+      <footer className="weather-credit">Forecast by Open-Meteo</footer>
+
+      {pickerOpen && (
+        <div className="weather-picker" role="dialog" aria-modal="true" aria-label="Choose a city">
+          <header><button onClick={() => setPickerOpen(false)}>Cancel</button><strong>Choose a City</strong><span /></header>
+          <form onSubmit={searchLocations}><input value={query} onChange={(event) => setQuery(event.target.value)} placeholder="City or postal code" aria-label="Search city" autoFocus /><button disabled={searching || query.trim().length < 2}>{searching ? "…" : "Search"}</button></form>
+          <button className="weather-current-location" onClick={useCurrentLocation} disabled={locating}><i>◎</i><span><strong>{locating ? "Finding you…" : "My Location"}</strong><small>Use this device’s location</small></span></button>
+          <div className="weather-search-results">
+            {results.map((result) => <button key={`${result.latitude}-${result.longitude}`} onClick={() => { setPlace(result); setPickerOpen(false); setQuery(""); setResults([]); }}><span><strong>{result.name}</strong><small>{[result.admin, result.country].filter(Boolean).join(", ")}</small></span><i>›</i></button>)}
+          </div>
+          {error && <p>{error}</p>}
+        </div>
+      )}
     </div>
   );
 }
 
 function WeatherScene({ code, isDay }: { code: number; isDay: boolean }) {
-  const precipitation = code >= 51 && code <= 82;
-  const snow = code >= 71 && code <= 77;
+  const precipitation = code >= 51;
+  const snow = (code >= 71 && code <= 77) || code === 85 || code === 86;
   const cloudy = code >= 1;
+  const thunder = code >= 95;
   return (
     <div className="weather-scene" aria-hidden="true">
       <div className="weather-atmosphere"><i /><i /><i /></div>
-      <div className="weather-orb"><i className="weather-orb-glass" /><i className="weather-orb-land" /><span /></div>
+      <div className="weather-horizon"><i /><i /><span /></div>
       <i className={isDay ? "weather-sun" : "weather-moon"} />
       {cloudy && <><i className="weather-cloud weather-cloud-one" /><i className="weather-cloud weather-cloud-two" /></>}
-      {precipitation && <div className={snow ? "weather-snow" : "weather-rain"}>{Array.from({ length: 16 }, (_, index) => <i key={index} style={{ "--drop": index } as CSSProperties} />)}</div>}
-      {!isDay && <div className="weather-stars">{Array.from({ length: 10 }, (_, index) => <i key={index} style={{ "--star": index } as CSSProperties} />)}</div>}
+      {precipitation && <div className={snow ? "weather-snow" : "weather-rain"}>{Array.from({ length: 26 }, (_, index) => <i key={index} style={{ "--drop": index } as CSSProperties} />)}</div>}
+      {thunder && <i className="weather-lightning" />}
+      {!isDay && <div className="weather-stars">{Array.from({ length: 18 }, (_, index) => <i key={index} style={{ "--star": index } as CSSProperties} />)}</div>}
       <span className="weather-haze" />
     </div>
   );
@@ -959,20 +1138,68 @@ function weatherLabel(code: number) {
   if (code === 0) return "Clear";
   if (code <= 3) return "Partly Cloudy";
   if (code <= 48) return "Foggy";
+  if (code === 71 || code === 73 || code === 75 || code === 77) return "Snow";
+  if (code === 85 || code === 86) return "Snow Showers";
   if (code <= 67) return "Rain";
-  if (code <= 77) return "Snow";
   if (code <= 82) return "Rain Showers";
   return "Thunderstorms";
 }
 
-function weatherSymbol(code: number) {
-  if (code === 0) return "☀";
-  if (code <= 3) return "☁";
+function weatherSymbol(code: number, isDay = true) {
+  if (code === 0) return isDay ? "☀" : "☾";
+  if (code <= 3) return isDay ? "☁" : "☁";
   if (code <= 48) return "≋";
   if (code <= 67) return "☂";
   if (code <= 77) return "✻";
   if (code <= 82) return "☂";
+  if (code === 85 || code === 86) return "✻";
   return "ϟ";
+}
+
+function weatherTheme(code: number, isDay: boolean) {
+  const time = isDay ? "weather-day" : "weather-night";
+  if (code >= 95) return `${time} weather-stormy`;
+  if ((code >= 71 && code <= 77) || code === 85 || code === 86) return `${time} weather-snowy`;
+  if (code >= 51) return `${time} weather-rainy`;
+  if (code === 45 || code === 48) return `${time} weather-foggy`;
+  if (code >= 2) return `${time} weather-cloudy`;
+  return `${time} weather-clear`;
+}
+
+function weatherNarrative(code: number, isDay: boolean) {
+  if (code === 0) return isDay ? "Clear skies for the next few hours." : "A clear, quiet night ahead.";
+  if (code <= 3) return "Clouds drifting through, with calm conditions.";
+  if (code <= 48) return "Low visibility—take it easy out there.";
+  if ((code >= 71 && code <= 77) || code === 85 || code === 86) return "Snow is shaping the hours ahead.";
+  if (code <= 67 || code <= 82) return "Keep an umbrella close.";
+  return "Storm cells are nearby. Stay aware.";
+}
+
+function formatWeatherHour(value: string) {
+  const hour = Number(value.slice(11, 13));
+  if (hour === 0) return "12 AM";
+  if (hour === 12) return "12 PM";
+  return `${hour % 12} ${hour < 12 ? "AM" : "PM"}`;
+}
+
+function formatWeatherTime(value: string) {
+  if (!value || !value.includes("T")) return "—";
+  return formatWeatherHour(value);
+}
+
+function windCompass(degrees: number) {
+  return ["N", "NE", "E", "SE", "S", "SW", "W", "NW"][Math.round(degrees / 45) % 8];
+}
+
+function formatVisibility(value: number, unit: WeatherUnit) {
+  return unit === "fahrenheit" ? `${Math.round(value / 528) / 10} mi` : `${Math.round(value / 100) / 10} km`;
+}
+
+function uvLabel(value: number) {
+  if (value < 3) return "Low";
+  if (value < 6) return "Moderate";
+  if (value < 8) return "High";
+  return "Very high";
 }
 
 function ClockApp({ time }: { time: string }) {
