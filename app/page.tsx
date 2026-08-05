@@ -6,6 +6,7 @@ export default function Home() {
       <div className="ambient ambient-one" />
       <div className="ambient ambient-two" />
       <PhoneExperience />
+      <p className="heart-note">Welcome to my heart. Have fun. <span>— Tian Xing</span></p>
     </main>
   );
 }
