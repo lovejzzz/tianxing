@@ -8,6 +8,7 @@ import type { CSSProperties, FocusEvent as ReactFocusEvent, FormEvent, KeyboardE
 import { projects } from "../projects";
 import { portfolioPhotos } from "../photoManifest";
 import { AppIcon } from "./AppIcon";
+import { Phone3DIntro } from "./Phone3DIntro";
 
 type NativeApp =
   | "messages"
@@ -353,8 +354,8 @@ export function PhoneExperience() {
       } as CSSProperties}
       aria-label="Interactive iPhone portfolio"
     >
+      <Phone3DIntro />
       <div className="phone-product">
-        <span className="phone-spine" aria-hidden="true" />
         <div className="phone-back" aria-hidden="true">
           <span className="back-camera" />
           <span className="back-flash" />
