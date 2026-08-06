@@ -138,12 +138,13 @@ test("keeps the iPhone interactive and time-aware", async () => {
   assert.match(phone3dSource, /linerGeometry/);
   assert.match(phone3dSource, /displayGasket = new THREE\.MeshBasicMaterial/);
   assert.match(phone3dSource, /new THREE\.Mesh\(linerGeometry, displayGasket\)/);
-  assert.match(phone3dSource, /createIntroScreenTexture/);
-  assert.match(phone3dSource, /new THREE\.PlaneGeometry\(SCREEN_WIDTH \* 1\.035, SCREEN_HEIGHT \* 1\.012\)/);
-  assert.match(phone3dSource, /product\.style\.visibility = hasCompleted \|\| domHandoff > 0 \? "visible" : "hidden"/);
-  assert.match(phone3dSource, /transparent: true, opacity: 1/);
-  assert.match(phone3dSource, /introDisplayMaterial\.opacity = 1 - domHandoff/);
-  assert.match(phone3dSource, /introDisplay\.visible = false/);
+  // The rotating model and the resting phone now share the live DOM screen.
+  // This removes the old canvas-texture crossfade (and its one-frame wallpaper/icon jump).
+  assert.doesNotMatch(phone3dSource, /createIntroScreenTexture/);
+  assert.doesNotMatch(phone3dSource, /introDisplayMaterial/);
+  assert.doesNotMatch(phone3dSource, /domHandoff/);
+  assert.match(phone3dSource, /product\.style\.visibility = "visible"/);
+  assert.match(phone3dSource, /DOM front has backface-visibility:hidden/);
   assert.match(phone3dSource, /new THREE\.ShapeGeometry\(faceShape/);
   assert.match(phone3dSource, /faceShape\.holes/);
   assert.match(phone3dSource, /SCREEN_COMPOSITE_Z = GLASS_Z \+ 0\.004/);
@@ -153,6 +154,10 @@ test("keeps the iPhone interactive and time-aware", async () => {
   assert.match(phone3dSource, /delete document\.documentElement\.dataset\.phoneIntro/);
   assert.doesNotMatch(phone3dSource, /sessionStorage/);
   assert.doesNotMatch(phone3dSource, /host\.style\.visibility = "hidden"/);
+  assert.match(source, /folder-portal-body/);
+  assert.match(source, /--launch-body-scale-y/);
+  assert.match(styles, /fun-body-shared-close/);
+  assert.match(styles, /fun-chrome-stay-close/);
   assert.doesNotMatch(source, /phone-edge edge-left/);
   assert.doesNotMatch(source, /phone-spine/);
   assert.doesNotMatch(styles, /@keyframes phone-product-flip/);

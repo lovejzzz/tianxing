@@ -177,6 +177,7 @@ type Origin = {
   height: number;
   scaleX: number;
   scaleY: number;
+  bodyScaleY: number;
 };
 type MessageBubble = {
   id: string;
@@ -202,7 +203,7 @@ export function PhoneExperience() {
   const [immersiveShift, setImmersiveShift] = useState(0);
   const [activeApp, setActiveApp] = useState<NativeApp | null>(null);
   const [closing, setClosing] = useState(false);
-  const [origin, setOrigin] = useState<Origin>({ x: 50, y: 58, left: 134, top: 260, width: 64, height: 64, scaleX: .16, scaleY: .09 });
+  const [origin, setOrigin] = useState<Origin>({ x: 50, y: 58, left: 134, top: 260, width: 64, height: 64, scaleX: .16, scaleY: .09, bodyScaleY: .1 });
   const [launchFromIcon, setLaunchFromIcon] = useState(false);
   const [motionInspectionMs, setMotionInspectionMs] = useState<number | null>(null);
   const [arrivalInspectionMs, setArrivalInspectionMs] = useState<number | null>(null);
@@ -322,6 +323,7 @@ export function PhoneExperience() {
       height,
       scaleX: width / layerWidth,
       scaleY: height / layerHeight,
+      bodyScaleY: height / Math.max(1, layerHeight - 49),
     });
     return true;
   };
@@ -426,6 +428,7 @@ export function PhoneExperience() {
                   "--launch-height": `${origin.height}px`,
                   "--launch-scale-x": origin.scaleX,
                   "--launch-scale-y": origin.scaleY,
+                  "--launch-body-scale-y": origin.bodyScaleY,
                 } as CSSProperties}
               >
                 {mode === "folder" && <FolderView onGoHome={goHome} />}
@@ -468,7 +471,7 @@ function FolderView({ onGoHome }: { onGoHome: () => void }) {
   return (
     <div className="folder-screen">
       <div className="fun-icon-shell" aria-hidden="true">
-        <FunShelf />
+        <span className="system-app-icon sys-folder fun-portal-icon"><FunShelf compact /></span>
       </div>
       <div className="fun-dolly" aria-hidden="true"><i /><i /><i /><i /></div>
       <div className="folder-content">
@@ -477,19 +480,21 @@ function FolderView({ onGoHome }: { onGoHome: () => void }) {
           <strong>Fun</strong>
         </div>
 
-        <nav className="app-grid" aria-label="Selected projects">
-          {projects.map((project, index) => (
-            <Link
-              className="app-link"
-              href={`/projects/${project.slug}`}
-              key={project.slug}
-              style={{ "--delay": `${index * 32}ms` } as CSSProperties}
-            >
-              <AppIcon project={project} />
-              <span className="app-name">{project.shortTitle}</span>
-            </Link>
-          ))}
-        </nav>
+        <div className="folder-portal-body">
+          <nav className="app-grid" aria-label="Selected projects">
+            {projects.map((project, index) => (
+              <Link
+                className="app-link"
+                href={`/projects/${project.slug}`}
+                key={project.slug}
+                style={{ "--delay": `${index * 24}ms` } as CSSProperties}
+              >
+                <AppIcon project={project} />
+                <span className="app-name">{project.shortTitle}</span>
+              </Link>
+            ))}
+          </nav>
+        </div>
       </div>
     </div>
   );
