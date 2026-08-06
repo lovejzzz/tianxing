@@ -196,6 +196,7 @@ type NoteDocument = {
 };
 
 export function PhoneExperience() {
+  const phoneProductRef = useRef<HTMLDivElement>(null);
   const [mode, setMode] = useState<"folder" | "home" | "native">("folder");
   const [immersive, setImmersive] = useState(false);
   const [immersiveShift, setImmersiveShift] = useState(0);
@@ -354,8 +355,8 @@ export function PhoneExperience() {
       } as CSSProperties}
       aria-label="Interactive iPhone portfolio"
     >
-      <Phone3DIntro />
-      <div className="phone-product">
+      <Phone3DIntro productRef={phoneProductRef} />
+      <div className="phone-product" ref={phoneProductRef}>
         <div className="phone-back" aria-hidden="true">
           <span className="back-camera" />
           <span className="back-flash" />

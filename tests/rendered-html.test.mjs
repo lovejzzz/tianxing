@@ -46,6 +46,7 @@ test("embeds playable projects and full-resolution screenshots", async () => {
 
 test("keeps the iPhone interactive and time-aware", async () => {
   const source = await readFile(new URL("../app/components/PhoneExperience.tsx", import.meta.url), "utf8");
+  const phone3dSource = await readFile(new URL("../app/components/Phone3DIntro.tsx", import.meta.url), "utf8");
   const styles = await readFile(new URL("../app/globals.css", import.meta.url), "utf8");
   const photoManifest = await readFile(new URL("../app/photoManifest.ts", import.meta.url), "utf8");
   const projectSource = await readFile(new URL("../app/projects.ts", import.meta.url), "utf8");
@@ -123,7 +124,11 @@ test("keeps the iPhone interactive and time-aware", async () => {
   assert.match(source, /shouldReturnToFunIcon/);
   assert.match(source, /className="phone-product"/);
   assert.match(source, /className="phone-back"/);
-  assert.match(source, /<Phone3DIntro \/>/);
+  assert.match(source, /<Phone3DIntro productRef=\{phoneProductRef\} \/>/);
+  assert.match(source, /ref=\{phoneProductRef\}/);
+  assert.match(phone3dSource, /true transparent aperture/);
+  assert.match(phone3dSource, /product\.style\.transform/);
+  assert.doesNotMatch(phone3dSource, /host\.style\.visibility = "hidden"/);
   assert.doesNotMatch(source, /phone-edge edge-left/);
   assert.doesNotMatch(source, /phone-spine/);
   assert.doesNotMatch(styles, /@keyframes phone-product-flip/);
