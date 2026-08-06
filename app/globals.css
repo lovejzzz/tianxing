@@ -1180,7 +1180,7 @@ body:has(.home-shell){overflow:hidden}
     height:30px;
     min-width:52px;
     display:block;
-    padding:0 9px 0 13px;
+    padding:0 9px;
     border:1px solid #20394d;
     border-radius:6px;
     color:#fff;
@@ -1189,20 +1189,7 @@ body:has(.home-shell){overflow:hidden}
     font:700 11px/28px Helvetica,Arial,sans-serif;
     text-shadow:0 -1px #193247;
   }
-  .mobile-home-nav::before {
-    content:"";
-    position:absolute;
-    left:-5px;
-    top:6px;
-    width:16px;
-    height:16px;
-    border-left:1px solid #20394d;
-    border-bottom:1px solid #20394d;
-    border-radius:3px;
-    background:linear-gradient(135deg,#708ba0 0 48%,#36566f 52%);
-    transform:rotate(45deg);
-    z-index:-1;
-  }
+  .mobile-home-nav::before { content:none; }
   .mobile-home-nav:active { filter:brightness(.78); }
   .work-titlebar .mini-mark { visibility:hidden; }
   .native-content { padding-bottom:env(safe-area-inset-bottom); }
