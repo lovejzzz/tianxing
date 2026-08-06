@@ -373,7 +373,16 @@ export function Phone3DIntro({ productRef }: { productRef: RefObject<HTMLDivElem
       ownedTextures.push(backMarkTexture);
       const backMark = new THREE.Mesh(
         new THREE.PlaneGeometry(0.94, 0.35),
-        new THREE.MeshBasicMaterial({ map: backMarkTexture, transparent: true, opacity: 0.2, depthWrite: false }),
+        new THREE.MeshStandardMaterial({
+          map: backMarkTexture,
+          color: 0xd4d9dc,
+          metalness: 0.8,
+          roughness: 0.3,
+          envMapIntensity: 0.85,
+          transparent: true,
+          opacity: 0.32,
+          depthWrite: false,
+        }),
       );
       backMark.position.set(0, -0.15, GLASS_Z + 0.008);
       rearGroup.add(backMark);
