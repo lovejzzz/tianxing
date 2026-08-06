@@ -1037,7 +1037,7 @@ body:has(.home-shell){overflow:hidden}
     transform:none;
     transform-origin:50% 50%;
     will-change:transform,border-radius;
-    animation:mobile-phone-arrival 2500ms linear both;
+    animation:mobile-phone-arrival 3000ms linear both;
   }
   .phone-product > .device {
     display:block;
@@ -1049,7 +1049,7 @@ body:has(.home-shell){overflow:hidden}
     border-radius:58px;
     pointer-events:none;
     opacity:0;
-    animation:mobile-frame-dissolve 2500ms linear both;
+    animation:mobile-frame-dissolve 3000ms linear both;
   }
   .phone-product > .device::before { inset:5px; border-radius:53px; }
   .phone-product > .device::after { border-radius:57px; }
@@ -1066,7 +1066,7 @@ body:has(.home-shell){overflow:hidden}
       linear-gradient(112deg,transparent 28%,rgba(255,255,255,.16) 46%,rgba(132,190,222,.06) 53%,transparent 67%);
     mix-blend-mode:screen;
     opacity:0;
-    animation:mobile-glass-awaken 2500ms linear both;
+    animation:mobile-glass-awaken 3000ms linear both;
   }
   .is-mobile-arrival-inspection .phone-product,
   .is-mobile-arrival-inspection .phone-product > .device,
@@ -1093,7 +1093,7 @@ body:has(.home-shell){overflow:hidden}
     background:linear-gradient(105deg,#050505,#161719 45%,#020202 78%);
     box-shadow:inset 0 0 0 2px rgba(255,255,255,.06),inset 0 0 16px #000,0 0 0 1px rgba(238,240,241,.4),0 2px 3px rgba(255,255,255,.12);
     will-change:filter;
-    animation:mobile-screen-exposure 2500ms linear both,mobile-screen-fit 2500ms linear both;
+    animation:mobile-screen-exposure 3000ms linear both,mobile-screen-fit 3000ms linear both;
   }
   .phone::after,
   .phone::before { display:none; }
@@ -1101,7 +1101,7 @@ body:has(.home-shell){overflow:hidden}
   .phone>.home-button {
     display:block;
     pointer-events:none;
-    animation:mobile-hardware-controls 2500ms linear both;
+    animation:mobile-hardware-controls 3000ms linear both;
   }
   .phone .screen {
     width:100%;
@@ -1172,27 +1172,29 @@ body:has(.home-shell){overflow:hidden}
 
   @keyframes mobile-phone-arrival {
     0% { pointer-events:none; border-radius:54px; transform:scale(.44) translateZ(0); }
-    12% { border-radius:54px; transform:scale(.455) translateZ(0); }
-    28% { border-radius:52px; transform:scale(.51) translateZ(0); }
-    45% { border-radius:47px; transform:scale(.61) translateZ(0); }
-    61% { border-radius:39px; transform:scale(.735) translateZ(0); }
-    75% { border-radius:28px; transform:scale(.855) translateZ(0); }
-    88% { border-radius:13px; transform:scale(.955) translateZ(0); }
+    10% { border-radius:54px; transform:scale(.455) translateZ(0); }
+    23.333% { border-radius:52px; transform:scale(.51) translateZ(0); }
+    37.5% { border-radius:47px; transform:scale(.61) translateZ(0); }
+    50% { border-radius:40px; transform:scale(.728) translateZ(0); }
+    60% { border-radius:34px; transform:scale(.809) translateZ(0); }
+    70% { border-radius:27px; transform:scale(.878) translateZ(0); }
+    80% { border-radius:18px; transform:scale(.933) translateZ(0); }
+    90% { border-radius:9px; transform:scale(.975) translateZ(0); }
     100% { pointer-events:auto; border-radius:0; transform:scale(1) translateZ(0); }
   }
   @keyframes mobile-screen-exposure {
     0% { filter:brightness(.008) contrast(.72) saturate(.28) blur(1.5px); }
-    13% { filter:brightness(.016) contrast(.76) saturate(.32) blur(1.25px); }
-    29% { filter:brightness(.045) contrast(.84) saturate(.4) blur(1px); }
-    45% { filter:brightness(.12) contrast(.94) saturate(.54) blur(.72px); }
-    59% { filter:brightness(.27) contrast(1.04) saturate(.68) blur(.45px); }
-    71% { filter:brightness(.49) contrast(1.09) saturate(.8) blur(.24px); }
-    82% { filter:brightness(.7) contrast(1.07) saturate(.89) blur(.1px); }
-    91% { filter:brightness(.89) contrast(1.03) saturate(.96) blur(0); }
+    10.833% { filter:brightness(.016) contrast(.76) saturate(.32) blur(1.25px); }
+    24.167% { filter:brightness(.045) contrast(.84) saturate(.4) blur(1px); }
+    37.5% { filter:brightness(.12) contrast(.94) saturate(.54) blur(.72px); }
+    49.167% { filter:brightness(.27) contrast(1.04) saturate(.68) blur(.45px); }
+    59.167% { filter:brightness(.49) contrast(1.09) saturate(.8) blur(.24px); }
+    68.333% { filter:brightness(.7) contrast(1.07) saturate(.89) blur(.1px); }
+    75.833% { filter:brightness(.89) contrast(1.03) saturate(.96) blur(0); }
     100% { filter:brightness(1) contrast(1) saturate(1) blur(0); }
   }
 @keyframes mobile-screen-fit {
-  0%,62% {
+  0%,35% {
     left:calc(50% - (var(--mobile-hardware-width) - 12px) / 2);
     top:calc(50% - (var(--mobile-hardware-height) - 12px) / 2);
     width:calc(var(--mobile-hardware-width) - 12px);
@@ -1201,42 +1203,79 @@ body:has(.home-shell){overflow:hidden}
     border-width:1px;
     border-radius:54px;
   }
-  76% {
-    left:4px;
-    top:4px;
-    width:calc(100% - 8px);
-    height:calc(100% - 8px);
-    padding:13px 3px 14px;
+  40% {
+    left:calc(49.5% - (var(--mobile-hardware-width) - 12px) * .495);
+    top:calc(49.5% - (var(--mobile-hardware-height) - 12px) * .495);
+    width:calc((var(--mobile-hardware-width) - 12px) * .99 + 1%);
+    height:calc((var(--mobile-hardware-height) - 12px) * .99 + 1%);
+    padding:calc(var(--mobile-hardware-width) * .17919) calc(var(--mobile-hardware-width) * .03663) calc(var(--mobile-hardware-width) * .1881);
     border-width:1px;
-    border-radius:27px;
+    border-radius:54px;
   }
-  88% {
-    left:1px;
-    top:1px;
-    width:calc(100% - 2px);
-    height:calc(100% - 2px);
-    padding:2px 0 3px;
+  50% {
+    left:calc(47% - (var(--mobile-hardware-width) - 12px) * .47);
+    top:calc(47% - (var(--mobile-hardware-height) - 12px) * .47);
+    width:calc((var(--mobile-hardware-width) - 12px) * .94 + 6%);
+    height:calc((var(--mobile-hardware-height) - 12px) * .94 + 6%);
+    padding:calc(var(--mobile-hardware-width) * .17014) calc(var(--mobile-hardware-width) * .03478) calc(var(--mobile-hardware-width) * .1786);
+    border-width:1px;
+    border-radius:53px;
+  }
+  60% {
+    left:calc(40% - (var(--mobile-hardware-width) - 12px) * .4);
+    top:calc(40% - (var(--mobile-hardware-height) - 12px) * .4);
+    width:calc((var(--mobile-hardware-width) - 12px) * .8 + 20%);
+    height:calc((var(--mobile-hardware-height) - 12px) * .8 + 20%);
+    padding:calc(var(--mobile-hardware-width) * .1448) calc(var(--mobile-hardware-width) * .0296) calc(var(--mobile-hardware-width) * .152);
+    border-width:1px;
+    border-radius:49px;
+  }
+  70% {
+    left:calc(30% - (var(--mobile-hardware-width) - 12px) * .3);
+    top:calc(30% - (var(--mobile-hardware-height) - 12px) * .3);
+    width:calc((var(--mobile-hardware-width) - 12px) * .6 + 40%);
+    height:calc((var(--mobile-hardware-height) - 12px) * .6 + 40%);
+    padding:calc(var(--mobile-hardware-width) * .1086) calc(var(--mobile-hardware-width) * .0222) calc(var(--mobile-hardware-width) * .114);
+    border-width:1px;
+    border-radius:42px;
+  }
+  80% {
+    left:calc(19% - (var(--mobile-hardware-width) - 12px) * .19);
+    top:calc(19% - (var(--mobile-hardware-height) - 12px) * .19);
+    width:calc((var(--mobile-hardware-width) - 12px) * .38 + 62%);
+    height:calc((var(--mobile-hardware-height) - 12px) * .38 + 62%);
+    padding:calc(var(--mobile-hardware-width) * .06878) calc(var(--mobile-hardware-width) * .01406) calc(var(--mobile-hardware-width) * .0722);
+    border-width:1px;
+    border-radius:31px;
+  }
+  90% {
+    left:calc(8.5% - (var(--mobile-hardware-width) - 12px) * .085);
+    top:calc(8.5% - (var(--mobile-hardware-height) - 12px) * .085);
+    width:calc((var(--mobile-hardware-width) - 12px) * .17 + 83%);
+    height:calc((var(--mobile-hardware-height) - 12px) * .17 + 83%);
+    padding:calc(var(--mobile-hardware-width) * .03077) calc(var(--mobile-hardware-width) * .00629) calc(var(--mobile-hardware-width) * .0323);
     border-width:0;
-    border-radius:11px;
+    border-radius:16px;
   }
   100% { left:0; top:0; width:100%; height:100%; padding:0; border-width:0; border-radius:0; background:#000; box-shadow:none; }
 }
-@keyframes mobile-hardware-controls { 0%,62%{opacity:1}68%{opacity:.3}72%,100%{opacity:0} }
+@keyframes mobile-hardware-controls { 0%,45%{opacity:1}60%{opacity:.8}72%{opacity:.42}84%{opacity:.12}92%,100%{opacity:0} }
   @keyframes mobile-frame-dissolve {
     0% { opacity:.14; filter:brightness(.36); }
-    18% { opacity:.3; filter:brightness(.52); }
-    42% { opacity:.66; filter:brightness(.75); }
-    62% { opacity:.92; filter:brightness(.98); }
-    76% { opacity:.56; filter:brightness(1.08); }
-    84% { opacity:.16; filter:brightness(1.04); }
-    88% { opacity:0; filter:brightness(1.02); }
+    15% { opacity:.3; filter:brightness(.52); }
+    35% { opacity:.66; filter:brightness(.75); }
+    46.667% { opacity:.92; filter:brightness(.98); }
+    56.667% { opacity:.82; filter:brightness(1.04); }
+    65% { opacity:.61; filter:brightness(1.08); }
+    73.333% { opacity:.3; filter:brightness(1.06); }
+    78.333% { opacity:.08; filter:brightness(1.03); }
     100% { opacity:0; filter:brightness(1); }
   }
   @keyframes mobile-glass-awaken {
-    0%,28% { opacity:0; transform:translateX(-8%); }
-    49% { opacity:.07; }
-    68% { opacity:.22; transform:translateX(0); }
-    84% { opacity:.08; transform:translateX(3%); }
+    0%,23.333% { opacity:0; transform:translateX(-8%); }
+    40.833% { opacity:.07; }
+    56.667% { opacity:.22; transform:translateX(0); }
+    70% { opacity:.08; transform:translateX(3%); }
     100% { opacity:0; transform:translateX(4%); }
   }
 

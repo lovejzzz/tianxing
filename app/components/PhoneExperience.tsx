@@ -259,7 +259,7 @@ export function PhoneExperience() {
       }
       if (arrivalValue !== null) {
         const requestedFrame = Number(arrivalValue);
-        if (Number.isFinite(requestedFrame)) setArrivalInspectionMs(Math.max(0, Math.min(2500, requestedFrame)));
+        if (Number.isFinite(requestedFrame)) setArrivalInspectionMs(Math.max(0, Math.min(3000, requestedFrame)));
       }
     }, 0);
     return () => window.clearTimeout(timer);
