@@ -249,6 +249,10 @@ export function Phone3DIntro({ productRef }: { productRef: RefObject<HTMLDivElem
     // the live Vite build. Highlights belong to the clear screen layer and the
     // stainless rim; letting PMREM light this broad face made it read as gray.
     const frontGlass = new THREE.MeshBasicMaterial({ color: 0x010203 });
+    // The display gasket sits beneath the cover glass, outside the illuminated
+    // studio volume. Keep it optically black so an oblique view reads as one
+    // continuous bezel instead of a diffuse gray vertical strip.
+    const displayGasket = new THREE.MeshBasicMaterial({ color: 0x010203 });
     const matteBlack = new THREE.MeshStandardMaterial({ color: 0x040506, metalness: 0.1, roughness: 0.42 });
     const glassEdge = new THREE.MeshStandardMaterial({ color: 0x05070a, metalness: 0.1, roughness: 0.6 });
     const breakPlastic = new THREE.MeshStandardMaterial({ color: 0x141619, metalness: 0.05, roughness: 0.52 });
@@ -284,7 +288,7 @@ export function Phone3DIntro({ productRef }: { productRef: RefObject<HTMLDivElem
       curveSegments: 52,
     });
     linerGeometry.translate(0, 0, -(BAND_DEPTH - 0.12) / 2);
-    phone.add(new THREE.Mesh(linerGeometry, matteBlack));
+    phone.add(new THREE.Mesh(linerGeometry, displayGasket));
 
     // Antenna break lines, GSM layout: one up top, two low on the sides.
     const breakTop = new THREE.Mesh(new RoundedBoxGeometry(0.04, 0.13, 0.55, 2, 0.012), breakPlastic);

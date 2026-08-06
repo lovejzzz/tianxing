@@ -135,6 +135,8 @@ test("keeps the iPhone interactive and time-aware", async () => {
   assert.match(phone3dSource, /zero-depth rounded glass face/i);
   assert.match(phone3dSource, /black structural liner/);
   assert.match(phone3dSource, /linerGeometry/);
+  assert.match(phone3dSource, /displayGasket = new THREE\.MeshBasicMaterial/);
+  assert.match(phone3dSource, /new THREE\.Mesh\(linerGeometry, displayGasket\)/);
   assert.match(phone3dSource, /new THREE\.ShapeGeometry\(faceShape/);
   assert.match(phone3dSource, /faceShape\.holes/);
   assert.match(phone3dSource, /SCREEN_COMPOSITE_Z = GLASS_Z \+ 0\.004/);
