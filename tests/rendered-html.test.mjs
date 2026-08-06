@@ -20,12 +20,10 @@ test("renders the finished portfolio home", async () => {
   assert.match(html, /Welcome to my heart\. Have fun\./);
   assert.match(html, /Welcome to my heart\.<\/span><span[^>]*>Have fun\./);
   assert.match(html, /— Tian Xing/);
-  const introGuard = html.indexOf(".phone-intro-pending .phone-product{position:relative!important");
+  const introGuard = html.indexOf("html.phone-intro-pending{background:#020305!important}");
   const phoneMarkup = html.indexOf('class="phone-product"');
-  assert.ok(introGuard >= 0 && phoneMarkup > introGuard, "the pre-paint phone placeholder must arrive before the phone markup");
-  assert.match(html, /phone-intro-pending \.phone-product>\*:not\(\.phone-back\)\{visibility:hidden!important\}/);
-  assert.match(html, /phone-intro-pending \.phone-product>\.phone-back\{position:absolute!important/);
-  assert.match(html, /radial-gradient\(circle at 28% 16%/);
+  assert.ok(introGuard >= 0 && phoneMarkup > introGuard, "the pre-paint dark-field guard must arrive before the phone markup");
+  assert.match(html, /html\.phone-intro-pending body\{visibility:hidden!important\}/);
   assert.match(html, /dataset\.phoneIntro = 'pending'/);
   assert.doesNotMatch(html, /tian-phone-intro-played/);
   assert.doesNotMatch(html, /Portfolio · Edition 01|Selected work|2024—2026|Tian Xing delivers|Designed &amp; built by Tian Xing|New York/i);
@@ -134,11 +132,11 @@ test("keeps the iPhone interactive and time-aware", async () => {
   assert.match(source, /className="phone-back"/);
   assert.match(source, /<Phone3DIntro productRef=\{phoneProductRef\} \/>/);
   assert.match(source, /ref=\{phoneProductRef\}/);
-  assert.match(phone3dSource, /zero-depth surface/);
+  assert.match(phone3dSource, /zero-depth rounded glass face/i);
   assert.match(phone3dSource, /black structural liner/);
   assert.match(phone3dSource, /linerGeometry/);
   assert.match(phone3dSource, /new THREE\.ShapeGeometry\(faceShape/);
-  assert.doesNotMatch(phone3dSource, /new THREE\.ExtrudeGeometry\(faceShape/);
+  assert.match(phone3dSource, /faceShape\.holes/);
   assert.match(phone3dSource, /SCREEN_COMPOSITE_Z = GLASS_Z \+ 0\.004/);
   assert.match(phone3dSource, /new THREE\.MeshBasicMaterial\(\{ color: 0x010203 \}\)/);
   assert.match(phone3dSource, /product\.style\.transform/);
@@ -150,7 +148,7 @@ test("keeps the iPhone interactive and time-aware", async () => {
   assert.doesNotMatch(source, /phone-spine/);
   assert.doesNotMatch(styles, /@keyframes phone-product-flip/);
   assert.match(styles, /phone-3d-ready:not\(\.phone-3d-complete\) \.phone-product/);
-  assert.match(styles, /phone-3d-ready:not\(\.phone-3d-complete\) \.phone-product>\.phone::before/);
+  assert.match(styles, /phone-product>\.phone:has\(\.screen\.phone-mode-folder\)/);
   assert.match(styles, /water-drops\.png/);
   assert.match(styles, /transform:scale\(1\.035,1\.012\)/);
   assert.doesNotMatch(styles, /@keyframes phone-dom-handoff/);

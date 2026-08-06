@@ -297,10 +297,9 @@ export function Phone3DIntro({ productRef }: { productRef: RefObject<HTMLDivElem
     });
 
     // --- Front glass --------------------------------------------------------
-    // A flush black glass sheet with the screen cut clean through it. This is
-    // intentionally a zero-depth surface: an extruded aperture creates a lit
-    // inner wall at oblique angles and makes the Retina display look recessed.
-    // The live React screen is slightly oversized beneath this mask.
+    // A zero-depth rounded glass face masks the live Retina display. The phone
+    // plane beneath it now carries the same wallpaper for the full animation,
+    // so oblique views never expose a differently lit internal surface.
     const faceShape = traceRoundedRect(new THREE.Shape(), GLASS_WIDTH, GLASS_HEIGHT, GLASS_RADIUS);
     faceShape.holes.push(traceRoundedRect(new THREE.Path(), SCREEN_WIDTH, SCREEN_HEIGHT, 0.05));
     const frontGlassGeometry = new THREE.ShapeGeometry(faceShape, 52);
