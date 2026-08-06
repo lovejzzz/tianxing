@@ -218,13 +218,22 @@ export function Phone3DIntro({ productRef }: { productRef: RefObject<HTMLDivElem
       envMapIntensity: 0.88,
     });
     const steelButton = new THREE.MeshPhysicalMaterial({ color: 0xa0a6ab, metalness: 1, roughness: 0.34, envMapIntensity: 0.9 });
-    const glassBlack = new THREE.MeshPhysicalMaterial({
+    const backGlass = new THREE.MeshPhysicalMaterial({
       color: 0x000102,
       metalness: 0,
       roughness: 0.18,
       clearcoat: 0.42,
       clearcoatRoughness: 0.11,
       envMapIntensity: 0.18,
+    });
+    // The front bezel stays optically black in both the static Next build and
+    // the live Vite build. Highlights belong to the clear screen layer and the
+    // stainless rim; letting PMREM light this broad face made it read as gray.
+    const frontGlass = new THREE.MeshStandardMaterial({
+      color: 0x010203,
+      metalness: 0,
+      roughness: 0.72,
+      envMapIntensity: 0.035,
     });
     const matteBlack = new THREE.MeshStandardMaterial({ color: 0x040506, metalness: 0.1, roughness: 0.42 });
     const glassEdge = new THREE.MeshStandardMaterial({ color: 0x05070a, metalness: 0.1, roughness: 0.6 });
@@ -267,7 +276,7 @@ export function Phone3DIntro({ productRef }: { productRef: RefObject<HTMLDivElem
     const frontGlassGeometry = new THREE.ExtrudeGeometry(faceShape, { depth: 0.05, bevelEnabled: false, curveSegments: 52 });
     frontGlassGeometry.translate(0, 0, GLASS_Z - 0.05);
     // Material 1 covers the extrude walls, so the aperture cut reads as a dark glass edge.
-    phone.add(new THREE.Mesh(frontGlassGeometry, [glassBlack, glassEdge]));
+    phone.add(new THREE.Mesh(frontGlassGeometry, [frontGlass, glassEdge]));
 
     const screenGlass = new THREE.Mesh(
       new THREE.PlaneGeometry(SCREEN_WIDTH, SCREEN_HEIGHT),
@@ -313,7 +322,7 @@ export function Phone3DIntro({ productRef }: { productRef: RefObject<HTMLDivElem
     const homeSeam = new THREE.Mesh(new THREE.TorusGeometry(0.223, 0.007, 12, 48), matteBlack);
     homeSeam.position.set(0, -3.06, GLASS_Z + 0.001);
     phone.add(homeSeam);
-    const homeCap = new THREE.Mesh(new THREE.CylinderGeometry(0.218, 0.218, 0.018, 48), glassBlack);
+    const homeCap = new THREE.Mesh(new THREE.CylinderGeometry(0.218, 0.218, 0.018, 48), frontGlass);
     homeCap.rotation.x = Math.PI / 2;
     homeCap.position.set(0, -3.06, GLASS_Z + 0.002);
     phone.add(homeCap);
@@ -331,7 +340,7 @@ export function Phone3DIntro({ productRef }: { productRef: RefObject<HTMLDivElem
     const backShape = traceRoundedRect(new THREE.Shape(), GLASS_WIDTH, GLASS_HEIGHT, GLASS_RADIUS);
     const backGlassGeometry = new THREE.ExtrudeGeometry(backShape, { depth: 0.05, bevelEnabled: false, curveSegments: 52 });
     backGlassGeometry.translate(0, 0, GLASS_Z - 0.05);
-    rearGroup.add(new THREE.Mesh(backGlassGeometry, [glassBlack, glassEdge]));
+    rearGroup.add(new THREE.Mesh(backGlassGeometry, [backGlass, glassEdge]));
 
     // Camera at the top-left of the back, LED flash beside it.
     const cameraBase = new THREE.Mesh(new THREE.CylinderGeometry(0.175, 0.175, 0.014, 48), matteBlack);
