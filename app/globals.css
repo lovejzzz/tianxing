@@ -1955,11 +1955,11 @@ body:has(.home-shell){overflow:hidden}
 .fun-icon-shell{
   position:absolute;
   z-index:15;
+  inset:auto;
   left:var(--launch-x);
   top:var(--launch-y);
   width:var(--launch-width);
   height:var(--launch-height);
-  inset:auto;
   display:grid;
   place-items:center;
   overflow:visible;

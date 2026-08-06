@@ -158,6 +158,7 @@ test("keeps the iPhone interactive and time-aware", async () => {
   assert.match(source, /--launch-body-scale-y/);
   assert.match(styles, /fun-body-shared-close/);
   assert.match(styles, /fun-chrome-stay-close/);
+  assert.match(styles, /\.fun-icon-shell\{[\s\S]*?inset:auto;[\s\S]*?left:var\(--launch-x\);[\s\S]*?top:var\(--launch-y\)/);
   assert.doesNotMatch(source, /phone-edge edge-left/);
   assert.doesNotMatch(source, /phone-spine/);
   assert.doesNotMatch(styles, /@keyframes phone-product-flip/);
