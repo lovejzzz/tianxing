@@ -172,6 +172,8 @@ type Origin = {
   y: number;
   left: number;
   top: number;
+  width: number;
+  height: number;
   scaleX: number;
   scaleY: number;
 };
@@ -198,7 +200,7 @@ export function PhoneExperience() {
   const [immersiveShift, setImmersiveShift] = useState(0);
   const [activeApp, setActiveApp] = useState<NativeApp | null>(null);
   const [closing, setClosing] = useState(false);
-  const [origin, setOrigin] = useState<Origin>({ x: 50, y: 58, left: 134, top: 260, scaleX: .16, scaleY: .09 });
+  const [origin, setOrigin] = useState<Origin>({ x: 50, y: 58, left: 134, top: 260, width: 64, height: 64, scaleX: .16, scaleY: .09 });
   const [launchFromIcon, setLaunchFromIcon] = useState(false);
   const [motionInspectionMs, setMotionInspectionMs] = useState<number | null>(null);
   const [time, setTime] = useState("9:41 AM");
@@ -248,11 +250,11 @@ export function PhoneExperience() {
     if (requestedValue === null) return;
     const requestedFrame = Number(requestedValue);
     if (!Number.isFinite(requestedFrame)) return;
-    const timer = window.setTimeout(() => setMotionInspectionMs(Math.max(0, Math.min(760, requestedFrame))), 0);
+    const timer = window.setTimeout(() => setMotionInspectionMs(Math.max(0, Math.min(920, requestedFrame))), 0);
     return () => window.clearTimeout(timer);
   }, []);
 
-  const motionProgress = (motionInspectionMs ?? 0) / 760;
+  const motionProgress = (motionInspectionMs ?? 0) / 920;
 
   const saveCapture = (src: string) => {
     setCaptures((current) => {
@@ -291,6 +293,8 @@ export function PhoneExperience() {
       y: ((icon.top + icon.height / 2 - screen.top - layerTop) / layerHeight) * 100,
       left: icon.left - screen.left,
       top: icon.top - screen.top - layerTop,
+      width: icon.width,
+      height: icon.height,
       scaleX: icon.width / screen.width,
       scaleY: icon.height / layerHeight,
     });
@@ -337,7 +341,7 @@ export function PhoneExperience() {
       setActiveApp(null);
       setClosing(false);
       setLaunchFromIcon(false);
-    }, mode === "folder" && (launchFromIcon || shouldReturnToFunIcon) ? 560 : 390);
+    }, mode === "folder" && (launchFromIcon || shouldReturnToFunIcon) ? 620 : 390);
   };
 
   return (
@@ -350,6 +354,10 @@ export function PhoneExperience() {
       aria-label="Interactive iPhone portfolio"
     >
       <div className="phone-product">
+        <span className="phone-edge edge-left" aria-hidden="true" />
+        <span className="phone-edge edge-right" aria-hidden="true" />
+        <span className="phone-edge edge-top" aria-hidden="true" />
+        <span className="phone-edge edge-bottom" aria-hidden="true" />
         <div className="phone-back" aria-hidden="true">
           <span className="back-camera" />
           <span className="back-flash" />
@@ -392,6 +400,8 @@ export function PhoneExperience() {
                   "--origin-y": `${origin.y}%`,
                   "--launch-x": `${origin.left}px`,
                   "--launch-y": `${origin.top}px`,
+                  "--launch-width": `${origin.width}px`,
+                  "--launch-height": `${origin.height}px`,
                   "--launch-scale-x": origin.scaleX,
                   "--launch-scale-y": origin.scaleY,
                 } as CSSProperties}
@@ -436,29 +446,40 @@ function FolderView({ onGoHome }: { onGoHome: () => void }) {
   return (
     <div className="folder-screen">
       <div className="fun-icon-shell" aria-hidden="true">
-        <span>{projects.map((project) => <AppIcon project={project} key={project.slug} />)}</span>
+        <FunShelf />
       </div>
       <div className="fun-dolly" aria-hidden="true"><i /><i /><i /><i /></div>
-      <div className="screen-titlebar work-titlebar">
-        <span className="mini-mark">TX</span>
-        <button className="mobile-home-nav" type="button" onClick={onGoHome}>Home</button>
-        <strong>Fun</strong>
-      </div>
+      <div className="folder-content">
+        <div className="screen-titlebar work-titlebar">
+          <button className="mobile-home-nav" type="button" onClick={onGoHome}>Home</button>
+          <strong>Fun</strong>
+        </div>
 
-      <nav className="app-grid" aria-label="Selected projects">
-        {projects.map((project, index) => (
-          <Link
-            className="app-link"
-            href={`/projects/${project.slug}`}
-            key={project.slug}
-            style={{ "--delay": `${index * 32}ms` } as CSSProperties}
-          >
-            <AppIcon project={project} />
-            <span className="app-name">{project.shortTitle}</span>
-          </Link>
-        ))}
-      </nav>
+        <nav className="app-grid" aria-label="Selected projects">
+          {projects.map((project, index) => (
+            <Link
+              className="app-link"
+              href={`/projects/${project.slug}`}
+              key={project.slug}
+              style={{ "--delay": `${index * 32}ms` } as CSSProperties}
+            >
+              <AppIcon project={project} />
+              <span className="app-name">{project.shortTitle}</span>
+            </Link>
+          ))}
+        </nav>
+      </div>
     </div>
+  );
+}
+
+function FunShelf({ compact = false }: { compact?: boolean }) {
+  return (
+    <span className={`fun-shelf ${compact ? "is-compact" : ""}`}>
+      {projects.slice(0, 9).map((project) => (
+        <img src={`/art/work-icons/${project.slug}.png`} alt="" draggable={false} key={project.slug} />
+      ))}
+    </span>
   );
 }
 
@@ -504,7 +525,7 @@ function SystemAppIcon({ id, calendarDay, calendarWeekday }: {
   if (id === "folder") {
     return (
       <span className="system-app-icon sys-folder">
-        <i>{projects.slice(0, 9).map((project) => <AppIcon project={project} key={project.slug} />)}</i>
+        <FunShelf compact />
       </span>
     );
   }
@@ -666,7 +687,7 @@ function MessagesApp() {
     <form className="message-compose" onSubmit={submit}>
       <div className="message-thread" ref={threadRef} aria-label="Conversation with Tian">
         <div className="message-intro">
-          <i aria-hidden="true">TX</i>
+          <img src="/media/about/tian-xing-iphone4.jpg" alt="" aria-hidden="true" />
           <strong>Tian Xing</strong>
           <span>Your message goes straight to my email.</span>
         </div>
@@ -2204,7 +2225,7 @@ function MailApp() {
   return (
     <div className="mail-app contact-mail-app">
       <div className="mail-paper">
-        <span className="mail-stamp">TX</span>
+        <img className="mail-stamp" src="/media/about/tian-xing-iphone4.jpg" alt="" aria-hidden="true" />
         <p>CONTACT CARD</p><h2>Tian Xing</h2><small>New York · available for thoughtful collaborations</small>
         <a className="contact-line" href="mailto:xingpicture@gmail.com"><i className="mail-mini-icon">✉</i><span><b>Email</b>xingpicture@gmail.com</span><em>›</em></a>
         <a className="contact-line" href="https://www.instagram.com/xing_tian_lifeitself/" target="_blank" rel="noreferrer"><i className="instagram-icon"><b /></i><span><b>Instagram</b>@xing_tian_lifeitself</span><em>›</em></a>
@@ -2231,7 +2252,7 @@ function SafariApp({ onOpenWork }: { onOpenWork: () => void }) {
           <button onClick={shufflePortal}>Surprise me again</button>
         </div>
         <h2>Keep close</h2>
-        <button onClick={onOpenWork}><i className="bookmark-work">TX</i><span><b>Fun</b>Nine projects</span><em>›</em></button>
+        <button onClick={onOpenWork}><i className="bookmark-work"><FunShelf compact /></i><span><b>Fun</b>Nine projects</span><em>›</em></button>
         <a href="https://xingpicture.myportfolio.com" target="_blank" rel="noreferrer"><i className="bookmark-photo">▣</i><span><b>Photo</b>xingpicture.myportfolio.com</span><em>›</em></a>
       </section>
       <nav><span>‹</span><span>›</span><button onClick={shufflePortal} aria-label="New surprise">＋</button><span>▤</span></nav>
