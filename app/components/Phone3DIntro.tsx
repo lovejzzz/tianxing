@@ -283,13 +283,48 @@ function createIntroScreenTexture(renderer: THREE.WebGLRenderer, ownedTextures: 
       const x = centers[index % 3] - 32;
       const y = rows[Math.floor(index / 3)];
       if (image) {
+        // Paint the cast shadow before clipping the icon artwork. Previously
+        // the shadow was assigned inside the rounded clip, so every pixel
+        // outside the icon was discarded and the 3D handoff looked flatter
+        // than the live DOM icons.
         context.save();
-        context.shadowColor = "rgba(0,0,0,.65)";
-        context.shadowBlur = 5;
-        context.shadowOffsetY = 3;
+        context.shadowColor = "rgba(0,0,0,.9)";
+        context.shadowBlur = 4;
+        context.shadowOffsetY = 2;
+        context.fillStyle = "rgba(0,0,0,.88)";
+        roundedCanvasRect(context, x, y, 64, 64, 13);
+        context.fill();
+        context.restore();
+
+        context.save();
         roundedCanvasRect(context, x, y, 64, 64, 13);
         context.clip();
         context.drawImage(image, x, y, 64, 64);
+
+        const iconShade = context.createLinearGradient(0, y, 0, y + 64);
+        iconShade.addColorStop(0, "rgba(255,255,255,.08)");
+        iconShade.addColorStop(.58, "rgba(255,255,255,0)");
+        iconShade.addColorStop(1, "rgba(0,0,0,.25)");
+        context.fillStyle = iconShade;
+        context.fillRect(x, y, 64, 64);
+
+        const iconGloss = context.createLinearGradient(0, y, 0, y + 31);
+        iconGloss.addColorStop(0, "rgba(255,255,255,.5)");
+        iconGloss.addColorStop(1, "rgba(255,255,255,.035)");
+        context.fillStyle = iconGloss;
+        context.beginPath();
+        context.moveTo(x + 4, y + 2);
+        context.lineTo(x + 60, y + 2);
+        context.quadraticCurveTo(x + 61, y + 24, x + 32, y + 31);
+        context.quadraticCurveTo(x + 3, y + 24, x + 4, y + 2);
+        context.fill();
+        context.restore();
+
+        context.save();
+        context.strokeStyle = "rgba(5,5,5,.92)";
+        context.lineWidth = 1;
+        roundedCanvasRect(context, x + .5, y + .5, 63, 63, 12.5);
+        context.stroke();
         context.restore();
       }
       context.fillStyle = "#fff";
@@ -458,11 +493,15 @@ export function Phone3DIntro({ productRef }: { productRef: RefObject<HTMLDivElem
     const frontGlassMesh = new THREE.Mesh(frontGlassGeometry, frontGlass);
     frontGlassMesh.position.z = GLASS_Z;
     phone.add(frontGlassMesh);
-    const introDisplay = introScreenTexture
-      ? new THREE.Mesh(
-          new THREE.PlaneGeometry(SCREEN_WIDTH, SCREEN_HEIGHT),
-          new THREE.MeshBasicMaterial({ map: introScreenTexture, toneMapped: false }),
-        )
+    const introDisplayMaterial = introScreenTexture
+      ? new THREE.MeshBasicMaterial({ map: introScreenTexture, toneMapped: false, transparent: true, opacity: 1 })
+      : null;
+    const introDisplay = introDisplayMaterial
+      // The live DOM screen is enlarged by these exact factors so it reaches
+      // the inner edge of the 3D glass. Apply the same optical enlargement to
+      // the intro texture; otherwise icons drift outward by several pixels on
+      // the handoff even though the phone body itself is perfectly aligned.
+      ? new THREE.Mesh(new THREE.PlaneGeometry(SCREEN_WIDTH * 1.035, SCREEN_HEIGHT * 1.012), introDisplayMaterial)
       : null;
     if (introDisplay) {
       introDisplay.position.z = GLASS_Z - 0.002;
@@ -624,6 +663,7 @@ export function Phone3DIntro({ productRef }: { productRef: RefObject<HTMLDivElem
     let currentPose = poseAt(0);
     let pixelsPerUnit = 1;
     let hasCompleted = false;
+    let domHandoff = 0;
     const applyPose = (pose: PhonePose) => {
       phone.rotation.set(pose.rotateX, pose.rotateY, pose.rotateZ, "XYZ");
       phone.position.set(pose.x, pose.y, pose.z);
@@ -639,7 +679,7 @@ export function Phone3DIntro({ productRef }: { productRef: RefObject<HTMLDivElem
       product.style.transform = `translate3d(${x}px, ${y}px, ${z}px) rotateX(${-pose.rotateX}rad) rotateY(${pose.rotateY}rad) rotateZ(${-pose.rotateZ}rad) scale(${pose.scale}) translateZ(${screenDepth}px) scale(${depthCompensation})`;
       // During the turn the display is a texture on the actual 3D glass plane.
       // The interactive DOM screen only replaces it after the phone is flat.
-      product.style.visibility = hasCompleted ? "visible" : "hidden";
+      product.style.visibility = hasCompleted || domHandoff > 0 ? "visible" : "hidden";
     };
 
     const resize = () => {
@@ -671,6 +711,12 @@ export function Phone3DIntro({ productRef }: { productRef: RefObject<HTMLDivElem
         ? Math.min(1, (now - startedAt) / INTRO_MS)
         : inspectionMs / INTRO_MS;
       const eased = smoothstep5(progress);
+      // Once the phone is essentially flat, dissolve the canvas display into
+      // the interactive DOM screen instead of replacing it on one frame. The
+      // final 216ms are deliberately short enough to read as one continuous
+      // Retina display while absorbing sub-pixel raster differences.
+      domHandoff = smoothstep5(Math.max(0, Math.min(1, (progress - .94) / .06)));
+      if (introDisplayMaterial) introDisplayMaterial.opacity = 1 - domHandoff;
       // The environment slides against the turn so one long highlight travels
       // down the band and across the glass — the classic product-spot sweep.
       scene.environmentRotation.y = THREE.MathUtils.lerp(0.9, -0.35, eased);
@@ -691,6 +737,7 @@ export function Phone3DIntro({ productRef }: { productRef: RefObject<HTMLDivElem
         // Keep the screen at the same physical glass depth after handoff; a
         // transform reset here caused a subtle final-frame size jump.
         hasCompleted = true;
+        domHandoff = 1;
         applyPose(poseAt(1));
         if (introDisplay) introDisplay.visible = false;
         renderer.render(scene, camera);

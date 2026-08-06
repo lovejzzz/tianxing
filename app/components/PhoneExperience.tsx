@@ -292,22 +292,36 @@ export function PhoneExperience() {
   };
 
   const rememberOrigin = (element?: HTMLElement | null) => {
-    const screen = screenRef.current?.getBoundingClientRect();
+    const screenElement = screenRef.current;
+    const homeLayer = screenElement?.querySelector<HTMLElement>(".phone-home-layer");
+    const screen = screenElement?.getBoundingClientRect();
+    const layer = homeLayer?.getBoundingClientRect();
     const iconTarget = element?.querySelector<HTMLElement>(".system-app-icon") ?? element;
     const icon = iconTarget?.getBoundingClientRect();
-    const statusBar = screenRef.current?.querySelector<HTMLElement>(".status-bar")?.getBoundingClientRect();
-    if (!screen || !icon) return false;
-    const layerTop = statusBar?.height ?? 21;
-    const layerHeight = Math.max(1, screen.height - layerTop);
+    if (!screenElement || !screen || !homeLayer || !layer || !icon) return false;
+
+    // The desktop phone is slightly scaled to sit at the same physical glass
+    // depth as the Three.js model. Viewport pixels therefore cannot be fed
+    // straight back into the app layer: doing so applies that scale twice and
+    // makes Home collapse toward a false, oversized target. Convert the
+    // measured visual rectangle back into the layer's own CSS-pixel space.
+    const layerWidth = Math.max(1, homeLayer.clientWidth);
+    const layerHeight = Math.max(1, homeLayer.clientHeight);
+    const scaleX = layerWidth / Math.max(1, layer.width);
+    const scaleY = layerHeight / Math.max(1, layer.height);
+    const left = (icon.left - layer.left) * scaleX;
+    const top = (icon.top - layer.top) * scaleY;
+    const width = icon.width * scaleX;
+    const height = icon.height * scaleY;
     setOrigin({
-      x: ((icon.left + icon.width / 2 - screen.left) / screen.width) * 100,
-      y: ((icon.top + icon.height / 2 - screen.top - layerTop) / layerHeight) * 100,
-      left: icon.left - screen.left,
-      top: icon.top - screen.top - layerTop,
-      width: icon.width,
-      height: icon.height,
-      scaleX: icon.width / screen.width,
-      scaleY: icon.height / layerHeight,
+      x: ((left + width / 2) / layerWidth) * 100,
+      y: ((top + height / 2) / layerHeight) * 100,
+      left,
+      top,
+      width,
+      height,
+      scaleX: width / layerWidth,
+      scaleY: height / layerHeight,
     });
     return true;
   };
@@ -329,7 +343,7 @@ export function PhoneExperience() {
     if (mode === "home" || closing) return;
     const shouldReturnToFunIcon = mode === "folder" && !launchFromIcon;
     if (shouldReturnToFunIcon) {
-      const funIcon = screenRef.current?.querySelector<HTMLElement>('[data-app-id="folder"]');
+      const funIcon = screenRef.current?.querySelector<HTMLElement>('.phone-home-layer [data-app-id="folder"]');
       if (funIcon && rememberOrigin(funIcon)) setLaunchFromIcon(true);
     }
     if (!immersive) {
@@ -352,7 +366,7 @@ export function PhoneExperience() {
       setActiveApp(null);
       setClosing(false);
       setLaunchFromIcon(false);
-    }, mode === "folder" && (launchFromIcon || shouldReturnToFunIcon) ? 1100 : 390);
+    }, mode === "folder" && (launchFromIcon || shouldReturnToFunIcon) ? 760 : 390);
   };
 
   return (

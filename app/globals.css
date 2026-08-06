@@ -106,7 +106,7 @@ body:has(.home-shell){overflow:hidden}
 .phone-3d-ready .phone-product>.phone::before { display:none; }
 .phone-3d-ready .phone-product .screen.phone-mode-folder,
 .phone-3d-ready .phone-product .phone-mode-folder .folder-content { background:transparent; }
-.phone-3d-ready .phone-product .phone-mode-folder>.phone-home-layer { visibility:hidden; }
+.phone-3d-ready .phone-product .phone-mode-folder>.phone-home-layer:not(.is-active) { visibility:hidden; }
 .phone-3d-ready .phone-product .phone-mode-folder .folder-content::after { background:transparent; }
 .phone-3d-ready .phone-product .screen {
   position:relative;
@@ -556,7 +556,7 @@ body:has(.home-shell){overflow:hidden}
   transform:scale(1.055);
   filter:brightness(.62) saturate(.8);
 }
-.phone-home-layer.is-fun-background { transition-duration:1100ms,1100ms,1100ms; transition-timing-function:linear; }
+.phone-home-layer.is-fun-background { transition-duration:760ms,760ms,760ms; transition-timing-function:cubic-bezier(.22,.68,.24,1); }
 .phone-app-layer.is-fun-app.is-from-icon {
   transform-origin:0 0;
   contain:paint;
@@ -677,20 +677,24 @@ body:has(.home-shell){overflow:hidden}
    then hands off to the full project grid without exposing an empty wallpaper frame. */
 .phone-app-layer.is-fun-app { background:transparent; }
 .phone-app-layer.is-fun-app.is-from-icon { transform:none; contain:paint; backface-visibility:hidden; will-change:auto; }
-.phone-app-layer.is-fun-app.is-from-icon.is-opening,
-.phone-app-layer.is-fun-app.is-from-icon.is-closing { animation:none; }
+.phone-app-layer.is-fun-app.is-from-icon.is-opening { animation:none; }
+.phone-app-layer.is-fun-app.is-from-icon.is-closing {
+  animation:fun-page-home-close 760ms cubic-bezier(.32,.03,.58,1) both;
+  overflow:hidden;
+  transform-origin:0 0;
+}
 .is-fun-app.is-from-icon.is-opening .folder-content { animation:fun-content-dolly-open 920ms cubic-bezier(.16,.78,.18,1) both; transform-origin:var(--origin-x,50%) var(--origin-y,58%); }
-.is-fun-app.is-from-icon.is-closing .folder-content { animation:fun-content-dolly-close 620ms cubic-bezier(.46,.03,.7,.28) both; transform-origin:var(--origin-x,50%) var(--origin-y,58%); }
+.is-fun-app.is-from-icon.is-closing .folder-content { animation:none; transform:none; opacity:1; filter:none; }
 .is-fun-app.is-from-icon.is-opening .folder-content .work-titlebar { animation:fun-title-open 460ms 330ms cubic-bezier(.2,.78,.24,1) both; }
 .is-fun-app.is-from-icon.is-opening .folder-content .app-link { animation:fun-icon-arrive 490ms calc(300ms + var(--delay)) cubic-bezier(.16,.82,.2,1) both; }
 .is-fun-app.is-from-icon.is-closing .folder-content .work-titlebar,
-.is-fun-app.is-from-icon.is-closing .folder-content .app-grid { animation:fun-content-close 520ms cubic-bezier(.45,0,.72,.32) both; }
+.is-fun-app.is-from-icon.is-closing .folder-content .app-grid { animation:none; }
 .fun-icon-shell { position:absolute; z-index:12; left:var(--launch-x); top:var(--launch-y); width:var(--launch-width); height:var(--launch-height); inset:auto; display:grid; place-items:center; overflow:hidden; border:1px solid rgba(0,0,0,.82); border-radius:14px; pointer-events:none; opacity:0; background:linear-gradient(145deg,#d1d4d6,#7e8489 57%,#41474c); box-shadow:inset 0 1px rgba(255,255,255,.72),inset 0 -3px 6px rgba(0,0,0,.46),0 2px 5px rgba(0,0,0,.78); }
 .fun-icon-shell .fun-shelf { width:86%; height:86%; padding:5%; gap:3.5%; border-radius:17%; }
 .is-fun-app.is-from-icon.is-opening .fun-icon-shell { animation:fun-portal-open 920ms cubic-bezier(.14,.76,.18,1) both; }
-.is-fun-app.is-from-icon.is-closing .fun-icon-shell { animation:fun-portal-close 620ms cubic-bezier(.48,.02,.76,.32) both; }
+.is-fun-app.is-from-icon.is-closing .fun-icon-shell { display:none; animation:none; }
 .is-fun-app.is-from-icon.is-opening .fun-dolly { animation:fun-dolly-fade 820ms 30ms ease-out both; }
-.is-fun-app.is-from-icon.is-closing .fun-dolly { animation:fun-dolly-close 620ms ease-in both; }
+.is-fun-app.is-from-icon.is-closing .fun-dolly { display:none; animation:none; }
 
 .phone-app-layer .native-app { height:100%; }
 .native-titlebar { height:44px; background:linear-gradient(#8ca1b1,#607a8e 48%,#3e5c73 50%,#55768e); border-top:1px solid rgba(255,255,255,.55); }
@@ -963,6 +967,18 @@ body:has(.home-shell){overflow:hidden}
   58% { opacity:.28; filter:brightness(.58) blur(2px); transform:scale(.76); }
   100% { opacity:0; filter:brightness(.4) blur(4px); transform:scale(.65); }
 }
+@keyframes fun-page-home-close {
+  0% { opacity:1; border-radius:0; filter:none; transform:translate3d(0,0,0) scale(1,1); }
+  18% { opacity:1; border-radius:3px; filter:brightness(.99); }
+  82% { opacity:1; border-radius:12px; filter:brightness(.96); }
+  98% { opacity:1; }
+  100% {
+    opacity:0;
+    border-radius:14px;
+    filter:brightness(.94);
+    transform:translate3d(var(--launch-x),var(--launch-y),0) scale(var(--launch-scale-x),var(--launch-scale-y));
+  }
+}
 @keyframes fun-portal-open {
   0% { left:var(--launch-x); top:var(--launch-y); width:var(--launch-width); height:var(--launch-height); border-radius:14px; opacity:1; filter:brightness(1); }
   16% { left:calc(var(--launch-x) - 3px); top:calc(var(--launch-y) - 3px); width:calc(var(--launch-width) + 6px); height:calc(var(--launch-height) + 6px); border-radius:15px; opacity:1; filter:brightness(1.08); }
@@ -1011,15 +1027,15 @@ body:has(.home-shell){overflow:hidden}
   /* A full-viewport phone needs a shallower move than the framed desktop shot.
      Stop at the glass edge instead of flying through the shelf at 172%. */
   .is-fun-app.is-from-icon.is-opening .folder-content { animation:fun-content-mobile-open 1100ms linear both; }
-  .is-fun-app.is-from-icon.is-closing .folder-content { animation:fun-content-mobile-close 1100ms linear both; }
+  .is-fun-app.is-from-icon.is-closing .folder-content { animation:none; }
   .is-fun-app.is-from-icon.is-opening .folder-content .work-titlebar { animation:fun-title-mobile-open 520ms 420ms cubic-bezier(.2,.74,.24,1) both; }
   .is-fun-app.is-from-icon.is-opening .folder-content .app-link { animation:fun-icon-mobile-arrive 500ms calc(390ms + var(--delay)) cubic-bezier(.2,.72,.24,1) both; }
   .is-fun-app.is-from-icon.is-opening .fun-icon-shell {
     animation:fun-portal-mobile-open 1100ms linear both;
   }
-  .is-fun-app.is-from-icon.is-closing .fun-icon-shell { animation:fun-portal-mobile-close 1100ms linear both; }
+  .is-fun-app.is-from-icon.is-closing .fun-icon-shell { display:none; animation:none; }
   .is-fun-app.is-from-icon.is-opening .fun-dolly { animation:fun-dolly-fade 1040ms 30ms linear both; }
-  .is-fun-app.is-from-icon.is-closing .fun-dolly { animation:fun-dolly-close 1100ms linear both; }
+  .is-fun-app.is-from-icon.is-closing .fun-dolly { display:none; animation:none; }
   .is-fun-app.is-from-icon.is-opening .fun-dolly i { animation-name:fun-ring-mobile; }
 
   html,

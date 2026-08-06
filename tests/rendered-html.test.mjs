@@ -139,8 +139,10 @@ test("keeps the iPhone interactive and time-aware", async () => {
   assert.match(phone3dSource, /displayGasket = new THREE\.MeshBasicMaterial/);
   assert.match(phone3dSource, /new THREE\.Mesh\(linerGeometry, displayGasket\)/);
   assert.match(phone3dSource, /createIntroScreenTexture/);
-  assert.match(phone3dSource, /new THREE\.PlaneGeometry\(SCREEN_WIDTH, SCREEN_HEIGHT\)/);
-  assert.match(phone3dSource, /product\.style\.visibility = hasCompleted \? "visible" : "hidden"/);
+  assert.match(phone3dSource, /new THREE\.PlaneGeometry\(SCREEN_WIDTH \* 1\.035, SCREEN_HEIGHT \* 1\.012\)/);
+  assert.match(phone3dSource, /product\.style\.visibility = hasCompleted \|\| domHandoff > 0 \? "visible" : "hidden"/);
+  assert.match(phone3dSource, /transparent: true, opacity: 1/);
+  assert.match(phone3dSource, /introDisplayMaterial\.opacity = 1 - domHandoff/);
   assert.match(phone3dSource, /introDisplay\.visible = false/);
   assert.match(phone3dSource, /new THREE\.ShapeGeometry\(faceShape/);
   assert.match(phone3dSource, /faceShape\.holes/);
@@ -167,6 +169,8 @@ test("keeps the iPhone interactive and time-aware", async () => {
   assert.match(styles, /animation:fun-portal-open 920ms/);
   assert.match(styles, /animation:fun-icon-arrive 490ms calc\(300ms/);
   assert.match(styles, /@keyframes fun-content-dolly-open/);
+  assert.match(styles, /@keyframes fun-page-home-close/);
+  assert.match(styles, /transform:translate3d\(var\(--launch-x\),var\(--launch-y\),0\) scale\(var\(--launch-scale-x\),var\(--launch-scale-y\)\)/);
   assert.match(styles, /@keyframes fun-content-close \{ 0%,28%\{opacity:1/);
   assert.match(styles, /@keyframes fun-portal-close/);
   assert.match(styles, /sys-folder \.fun-shelf\.is-compact/);
