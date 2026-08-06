@@ -312,6 +312,11 @@ export function PhoneExperience() {
 
   const goHome = () => {
     if (mode === "home" || closing) return;
+    const shouldReturnToFunIcon = mode === "folder" && !launchFromIcon;
+    if (shouldReturnToFunIcon) {
+      const funIcon = screenRef.current?.querySelector<HTMLElement>('[data-app-id="folder"]');
+      if (funIcon && rememberOrigin(funIcon)) setLaunchFromIcon(true);
+    }
     if (!immersive) {
       const stage = deviceStageRef.current;
       const before = stage?.getBoundingClientRect();
@@ -332,7 +337,7 @@ export function PhoneExperience() {
       setActiveApp(null);
       setClosing(false);
       setLaunchFromIcon(false);
-    }, mode === "folder" && launchFromIcon ? 560 : 390);
+    }, mode === "folder" && (launchFromIcon || shouldReturnToFunIcon) ? 560 : 390);
   };
 
   return (
@@ -466,7 +471,7 @@ function HomeScreen({ calendarDay, calendarWeekday, onOpenApp }: {
     <div className="iphone-desktop">
       <div className="system-page" aria-label="iPhone Home screen">
         {homeApps.map((app) => (
-          <button className="system-app" key={app.id} onClick={(event) => onOpenApp(app.id, event.currentTarget)}>
+          <button className="system-app" data-app-id={app.id} key={app.id} onClick={(event) => onOpenApp(app.id, event.currentTarget)}>
             <SystemAppIcon id={app.id} calendarDay={calendarDay} calendarWeekday={calendarWeekday} />
             <span>{app.label}</span>
           </button>
@@ -477,6 +482,7 @@ function HomeScreen({ calendarDay, calendarWeekday, onOpenApp }: {
         {dockApps.map((app) => (
           <button
             className="system-app dock-system-app"
+            data-app-id={app.id}
             key={app.id}
             onClick={(event) => onOpenApp(app.id, event.currentTarget)}
             aria-label={app.label}

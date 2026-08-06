@@ -118,12 +118,17 @@ test("keeps the iPhone interactive and time-aware", async () => {
   assert.match(source, /fun-icon-shell[^]*projects\.map/);
   assert.doesNotMatch(source, /fun-icon-shell[^]*Array\.from\(\{ length: 9 \}/);
   assert.match(source, /--launch-scale-x/);
+  assert.match(source, /data-app-id=\{app\.id\}/);
+  assert.match(source, /shouldReturnToFunIcon/);
   assert.match(source, /className="phone-product"/);
   assert.match(source, /className="phone-back"/);
   assert.match(styles, /@keyframes phone-product-flip/);
+  assert.doesNotMatch(styles, /@keyframes phone-product-flip\{[^}]*opacity/);
   assert.match(styles, /@keyframes fun-shell-open \{ 0%,34%\{opacity:1/);
   assert.match(styles, /animation:fun-shell-open 520ms/);
   assert.match(styles, /animation:fun-icon-arrive 470ms calc\(105ms/);
+  assert.match(styles, /@keyframes fun-content-close \{ 0%,28%\{opacity:1/);
+  assert.match(styles, /@keyframes fun-shell-close \{ 0%,28%\{opacity:0} 62%,100%\{opacity:1/);
   assert.match(styles, /sys-folder \.app-icon-art \{ width:100%; height:100%; transform:none/);
   assert.match(styles, /phone-app-layer\.is-opening\.is-from-icon/);
   assert.match(styles, /backface-visibility:hidden/);
