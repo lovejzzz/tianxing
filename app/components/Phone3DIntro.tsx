@@ -219,12 +219,12 @@ export function Phone3DIntro({ productRef }: { productRef: RefObject<HTMLDivElem
     });
     const steelButton = new THREE.MeshPhysicalMaterial({ color: 0xa0a6ab, metalness: 1, roughness: 0.34, envMapIntensity: 0.9 });
     const glassBlack = new THREE.MeshPhysicalMaterial({
-      color: 0x010203,
+      color: 0x000102,
       metalness: 0,
-      roughness: 0.1,
-      clearcoat: 0.92,
-      clearcoatRoughness: 0.045,
-      envMapIntensity: 0.4,
+      roughness: 0.18,
+      clearcoat: 0.42,
+      clearcoatRoughness: 0.11,
+      envMapIntensity: 0.18,
     });
     const matteBlack = new THREE.MeshStandardMaterial({ color: 0x040506, metalness: 0.1, roughness: 0.42 });
     const glassEdge = new THREE.MeshStandardMaterial({ color: 0x05070a, metalness: 0.1, roughness: 0.6 });
@@ -472,6 +472,10 @@ export function Phone3DIntro({ productRef }: { productRef: RefObject<HTMLDivElem
       // down the band and across the glass — the classic product-spot sweep.
       scene.environmentRotation.y = THREE.MathUtils.lerp(0.9, -0.35, eased);
       keyLight.position.x = THREE.MathUtils.lerp(-6.4, -4.2, eased);
+      // Let the hero frame settle into true black glass. The key is strongest
+      // across the turn, then slips off-axis instead of flattening the face.
+      keyLight.intensity = THREE.MathUtils.lerp(1.6, 0.68, eased);
+      warmFill.intensity = THREE.MathUtils.lerp(5, 2.2, eased);
       currentPose = poseAt(progress);
       applyPose(currentPose);
       renderer.render(scene, camera);
