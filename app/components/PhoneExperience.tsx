@@ -344,66 +344,74 @@ export function PhoneExperience() {
       } as CSSProperties}
       aria-label="Interactive iPhone portfolio"
     >
-      <div className="device" aria-hidden="true">
-        <div className="device-button volume-up" />
-        <div className="device-button volume-down" />
-        <div className="device-button mute" />
-      </div>
-
-      <div className="phone" role="application" aria-label="Tian Xing's iPhone">
-        <div className="phone-top">
-          <span className="speaker" aria-hidden="true" />
-          <span className="camera" aria-hidden="true" />
+      <div className="phone-product">
+        <div className="phone-back" aria-hidden="true">
+          <span className="back-camera" />
+          <span className="back-flash" />
+          <span className="back-mark">TIAN</span>
         </div>
 
-        <div
-          className={`screen phone-mode-${mode} ${motionInspectionMs !== null ? "is-fun-motion-inspection" : ""}`}
-          ref={screenRef}
-          style={motionInspectionMs === null ? undefined : {
-            "--fun-inspection-offset": `${-motionInspectionMs}ms`,
-            "--fun-home-scale": 1 + motionProgress * .105,
-            "--fun-home-opacity": 1 - motionProgress * .48,
-            "--fun-home-brightness": 1 - motionProgress * .5,
-            "--fun-home-saturation": 1 - motionProgress * .28,
-          } as CSSProperties}
-        >
-          <StatusBar time={time} />
-          <div className={`phone-home-layer ${mode === "home" || closing ? "is-active" : "is-background"} ${mode === "folder" && launchFromIcon ? "is-fun-background" : ""}`}>
-            <HomeScreen calendarDay={calendarDay} calendarWeekday={calendarWeekday} onOpenApp={openApp} />
+        <div className="device" aria-hidden="true">
+          <div className="device-button volume-up" />
+          <div className="device-button volume-down" />
+          <div className="device-button mute" />
+        </div>
+
+        <div className="phone" role="application" aria-label="Tian Xing's iPhone">
+          <div className="phone-top">
+            <span className="speaker" aria-hidden="true" />
+            <span className="camera" aria-hidden="true" />
           </div>
 
-          {mode !== "home" && (
-            <div
-              className={`phone-app-layer ${mode === "folder" ? "is-fun-app" : ""} ${launchFromIcon ? "is-from-icon" : ""} ${closing ? "is-closing" : "is-opening"}`}
-              style={{
-                "--origin-x": `${origin.x}%`,
-                "--origin-y": `${origin.y}%`,
-                "--launch-x": `${origin.left}px`,
-                "--launch-y": `${origin.top}px`,
-                "--launch-scale-x": origin.scaleX,
-                "--launch-scale-y": origin.scaleY,
-              } as CSSProperties}
-            >
-              {mode === "folder" && <FolderView onGoHome={goHome} />}
-              {mode === "native" && activeApp && (
-                <NativeAppView
-                  app={activeApp}
-                  base={base}
-                  time={time}
-                  captures={captures}
-                  onCapture={saveCapture}
-                  onDeleteCapture={deleteCapture}
-                  onOpenWork={() => openApp("folder")}
-                  onGoHome={goHome}
-                />
-              )}
+          <div
+            className={`screen phone-mode-${mode} ${motionInspectionMs !== null ? "is-fun-motion-inspection" : ""}`}
+            ref={screenRef}
+            style={motionInspectionMs === null ? undefined : {
+              "--fun-inspection-offset": `${-motionInspectionMs}ms`,
+              "--fun-home-scale": 1 + motionProgress * .105,
+              "--fun-home-opacity": 1 - motionProgress * .48,
+              "--fun-home-brightness": 1 - motionProgress * .5,
+              "--fun-home-saturation": 1 - motionProgress * .28,
+            } as CSSProperties}
+          >
+            <StatusBar time={time} />
+            <div className={`phone-home-layer ${mode === "home" || closing ? "is-active" : "is-background"} ${mode === "folder" && launchFromIcon ? "is-fun-background" : ""}`}>
+              <HomeScreen calendarDay={calendarDay} calendarWeekday={calendarWeekday} onOpenApp={openApp} />
             </div>
-          )}
-        </div>
 
-        <button className="home-button" onClick={goHome} aria-label="Go to iPhone Home screen">
-          <span />
-        </button>
+            {mode !== "home" && (
+              <div
+                className={`phone-app-layer ${mode === "folder" ? "is-fun-app" : ""} ${launchFromIcon ? "is-from-icon" : ""} ${closing ? "is-closing" : "is-opening"}`}
+                style={{
+                  "--origin-x": `${origin.x}%`,
+                  "--origin-y": `${origin.y}%`,
+                  "--launch-x": `${origin.left}px`,
+                  "--launch-y": `${origin.top}px`,
+                  "--launch-scale-x": origin.scaleX,
+                  "--launch-scale-y": origin.scaleY,
+                } as CSSProperties}
+              >
+                {mode === "folder" && <FolderView onGoHome={goHome} />}
+                {mode === "native" && activeApp && (
+                  <NativeAppView
+                    app={activeApp}
+                    base={base}
+                    time={time}
+                    captures={captures}
+                    onCapture={saveCapture}
+                    onDeleteCapture={deleteCapture}
+                    onOpenWork={() => openApp("folder")}
+                    onGoHome={goHome}
+                  />
+                )}
+              </div>
+            )}
+          </div>
+
+          <button className="home-button" onClick={goHome} aria-label="Go to iPhone Home screen">
+            <span />
+          </button>
+        </div>
       </div>
     </section>
   );

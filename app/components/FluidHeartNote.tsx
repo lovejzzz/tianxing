@@ -213,8 +213,8 @@ export function FluidHeartNote() {
       className={`heart-note ${fluidActive ? "is-fluid-active" : ""} ${fluidComplete ? "is-fluid-complete" : ""}`}
     >
       <p ref={copyRef} className="heart-copy" aria-label="Welcome to my heart. Have fun. — Tian Xing">
-        <span className="heart-line" data-fluid-line>Welcome to my</span>
-        <span className="heart-line" data-fluid-line>heart. Have fun.</span>
+        <span className="heart-line" data-fluid-line>Welcome to my heart.</span>
+        <span className="heart-line" data-fluid-line>Have fun.</span>
         <span className="heart-signature" data-fluid-line>— Tian Xing</span>
       </p>
       <canvas ref={canvasRef} className="heart-fluid-canvas" aria-hidden="true" />

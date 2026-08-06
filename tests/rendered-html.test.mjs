@@ -18,6 +18,7 @@ test("renders the finished portfolio home", async () => {
   assert.match(html, /EduTool/);
   assert.match(html, /Slotronome/);
   assert.match(html, /Welcome to my heart\. Have fun\./);
+  assert.match(html, /Welcome to my heart\.<\/span><span[^>]*>Have fun\./);
   assert.match(html, /— Tian Xing/);
   assert.doesNotMatch(html, /Portfolio · Edition 01|Selected work|2024—2026|Tian Xing delivers|Designed &amp; built by Tian Xing|New York/i);
   assert.doesNotMatch(html, /Choose an icon to open a project|Nine things I care about|makes things|systems thinking and play/i);
@@ -115,6 +116,11 @@ test("keeps the iPhone interactive and time-aware", async () => {
   assert.match(styles, /fun-shared-open/);
   assert.match(source, /fun-icon-shell/);
   assert.match(source, /--launch-scale-x/);
+  assert.match(source, /className="phone-product"/);
+  assert.match(source, /className="phone-back"/);
+  assert.match(styles, /@keyframes phone-product-flip/);
+  assert.match(styles, /phone-app-layer\.is-opening\.is-from-icon/);
+  assert.match(styles, /backface-visibility:hidden/);
   assert.match(styles, /device-stage\.is-immersive\{translate:none/);
   assert.match(styles, /prefers-reduced-motion/);
   assert.match(source, /Draw on this note/);
