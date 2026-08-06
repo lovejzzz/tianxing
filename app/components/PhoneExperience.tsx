@@ -255,7 +255,7 @@ export function PhoneExperience() {
     const timer = window.setTimeout(() => {
       if (funValue !== null) {
         const requestedFrame = Number(funValue);
-        if (Number.isFinite(requestedFrame)) setMotionInspectionMs(Math.max(0, Math.min(920, requestedFrame)));
+        if (Number.isFinite(requestedFrame)) setMotionInspectionMs(Math.max(0, Math.min(1100, requestedFrame)));
       }
       if (arrivalValue !== null) {
         const requestedFrame = Number(arrivalValue);
@@ -265,7 +265,7 @@ export function PhoneExperience() {
     return () => window.clearTimeout(timer);
   }, []);
 
-  const motionProgress = (motionInspectionMs ?? 0) / 920;
+  const motionProgress = (motionInspectionMs ?? 0) / 1100;
 
   const saveCapture = (src: string) => {
     setCaptures((current) => {
@@ -352,7 +352,7 @@ export function PhoneExperience() {
       setActiveApp(null);
       setClosing(false);
       setLaunchFromIcon(false);
-    }, mode === "folder" && (launchFromIcon || shouldReturnToFunIcon) ? 620 : 390);
+    }, mode === "folder" && (launchFromIcon || shouldReturnToFunIcon) ? 1100 : 390);
   };
 
   return (
@@ -389,10 +389,10 @@ export function PhoneExperience() {
             ref={screenRef}
             style={motionInspectionMs === null ? undefined : {
               "--fun-inspection-offset": `${-motionInspectionMs}ms`,
-              "--fun-home-scale": 1 + motionProgress * .105,
-              "--fun-home-opacity": 1 - motionProgress * .48,
-              "--fun-home-brightness": 1 - motionProgress * .5,
-              "--fun-home-saturation": 1 - motionProgress * .28,
+              "--fun-home-scale": 1 + motionProgress * .055,
+              "--fun-home-opacity": 1 - motionProgress * .42,
+              "--fun-home-brightness": 1 - motionProgress * .38,
+              "--fun-home-saturation": 1 - motionProgress * .2,
             } as CSSProperties}
           >
             <StatusBar time={time} />
