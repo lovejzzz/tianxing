@@ -1,6 +1,14 @@
 import type { Metadata, Viewport } from "next";
 import "./globals.css";
 
+const phoneIntroBootstrap = `
+try {
+  var desktopIntro = window.matchMedia('(min-width: 561px) and (prefers-reduced-motion: no-preference)').matches;
+  var introPlayed = window.sessionStorage.getItem('tian-phone-intro-played') === '1';
+  if (desktopIntro && !introPlayed) document.documentElement.classList.add('phone-intro-pending');
+} catch (_) {}
+`;
+
 export const metadata: Metadata = {
   metadataBase: new URL("https://tian.fun/"),
   title: {
@@ -44,6 +52,9 @@ export const viewport: Viewport = {
 export default function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
   return (
     <html lang="en">
+      <head>
+        <script dangerouslySetInnerHTML={{ __html: phoneIntroBootstrap }} />
+      </head>
       <body>{children}</body>
     </html>
   );

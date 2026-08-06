@@ -6,7 +6,9 @@ import * as THREE from "three";
 import { RoundedBoxGeometry } from "three/examples/jsm/geometries/RoundedBoxGeometry.js";
 
 const INTRO_MS = 3600;
+const BASE_FOV = 30;
 const CAMERA_Z = 13.263;
+const INTRO_SESSION_KEY = "tian-phone-intro-played";
 // One world unit is 110.44 CSS pixels, so the body always lines up with the 432x776 DOM product.
 const PHONE_WIDTH = 3.91;
 const PHONE_HEIGHT = 7.02;
@@ -171,17 +173,33 @@ export function Phone3DIntro({ productRef }: { productRef: RefObject<HTMLDivElem
     const host = hostRef.current;
     const product = productRef.current;
     const stage = host?.parentElement;
-    if (!host || !product || !stage || window.matchMedia("(max-width: 560px), (prefers-reduced-motion: reduce)").matches) return;
+    if (!host || !product || !stage) return;
+
+    const params = new URLSearchParams(window.location.search);
+    const inspectionValue = params.get("introFrame");
+    const requestedInspection = process.env.NODE_ENV === "production" || inspectionValue === null ? null : Number(inspectionValue);
+    const inspectionMs = requestedInspection !== null && Number.isFinite(requestedInspection)
+      ? Math.max(0, Math.min(INTRO_MS, requestedInspection))
+      : null;
+    let introPlayed = false;
+    try {
+      introPlayed = window.sessionStorage.getItem(INTRO_SESSION_KEY) === "1";
+    } catch {
+      // A private browser may disable session storage; the intro can still play safely.
+    }
+    if (window.matchMedia("(max-width: 560px), (prefers-reduced-motion: reduce)").matches || (introPlayed && inspectionMs === null)) {
+      document.documentElement.classList.remove("phone-intro-pending");
+      return;
+    }
 
     let renderer: THREE.WebGLRenderer;
     try {
       renderer = new THREE.WebGLRenderer({ alpha: true, antialias: true, powerPreference: "high-performance" });
     } catch {
+      document.documentElement.classList.remove("phone-intro-pending");
       return;
     }
 
-    document.documentElement.classList.add("phone-3d-ready");
-    document.documentElement.classList.remove("phone-3d-complete");
     renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
     renderer.outputColorSpace = THREE.SRGBColorSpace;
     renderer.toneMapping = THREE.ACESFilmicToneMapping;
@@ -198,7 +216,7 @@ export function Phone3DIntro({ productRef }: { productRef: RefObject<HTMLDivElem
     disposeStudio();
     scene.environment = environment.texture;
 
-    const camera = new THREE.PerspectiveCamera(30, 1, 0.1, 100);
+    const camera = new THREE.PerspectiveCamera(BASE_FOV, 1, 0.1, 100);
     camera.position.set(0, 0, CAMERA_Z);
 
     const phone = new THREE.Group();
@@ -468,21 +486,34 @@ export function Phone3DIntro({ productRef }: { productRef: RefObject<HTMLDivElem
     const resize = () => {
       const hostWidth = host.clientWidth || 500;
       const hostHeight = host.clientHeight || 785;
+      const stageHeight = stage.clientHeight || 785;
       renderer.setSize(hostWidth, hostHeight, false);
       camera.aspect = hostWidth / hostHeight;
+      const perspective = stageHeight / (2 * Math.tan(THREE.MathUtils.degToRad(BASE_FOV / 2)));
+      camera.fov = THREE.MathUtils.radToDeg(2 * Math.atan(hostHeight / (2 * perspective)));
       camera.updateProjectionMatrix();
-      const perspective = hostHeight / (2 * Math.tan(THREE.MathUtils.degToRad(camera.fov / 2)));
       pixelsPerUnit = perspective / CAMERA_Z;
       stage.style.setProperty("--phone-perspective", `${perspective}px`);
       applyPose(currentPose);
       renderer.render(scene, camera);
     };
     resize();
+    // Reveal only after a complete WebGL frame exists. This removes the brief
+    // DOM-phone flash that used to appear while Three.js was still preparing.
+    document.documentElement.classList.add("phone-3d-ready");
+    document.documentElement.classList.remove("phone-3d-complete", "phone-intro-pending");
+    if (inspectionMs === null) {
+      try {
+        window.sessionStorage.setItem(INTRO_SESSION_KEY, "1");
+      } catch {
+        // The animation still works when storage is unavailable.
+      }
+    }
     const observer = new ResizeObserver(resize);
     observer.observe(host);
 
     let frame = 0;
-    const startedAt = performance.now();
+    const startedAt = performance.now() - (inspectionMs ?? 0);
     const render = (now: number) => {
       const progress = Math.min(1, (now - startedAt) / INTRO_MS);
       const eased = smoothstep5(progress);
@@ -497,6 +528,7 @@ export function Phone3DIntro({ productRef }: { productRef: RefObject<HTMLDivElem
       currentPose = poseAt(progress);
       applyPose(currentPose);
       renderer.render(scene, camera);
+      if (inspectionMs !== null && progress < 1) return;
       if (progress < 1) frame = window.requestAnimationFrame(render);
       else {
         // Keep the screen at the same physical glass depth after handoff; a
@@ -516,6 +548,7 @@ export function Phone3DIntro({ productRef }: { productRef: RefObject<HTMLDivElem
       stage.style.removeProperty("--phone-perspective");
       document.documentElement.classList.remove("phone-3d-ready");
       document.documentElement.classList.remove("phone-3d-complete");
+      document.documentElement.classList.remove("phone-intro-pending");
       scene.traverse((object) => {
         if (!(object instanceof THREE.Mesh)) return;
         object.geometry.dispose();

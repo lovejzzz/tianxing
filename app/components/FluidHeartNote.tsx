@@ -23,6 +23,15 @@ type FluidParticle = {
   color: string;
 };
 
+type PreparedFluid = {
+  width: number;
+  height: number;
+  dpr: number;
+  bounds: DOMRect;
+  particles: FluidParticle[];
+  target: CanvasRenderingContext2D;
+};
+
 const IMPACT_EVENT = "tian:immersive-home";
 
 export function FluidHeartNote() {
@@ -30,21 +39,18 @@ export function FluidHeartNote() {
   const copyRef = useRef<HTMLParagraphElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const animationRef = useRef<number | null>(null);
+  const preparedRef = useRef<PreparedFluid | null>(null);
   const [fluidActive, setFluidActive] = useState(false);
   const [fluidComplete, setFluidComplete] = useState(false);
 
   useEffect(() => {
-    const handleImpact = (event: Event) => {
-      const detail = (event as CustomEvent<ImpactDetail>).detail;
-      const root = rootRef.current;
-      const copy = copyRef.current;
-      const canvas = canvasRef.current;
-      if (!root || !copy || !canvas || window.innerWidth <= 960) {
-        setFluidComplete(true);
-        return;
-      }
+    let idleHandle: number | null = null;
+    let fallbackTimer: number | null = null;
 
-      if (animationRef.current !== null) cancelAnimationFrame(animationRef.current);
+    const prepareFluid = () => {
+      const root = rootRef.current;
+      const canvas = canvasRef.current;
+      if (!root || !canvas || window.innerWidth <= 960) return;
 
       const dpr = Math.min(window.devicePixelRatio || 1, 2);
       const width = window.innerWidth;
@@ -54,11 +60,11 @@ export function FluidHeartNote() {
       canvas.style.width = `${width}px`;
       canvas.style.height = `${height}px`;
 
+      const target = canvas.getContext("2d");
       const offscreen = document.createElement("canvas");
       offscreen.width = canvas.width;
       offscreen.height = canvas.height;
       const source = offscreen.getContext("2d", { willReadFrequently: true });
-      const target = canvas.getContext("2d");
       if (!source || !target) return;
       source.scale(dpr, dpr);
 
@@ -79,7 +85,7 @@ export function FluidHeartNote() {
       const bottom = Math.min(offscreen.height, Math.ceil((bounds.bottom + 8) * dpr));
       const pixels = source.getImageData(left, top, right - left, bottom - top);
       const particles: FluidParticle[] = [];
-      const step = Math.max(3, Math.round(3 * dpr));
+      const step = Math.max(4, Math.round(4 * dpr));
       const textLeft = bounds.left;
       const textRight = bounds.right;
 
@@ -98,7 +104,7 @@ export function FluidHeartNote() {
             py: y,
             vx: 0,
             vy: 0,
-            radius: 1.25 + Math.random() * .95,
+            radius: 1.45 + Math.random() * 1.05,
             alpha,
             hitAt: .46 + fromRight * .34 + Math.random() * .03,
             phase: Math.random() * Math.PI * 2,
@@ -106,6 +112,36 @@ export function FluidHeartNote() {
           });
         }
       }
+
+      preparedRef.current = { width, height, dpr, bounds, particles, target };
+    };
+
+    const schedulePreparation = () => {
+      if (idleHandle !== null && "cancelIdleCallback" in window) window.cancelIdleCallback(idleHandle);
+      if (fallbackTimer !== null) window.clearTimeout(fallbackTimer);
+      preparedRef.current = null;
+      if ("requestIdleCallback" in window) {
+        idleHandle = window.requestIdleCallback(prepareFluid, { timeout: 3000 });
+      } else {
+        fallbackTimer = window.setTimeout(prepareFluid, 3700);
+      }
+    };
+
+    void document.fonts.ready.then(schedulePreparation);
+    window.addEventListener("resize", schedulePreparation, { passive: true });
+
+    const handleImpact = (event: Event) => {
+      const detail = (event as CustomEvent<ImpactDetail>).detail;
+      const copy = copyRef.current;
+      const prepared = preparedRef.current;
+      if (!copy || !prepared || prepared.width !== window.innerWidth || prepared.height !== window.innerHeight || window.innerWidth <= 960) {
+        setFluidComplete(true);
+        return;
+      }
+
+      if (animationRef.current !== null) cancelAnimationFrame(animationRef.current);
+      const { dpr, width, height, bounds, particles, target } = prepared;
+      const textRight = bounds.right;
 
       setFluidActive(true);
       const started = performance.now();
@@ -203,6 +239,9 @@ export function FluidHeartNote() {
     window.addEventListener(IMPACT_EVENT, handleImpact);
     return () => {
       window.removeEventListener(IMPACT_EVENT, handleImpact);
+      window.removeEventListener("resize", schedulePreparation);
+      if (idleHandle !== null && "cancelIdleCallback" in window) window.cancelIdleCallback(idleHandle);
+      if (fallbackTimer !== null) window.clearTimeout(fallbackTimer);
       if (animationRef.current !== null) cancelAnimationFrame(animationRef.current);
     };
   }, []);
