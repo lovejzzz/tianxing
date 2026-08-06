@@ -23,7 +23,8 @@ test("renders the finished portfolio home", async () => {
   const introGuard = html.indexOf(".phone-intro-pending .phone-product{position:relative!important");
   const phoneMarkup = html.indexOf('class="phone-product"');
   assert.ok(introGuard >= 0 && phoneMarkup > introGuard, "the pre-paint phone placeholder must arrive before the phone markup");
-  assert.match(html, /phone-intro-pending \.phone-product>\*\{visibility:hidden!important\}/);
+  assert.match(html, /phone-intro-pending \.phone-product>\*:not\(\.phone-back\)\{visibility:hidden!important\}/);
+  assert.match(html, /phone-intro-pending \.phone-product>\.phone-back\{position:absolute!important/);
   assert.match(html, /radial-gradient\(circle at 28% 16%/);
   assert.match(html, /dataset\.phoneIntro = 'pending'/);
   assert.doesNotMatch(html, /tian-phone-intro-played/);
