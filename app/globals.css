@@ -486,6 +486,8 @@ body:has(.home-shell){overflow:hidden}
 .sys-folder { background:linear-gradient(145deg,#c5c9cc,#767c82 60%,#474c51); }
 .sys-folder > i { width:48px; height:48px; gap:2px; padding:4px; border:1px solid rgba(0,0,0,.5); background:linear-gradient(rgba(35,40,44,.78),rgba(17,20,23,.74)); box-shadow:inset 0 1px rgba(255,255,255,.22); }
 .sys-folder .app-icon { width:11px; height:11px; }
+.sys-folder .app-icon-art { width:100%; height:100%; transform:none; }
+.sys-folder .app-icon-art > img { width:100%; height:100%; object-fit:cover; }
 .desktop-dock { left:7px; right:7px; bottom:6px; height:76px; padding:8px 10px 6px; gap:5px; border-radius:17px 17px 10px 10px; background:linear-gradient(rgba(238,245,249,.57),rgba(87,105,119,.5) 56%,rgba(36,51,64,.58)); border:1px solid rgba(255,255,255,.38); box-shadow:inset 0 1px rgba(255,255,255,.63),0 2px 7px #07111a; backdrop-filter:blur(7px); }
 .desktop-dock::after { content:""; position:absolute; left:8px; right:8px; bottom:5px; height:9px; border-radius:50%; background:rgba(255,255,255,.12); filter:blur(3px); }
 .desktop-dock .dock-system-app > .system-app-icon { width:56px; height:56px; flex-basis:56px; z-index:2; }

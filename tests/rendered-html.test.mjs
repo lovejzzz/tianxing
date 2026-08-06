@@ -124,6 +124,7 @@ test("keeps the iPhone interactive and time-aware", async () => {
   assert.match(styles, /@keyframes fun-shell-open \{ 0%,34%\{opacity:1/);
   assert.match(styles, /animation:fun-shell-open 520ms/);
   assert.match(styles, /animation:fun-icon-arrive 470ms calc\(105ms/);
+  assert.match(styles, /sys-folder \.app-icon-art \{ width:100%; height:100%; transform:none/);
   assert.match(styles, /phone-app-layer\.is-opening\.is-from-icon/);
   assert.match(styles, /backface-visibility:hidden/);
   assert.match(styles, /device-stage\.is-immersive\{translate:none/);
