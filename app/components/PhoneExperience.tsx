@@ -248,11 +248,11 @@ export function PhoneExperience() {
     if (requestedValue === null) return;
     const requestedFrame = Number(requestedValue);
     if (!Number.isFinite(requestedFrame)) return;
-    const timer = window.setTimeout(() => setMotionInspectionMs(Math.max(0, Math.min(720, requestedFrame))), 0);
+    const timer = window.setTimeout(() => setMotionInspectionMs(Math.max(0, Math.min(760, requestedFrame))), 0);
     return () => window.clearTimeout(timer);
   }, []);
 
-  const motionProgress = (motionInspectionMs ?? 0) / 720;
+  const motionProgress = (motionInspectionMs ?? 0) / 760;
 
   const saveCapture = (src: string) => {
     setCaptures((current) => {
@@ -431,7 +431,7 @@ function FolderView({ onGoHome }: { onGoHome: () => void }) {
   return (
     <div className="folder-screen">
       <div className="fun-icon-shell" aria-hidden="true">
-        <span>{Array.from({ length: 9 }, (_, index) => <i key={index} />)}</span>
+        <span>{projects.map((project) => <AppIcon project={project} key={project.slug} />)}</span>
       </div>
       <div className="fun-dolly" aria-hidden="true"><i /><i /><i /><i /></div>
       <div className="screen-titlebar work-titlebar">
