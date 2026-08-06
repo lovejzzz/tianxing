@@ -980,6 +980,28 @@ body:has(.home-shell){overflow:hidden}
 .mobile-home-nav { display:none; }
 
 @media (max-width:560px) {
+  /* Mobile boots directly into the already-installed home screen. The server's
+     desktop-first Fun layer stays mounted for hydration, but must never flash. */
+  .phone-mode-folder > .phone-home-layer.is-background:not(.is-fun-background) {
+    opacity:1;
+    transform:none;
+    filter:none;
+  }
+  .phone-mode-folder > .phone-app-layer.is-fun-app:not(.is-from-icon) {
+    visibility:hidden;
+  }
+
+  /* A full-viewport phone needs a shallower move than the framed desktop shot.
+     Stop at the glass edge instead of flying through the shelf at 172%. */
+  .is-fun-app.is-from-icon.is-opening .folder-content { animation-name:fun-content-mobile-open; }
+  .is-fun-app.is-from-icon.is-closing .folder-content { animation-name:fun-content-mobile-close; }
+  .is-fun-app.is-from-icon.is-opening .fun-icon-shell {
+    animation-name:fun-portal-mobile-open;
+    animation-timing-function:cubic-bezier(.24,.02,.22,1);
+  }
+  .is-fun-app.is-from-icon.is-closing .fun-icon-shell { animation-name:fun-portal-mobile-close; }
+  .is-fun-app.is-from-icon.is-opening .fun-dolly i { animation-name:fun-ring-mobile; }
+
   html,
   body { width:100%; min-height:100%; background:#000; overscroll-behavior:none; }
   body:has(.home-shell) { overflow:hidden; }
@@ -1094,6 +1116,36 @@ body:has(.home-shell){overflow:hidden}
   .mobile-home-nav:active { filter:brightness(.78); }
   .work-titlebar .mini-mark { visibility:hidden; }
   .native-content { padding-bottom:env(safe-area-inset-bottom); }
+
+  @keyframes fun-content-mobile-open {
+    0%,24% { opacity:0; filter:brightness(.62) blur(2.6px); transform:scale(.955); }
+    46% { opacity:.38; filter:brightness(.78) blur(1.35px); transform:scale(.975); }
+    72% { opacity:.96; filter:brightness(.99) blur(.15px); transform:scale(.998); }
+    100% { opacity:1; filter:none; transform:scale(1); }
+  }
+  @keyframes fun-content-mobile-close {
+    0%,20% { opacity:1; filter:none; transform:scale(1); }
+    56% { opacity:.38; filter:brightness(.76) blur(1.25px); transform:scale(.975); }
+    100% { opacity:0; filter:brightness(.6) blur(2.6px); transform:scale(.955); }
+  }
+  @keyframes fun-portal-mobile-open {
+    0% { left:var(--launch-x); top:var(--launch-y); width:var(--launch-width); height:var(--launch-height); border-radius:14px; opacity:1; filter:brightness(1); }
+    14% { left:calc(var(--launch-x) - 2px); top:calc(var(--launch-y) - 2px); width:calc(var(--launch-width) + 4px); height:calc(var(--launch-height) + 4px); border-radius:15px; opacity:1; filter:brightness(1.06); }
+    38% { left:calc(50% - min(26vw,22dvh)); top:calc(50% - min(26vw,22dvh)); width:min(52vw,44dvh); height:min(52vw,44dvh); border-radius:10px; opacity:1; filter:brightness(1.04); }
+    66% { left:calc(50% - min(34vw,28dvh)); top:calc(50% - min(34vw,28dvh)); width:min(68vw,56dvh); height:min(68vw,56dvh); border-radius:6px; opacity:.9; filter:brightness(1.02); }
+    84%,100% { left:calc(50% - min(36vw,30dvh)); top:calc(50% - min(36vw,30dvh)); width:min(72vw,60dvh); height:min(72vw,60dvh); border-radius:4px; opacity:0; filter:brightness(1.06) blur(.5px); }
+  }
+  @keyframes fun-portal-mobile-close {
+    0%,12% { left:calc(50% - min(36vw,30dvh)); top:calc(50% - min(36vw,30dvh)); width:min(72vw,60dvh); height:min(72vw,60dvh); border-radius:4px; opacity:0; filter:brightness(1.06) blur(.5px); }
+    36% { left:calc(50% - min(34vw,28dvh)); top:calc(50% - min(34vw,28dvh)); width:min(68vw,56dvh); height:min(68vw,56dvh); border-radius:6px; opacity:.9; filter:brightness(1.02); }
+    66% { left:calc(50% - min(26vw,22dvh)); top:calc(50% - min(26vw,22dvh)); width:min(52vw,44dvh); height:min(52vw,44dvh); border-radius:10px; opacity:1; filter:brightness(1.04); }
+    86% { left:calc(var(--launch-x) - 2px); top:calc(var(--launch-y) - 2px); width:calc(var(--launch-width) + 4px); height:calc(var(--launch-height) + 4px); border-radius:15px; opacity:1; filter:brightness(1.06); }
+    100% { left:var(--launch-x); top:var(--launch-y); width:var(--launch-width); height:var(--launch-height); border-radius:14px; opacity:1; filter:none; }
+  }
+  @keyframes fun-ring-mobile {
+    0% { opacity:.64; transform:translate(-50%,-50%) scale(.55); }
+    100% { opacity:0; transform:translate(-50%,-50%) scale(3.4); }
+  }
 }
 
 @media (max-width:560px) and (orientation:landscape) {
