@@ -123,7 +123,11 @@ export function FluidHeartNote() {
       if ("requestIdleCallback" in window) {
         idleHandle = window.requestIdleCallback(prepareFluid, { timeout: 3000 });
       } else {
-        fallbackTimer = window.setTimeout(prepareFluid, 3700);
+        // `requestIdleCallback` is declared on modern DOM Window types, so
+        // TypeScript narrows `window` to `never` in this legacy-browser branch.
+        // The global timer keeps the runtime fallback without touching that
+        // over-narrowed value.
+        fallbackTimer = setTimeout(prepareFluid, 3700) as unknown as number;
       }
     };
 
