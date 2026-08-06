@@ -8,7 +8,6 @@ import { RoundedBoxGeometry } from "three/examples/jsm/geometries/RoundedBoxGeom
 const INTRO_MS = 3600;
 const BASE_FOV = 30;
 const CAMERA_Z = 13.263;
-const INTRO_SESSION_KEY = "tian-phone-intro-played";
 // One world unit is 110.44 CSS pixels, so the body always lines up with the 432x776 DOM product.
 const PHONE_WIDTH = 3.91;
 const PHONE_HEIGHT = 7.02;
@@ -181,16 +180,15 @@ export function Phone3DIntro({ productRef }: { productRef: RefObject<HTMLDivElem
     const inspectionMs = requestedInspection !== null && Number.isFinite(requestedInspection)
       ? Math.max(0, Math.min(INTRO_MS, requestedInspection))
       : null;
-    let introPlayed = false;
-    try {
-      introPlayed = window.sessionStorage.getItem(INTRO_SESSION_KEY) === "1";
-    } catch {
-      // A private browser may disable session storage; the intro can still play safely.
-    }
-    if (window.matchMedia("(max-width: 560px), (prefers-reduced-motion: reduce)").matches || (introPlayed && inspectionMs === null)) {
+    const introRequestedForDocument = document.documentElement.dataset.phoneIntro === "pending";
+    if (window.matchMedia("(max-width: 560px), (prefers-reduced-motion: reduce)").matches || (!introRequestedForDocument && inspectionMs === null)) {
       document.documentElement.classList.remove("phone-intro-pending");
       return;
     }
+    // Consume the request once per document. A hard refresh creates a new
+    // document and requests the intro again; client-side project navigation
+    // reuses this document, so returning to Fun does not replay it.
+    delete document.documentElement.dataset.phoneIntro;
 
     let renderer: THREE.WebGLRenderer;
     try {
@@ -500,13 +498,6 @@ export function Phone3DIntro({ productRef }: { productRef: RefObject<HTMLDivElem
     // DOM-phone flash that used to appear while Three.js was still preparing.
     document.documentElement.classList.add("phone-3d-ready");
     document.documentElement.classList.remove("phone-3d-complete", "phone-intro-pending");
-    if (inspectionMs === null) {
-      try {
-        window.sessionStorage.setItem(INTRO_SESSION_KEY, "1");
-      } catch {
-        // The animation still works when storage is unavailable.
-      }
-    }
     const observer = new ResizeObserver(resize);
     observer.observe(host);
 

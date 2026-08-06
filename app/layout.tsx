@@ -4,8 +4,10 @@ import "./globals.css";
 const phoneIntroBootstrap = `
 try {
   var desktopIntro = window.matchMedia('(min-width: 561px) and (prefers-reduced-motion: no-preference)').matches;
-  var introPlayed = window.sessionStorage.getItem('tian-phone-intro-played') === '1';
-  if (desktopIntro && !introPlayed) document.documentElement.classList.add('phone-intro-pending');
+  if (desktopIntro) {
+    document.documentElement.dataset.phoneIntro = 'pending';
+    document.documentElement.classList.add('phone-intro-pending');
+  }
 } catch (_) {}
 `;
 
