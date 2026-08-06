@@ -354,14 +354,10 @@ export function PhoneExperience() {
       aria-label="Interactive iPhone portfolio"
     >
       <div className="phone-product">
-        <span className="phone-edge edge-left" aria-hidden="true" />
-        <span className="phone-edge edge-right" aria-hidden="true" />
-        <span className="phone-edge edge-top" aria-hidden="true" />
-        <span className="phone-edge edge-bottom" aria-hidden="true" />
+        <span className="phone-spine" aria-hidden="true" />
         <div className="phone-back" aria-hidden="true">
           <span className="back-camera" />
           <span className="back-flash" />
-          <span className="back-mark">TIAN</span>
         </div>
 
         <div className="device" aria-hidden="true">

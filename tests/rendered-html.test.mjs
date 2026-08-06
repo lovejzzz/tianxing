@@ -123,9 +123,14 @@ test("keeps the iPhone interactive and time-aware", async () => {
   assert.match(source, /shouldReturnToFunIcon/);
   assert.match(source, /className="phone-product"/);
   assert.match(source, /className="phone-back"/);
-  assert.match(source, /phone-edge edge-left/);
+  assert.doesNotMatch(source, /phone-edge edge-left/);
+  assert.match(source, /phone-spine/);
   assert.match(styles, /@keyframes phone-product-flip/);
   assert.doesNotMatch(styles, /@keyframes phone-product-flip\{[^}]*opacity/);
+  assert.match(styles, /phone-product-flip 2400ms/);
+  assert.doesNotMatch(styles, /\.edge-left/);
+  assert.match(styles, /@keyframes phone-spine-reveal/);
+  assert.doesNotMatch(source, /className="back-mark"/);
   assert.match(styles, /animation:fun-portal-open 920ms/);
   assert.match(styles, /animation:fun-icon-arrive 490ms calc\(300ms/);
   assert.match(styles, /@keyframes fun-content-dolly-open/);
