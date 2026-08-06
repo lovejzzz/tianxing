@@ -444,7 +444,7 @@ function StatusBar({ time }: { time: string }) {
   return (
     <div className="status-bar" aria-label={`Current time ${time}`}>
       <span className="signal" aria-hidden="true"><i /><i /><i /><i /><i /></span>
-      <span>{time}</span>
+      <span className="status-time">{time}</span>
       <span className="battery" aria-hidden="true"><b>100%</b><i /></span>
     </div>
   );

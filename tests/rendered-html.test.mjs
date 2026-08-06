@@ -129,6 +129,7 @@ test("keeps the iPhone interactive and time-aware", async () => {
   assert.match(source, /data-app-id=\{app\.id\}/);
   assert.match(source, /shouldReturnToFunIcon/);
   assert.match(source, /className="phone-product"/);
+  assert.match(source, /className="status-time"/);
   assert.match(source, /className="phone-back"/);
   assert.match(source, /<Phone3DIntro productRef=\{phoneProductRef\} \/>/);
   assert.match(source, /ref=\{phoneProductRef\}/);
@@ -158,6 +159,7 @@ test("keeps the iPhone interactive and time-aware", async () => {
   assert.match(styles, /water-drops\.png/);
   assert.match(styles, /transform:scale\(1\.035,1\.012\)/);
   assert.match(styles, /phone-3d-ready \.phone-product \.status-bar[\s\S]*padding-inline:13px/);
+  assert.match(styles, /\.status-time\s*\{[^}]*left:50%[^}]*translate\(-50%,-50%\)/);
   assert.doesNotMatch(styles, /@keyframes phone-dom-handoff/);
   assert.doesNotMatch(styles, /\.edge-left/);
   assert.doesNotMatch(styles, /@keyframes phone-spine-reveal/);
