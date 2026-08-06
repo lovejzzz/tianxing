@@ -11,12 +11,15 @@ const CAMERA_Z = 13.263;
 const PHONE_WIDTH = 3.91;
 const PHONE_HEIGHT = 7.02;
 const BAND_DEPTH = 0.62; // 9.3mm at true iPhone 4 proportions
-const SCREEN_WIDTH = 3.492;
-const SCREEN_HEIGHT = 5.437;
+// The aperture is measured at the glass plane, not at the phone origin. These
+// dimensions project to the DOM screen's exact 386 x 601 CSS-pixel rectangle.
+const SCREEN_WIDTH = 3.41485;
+const SCREEN_HEIGHT = 5.3169;
 const GLASS_WIDTH = 3.8;
 const GLASS_HEIGHT = 6.91;
 const GLASS_RADIUS = 0.46;
 const GLASS_Z = BAND_DEPTH / 2 - 0.01; // both glass plates sit just inside the steel chamfer
+const SCREEN_PLANE_Z = GLASS_Z + 0.004;
 
 function smoothstep5(value: number) {
   return value * value * value * (value * (value * 6 - 15) + 10);
@@ -143,6 +146,24 @@ function createSpeakerMeshTexture(): THREE.CanvasTexture | null {
   return texture;
 }
 
+function createBackMarkTexture(): THREE.CanvasTexture | null {
+  const canvas = document.createElement("canvas");
+  canvas.width = 512;
+  canvas.height = 192;
+  const context = canvas.getContext("2d");
+  if (!context) return null;
+  context.clearRect(0, 0, canvas.width, canvas.height);
+  context.font = '500 55px "Helvetica Neue", Helvetica, Arial, sans-serif';
+  context.textAlign = "center";
+  context.textBaseline = "middle";
+  context.fillStyle = "rgba(204, 210, 215, 0.72)";
+  context.fillText("TIAN", canvas.width / 2, canvas.height / 2);
+  const texture = new THREE.CanvasTexture(canvas);
+  texture.colorSpace = THREE.SRGBColorSpace;
+  texture.anisotropy = 4;
+  return texture;
+}
+
 export function Phone3DIntro({ productRef }: { productRef: RefObject<HTMLDivElement | null> }) {
   const hostRef = useRef<HTMLDivElement>(null);
 
@@ -164,7 +185,7 @@ export function Phone3DIntro({ productRef }: { productRef: RefObject<HTMLDivElem
     renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
     renderer.outputColorSpace = THREE.SRGBColorSpace;
     renderer.toneMapping = THREE.ACESFilmicToneMapping;
-    renderer.toneMappingExposure = 1.05;
+    renderer.toneMappingExposure = 1.01;
     renderer.setClearColor(0x000000, 0);
     renderer.domElement.setAttribute("aria-hidden", "true");
     host.appendChild(renderer.domElement);
@@ -173,7 +194,7 @@ export function Phone3DIntro({ productRef }: { productRef: RefObject<HTMLDivElem
     // A neutral studio environment gives the steel and glass their Apple-spot reflections.
     const pmrem = new THREE.PMREMGenerator(renderer);
     const { studio, dispose: disposeStudio } = createStudioEnvironment();
-    const environment = pmrem.fromScene(studio, 0.05);
+    const environment = pmrem.fromScene(studio, 0.035);
     disposeStudio();
     scene.environment = environment.texture;
 
@@ -188,22 +209,22 @@ export function Phone3DIntro({ productRef }: { productRef: RefObject<HTMLDivElem
     // Brushed steel: anisotropy stretches the streak highlights along the band,
     // a whisper of clearcoat keeps the chamfers crisp over the brushing.
     const steel = new THREE.MeshPhysicalMaterial({
-      color: 0xaaafb4,
+      color: 0x989ea3,
       metalness: 1,
-      roughness: 0.3,
+      roughness: 0.34,
       anisotropy: 0.28,
       clearcoat: 0.25,
       clearcoatRoughness: 0.2,
-      envMapIntensity: 1.05,
+      envMapIntensity: 0.88,
     });
-    const steelButton = new THREE.MeshPhysicalMaterial({ color: 0xa8adb2, metalness: 1, roughness: 0.32, envMapIntensity: 1 });
+    const steelButton = new THREE.MeshPhysicalMaterial({ color: 0xa0a6ab, metalness: 1, roughness: 0.34, envMapIntensity: 0.9 });
     const glassBlack = new THREE.MeshPhysicalMaterial({
-      color: 0x07090b,
+      color: 0x010203,
       metalness: 0,
-      roughness: 0.035,
-      clearcoat: 1,
-      clearcoatRoughness: 0.02,
-      envMapIntensity: 1.15,
+      roughness: 0.1,
+      clearcoat: 0.92,
+      clearcoatRoughness: 0.045,
+      envMapIntensity: 0.4,
     });
     const matteBlack = new THREE.MeshStandardMaterial({ color: 0x040506, metalness: 0.1, roughness: 0.42 });
     const glassEdge = new THREE.MeshStandardMaterial({ color: 0x05070a, metalness: 0.1, roughness: 0.6 });
@@ -262,7 +283,7 @@ export function Phone3DIntro({ productRef }: { productRef: RefObject<HTMLDivElem
         side: THREE.FrontSide,
       }),
     );
-    screenGlass.position.z = GLASS_Z + 0.004;
+    screenGlass.position.z = SCREEN_PLANE_Z;
     phone.add(screenGlass);
 
     // Earpiece slot with its metal mesh, and the front camera beside it.
@@ -336,6 +357,19 @@ export function Phone3DIntro({ productRef }: { productRef: RefObject<HTMLDivElem
     flash.position.set(-1.06, 2.95, GLASS_Z + 0.005);
     rearGroup.add(flash);
 
+    // A restrained personal mark in place of borrowed Apple branding. It only
+    // catches the light on the back turn and disappears into the black glass.
+    const backMarkTexture = createBackMarkTexture();
+    if (backMarkTexture) {
+      ownedTextures.push(backMarkTexture);
+      const backMark = new THREE.Mesh(
+        new THREE.PlaneGeometry(0.94, 0.35),
+        new THREE.MeshBasicMaterial({ map: backMarkTexture, transparent: true, opacity: 0.2, depthWrite: false }),
+      );
+      backMark.position.set(0, -0.15, GLASS_Z + 0.008);
+      rearGroup.add(backMark);
+    }
+
     // --- Band furniture -----------------------------------------------------
     // Left edge: mute switch above two round volume buttons.
     const mute = new THREE.Mesh(new RoundedBoxGeometry(0.09, 0.23, 0.13, 3, 0.03), steelButton);
@@ -407,7 +441,9 @@ export function Phone3DIntro({ productRef }: { productRef: RefObject<HTMLDivElem
       const x = pose.x * pixelsPerUnit;
       const y = -pose.y * pixelsPerUnit;
       const z = pose.z * pixelsPerUnit;
-      product.style.transform = `translate3d(${x}px, ${y}px, ${z}px) rotateX(${-pose.rotateX}rad) rotateY(${pose.rotateY}rad) rotateZ(${-pose.rotateZ}rad) scale(${pose.scale})`;
+      const screenDepth = SCREEN_PLANE_Z * pixelsPerUnit;
+      const depthCompensation = 1 - SCREEN_PLANE_Z / CAMERA_Z;
+      product.style.transform = `translate3d(${x}px, ${y}px, ${z}px) rotateX(${-pose.rotateX}rad) rotateY(${pose.rotateY}rad) rotateZ(${-pose.rotateZ}rad) scale(${pose.scale}) translateZ(${screenDepth}px) scale(${depthCompensation})`;
       product.style.visibility = Math.cos(pose.rotateY) > 0 ? "visible" : "hidden";
     };
 
@@ -441,7 +477,9 @@ export function Phone3DIntro({ productRef }: { productRef: RefObject<HTMLDivElem
       renderer.render(scene, camera);
       if (progress < 1) frame = window.requestAnimationFrame(render);
       else {
-        product.style.transform = "none";
+        // Keep the screen at the same physical glass depth after handoff; a
+        // transform reset here caused a subtle final-frame size jump.
+        applyPose(poseAt(1));
         product.style.visibility = "visible";
         document.documentElement.classList.add("phone-3d-complete");
       }
