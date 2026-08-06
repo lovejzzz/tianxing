@@ -150,6 +150,8 @@ test("keeps the iPhone interactive and time-aware", async () => {
   assert.doesNotMatch(source, /phone-spine/);
   assert.doesNotMatch(styles, /@keyframes phone-product-flip/);
   assert.match(styles, /phone-3d-ready:not\(\.phone-3d-complete\) \.phone-product/);
+  assert.match(styles, /phone-3d-ready:not\(\.phone-3d-complete\) \.phone-product>\.phone::before/);
+  assert.match(styles, /water-drops\.png/);
   assert.match(styles, /transform:scale\(1\.035,1\.012\)/);
   assert.doesNotMatch(styles, /@keyframes phone-dom-handoff/);
   assert.doesNotMatch(styles, /\.edge-left/);

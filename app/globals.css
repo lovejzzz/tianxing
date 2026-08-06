@@ -91,7 +91,7 @@ body:has(.home-shell){overflow:hidden}
 .phone-3d-ready .phone-product>.device,
 .phone-3d-ready .phone-product>.phone-back { display:none; }
 .phone-3d-ready .phone-product>.phone {
-  overflow:visible;
+  overflow:hidden;
   background:transparent;
   border-color:transparent;
   box-shadow:none;
@@ -99,10 +99,37 @@ body:has(.home-shell){overflow:hidden}
   backface-visibility:hidden;
   -webkit-backface-visibility:hidden;
 }
-.phone-3d-ready .phone-product>.phone::before,
 .phone-3d-ready .phone-product>.phone::after,
 .phone-3d-ready .phone-product .phone-top { display:none; }
+.phone-3d-ready:not(.phone-3d-complete) .phone-product>.phone::before {
+  content:"";
+  position:absolute;
+  z-index:0;
+  inset:79px 0 82px;
+  display:block;
+  opacity:1;
+  border:0;
+  border-radius:0;
+  pointer-events:none;
+  mix-blend-mode:normal;
+  background:
+    linear-gradient(#33495d,#172b3d 48%,#102438 52%,#1b354a) 0 0/100% 21px no-repeat,
+    linear-gradient(rgba(91,126,158,.88),rgba(27,51,75,.94) 49%,rgba(13,30,48,.98) 50%,rgba(22,44,65,.94)) 0 21px/100% 49px no-repeat,
+    linear-gradient(rgba(7,24,37,.08),rgba(3,14,23,.32)) 0 70px/100% calc(100% - 70px) no-repeat,
+    #c5c9cb url("/media/ios4/water-drops.png") center 21px/420px 630px no-repeat;
+  transform:none;
+}
+.phone-3d-ready:not(.phone-3d-complete) .phone-product .folder-content {
+  background:transparent;
+}
+.phone-3d-ready:not(.phone-3d-complete) .phone-product .screen.phone-mode-folder { background:transparent; }
+.phone-3d-ready:not(.phone-3d-complete) .phone-product .phone-mode-folder>.phone-home-layer { visibility:hidden; }
+.phone-3d-ready:not(.phone-3d-complete) .phone-product .folder-content::after { background:transparent; }
+.phone-3d-complete .phone-product>.phone::before { display:none; }
 .phone-3d-ready .phone-product .screen {
+  position:relative;
+  z-index:1;
+  box-shadow:none;
   backface-visibility:hidden;
   -webkit-backface-visibility:hidden;
   transform:scale(1.035,1.012);
