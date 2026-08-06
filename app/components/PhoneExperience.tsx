@@ -205,6 +205,7 @@ export function PhoneExperience() {
   const [origin, setOrigin] = useState<Origin>({ x: 50, y: 58, left: 134, top: 260, width: 64, height: 64, scaleX: .16, scaleY: .09 });
   const [launchFromIcon, setLaunchFromIcon] = useState(false);
   const [motionInspectionMs, setMotionInspectionMs] = useState<number | null>(null);
+  const [arrivalInspectionMs, setArrivalInspectionMs] = useState<number | null>(null);
   const [time, setTime] = useState("9:41 AM");
   const [calendarDay, setCalendarDay] = useState("1");
   const [calendarWeekday, setCalendarWeekday] = useState("Today");
@@ -248,11 +249,19 @@ export function PhoneExperience() {
 
   useEffect(() => {
     if (process.env.NODE_ENV === "production") return;
-    const requestedValue = new URLSearchParams(window.location.search).get("funFrame");
-    if (requestedValue === null) return;
-    const requestedFrame = Number(requestedValue);
-    if (!Number.isFinite(requestedFrame)) return;
-    const timer = window.setTimeout(() => setMotionInspectionMs(Math.max(0, Math.min(920, requestedFrame))), 0);
+    const params = new URLSearchParams(window.location.search);
+    const funValue = params.get("funFrame");
+    const arrivalValue = params.get("arrivalFrame");
+    const timer = window.setTimeout(() => {
+      if (funValue !== null) {
+        const requestedFrame = Number(funValue);
+        if (Number.isFinite(requestedFrame)) setMotionInspectionMs(Math.max(0, Math.min(920, requestedFrame)));
+      }
+      if (arrivalValue !== null) {
+        const requestedFrame = Number(arrivalValue);
+        if (Number.isFinite(requestedFrame)) setArrivalInspectionMs(Math.max(0, Math.min(2500, requestedFrame)));
+      }
+    }, 0);
     return () => window.clearTimeout(timer);
   }, []);
 
@@ -349,9 +358,10 @@ export function PhoneExperience() {
   return (
     <section
       ref={deviceStageRef}
-      className={`device-stage ${immersive ? "is-immersive" : ""}`}
+      className={`device-stage ${immersive ? "is-immersive" : ""} ${arrivalInspectionMs !== null ? "is-mobile-arrival-inspection" : ""}`}
       style={{
         "--immersive-shift": `${immersiveShift}px`,
+        "--mobile-arrival-inspection-offset": `${-(arrivalInspectionMs ?? 0)}ms`,
       } as CSSProperties}
       aria-label="Interactive iPhone portfolio"
     >

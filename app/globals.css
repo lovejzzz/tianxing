@@ -1029,8 +1029,51 @@ body:has(.home-shell){overflow:hidden}
   .phone-product {
     width:100%;
     height:100%;
-    animation:none;
+    overflow:hidden;
+    border-radius:0;
+    background:#000;
     transform:none;
+    transform-origin:50% 50%;
+    will-change:transform,border-radius;
+    animation:mobile-phone-arrival 2500ms linear both;
+  }
+  .phone-product::before {
+    content:"";
+    position:absolute;
+    z-index:40;
+    inset:0;
+    pointer-events:none;
+    border:5px solid rgba(196,202,207,.9);
+    border-radius:54px;
+    box-shadow:
+      inset 0 0 0 2px rgba(4,6,8,.98),
+      inset 0 0 0 4px rgba(238,242,244,.24),
+      inset 13px 0 17px rgba(255,255,255,.08),
+      inset -13px 0 18px rgba(0,0,0,.82),
+      0 26px 68px rgba(0,0,0,.88);
+    opacity:0;
+    animation:mobile-frame-dissolve 2500ms linear both;
+  }
+  .phone-product::after {
+    content:"";
+    position:absolute;
+    z-index:39;
+    inset:0;
+    pointer-events:none;
+    border-radius:inherit;
+    background:
+      radial-gradient(circle at 72% 28%,rgba(105,170,211,.2),transparent 28%),
+      linear-gradient(112deg,transparent 28%,rgba(255,255,255,.16) 46%,rgba(132,190,222,.06) 53%,transparent 67%);
+    mix-blend-mode:screen;
+    opacity:0;
+    animation:mobile-glass-awaken 2500ms linear both;
+  }
+  .is-mobile-arrival-inspection .phone-product,
+  .is-mobile-arrival-inspection .phone-product::before,
+  .is-mobile-arrival-inspection .phone-product::after,
+  .is-mobile-arrival-inspection .phone-product > .phone {
+    animation-delay:var(--mobile-arrival-inspection-offset)!important;
+    animation-play-state:paused!important;
   }
   .phone-3d-intro { display:none; }
   .phone-back { display:none; }
@@ -1045,6 +1088,8 @@ body:has(.home-shell){overflow:hidden}
     border-radius:0;
     background:#000;
     box-shadow:none;
+    will-change:filter;
+    animation:mobile-screen-exposure 2500ms linear both;
   }
   .phone::after,
   .phone::before,
@@ -1117,6 +1162,45 @@ body:has(.home-shell){overflow:hidden}
   .work-titlebar .mini-mark { visibility:hidden; }
   .native-content { padding-bottom:env(safe-area-inset-bottom); }
 
+  @keyframes mobile-phone-arrival {
+    0% { pointer-events:none; border-radius:54px; transform:scale(.44) translateZ(0); }
+    12% { border-radius:54px; transform:scale(.455) translateZ(0); }
+    28% { border-radius:52px; transform:scale(.51) translateZ(0); }
+    45% { border-radius:47px; transform:scale(.61) translateZ(0); }
+    61% { border-radius:39px; transform:scale(.735) translateZ(0); }
+    75% { border-radius:28px; transform:scale(.855) translateZ(0); }
+    88% { border-radius:13px; transform:scale(.955) translateZ(0); }
+    100% { pointer-events:auto; border-radius:0; transform:scale(1) translateZ(0); }
+  }
+  @keyframes mobile-screen-exposure {
+    0% { filter:brightness(.008) contrast(.72) saturate(.28) blur(1.5px); }
+    13% { filter:brightness(.016) contrast(.76) saturate(.32) blur(1.25px); }
+    29% { filter:brightness(.045) contrast(.84) saturate(.4) blur(1px); }
+    45% { filter:brightness(.12) contrast(.94) saturate(.54) blur(.72px); }
+    59% { filter:brightness(.27) contrast(1.04) saturate(.68) blur(.45px); }
+    71% { filter:brightness(.49) contrast(1.09) saturate(.8) blur(.24px); }
+    82% { filter:brightness(.7) contrast(1.07) saturate(.89) blur(.1px); }
+    91% { filter:brightness(.89) contrast(1.03) saturate(.96) blur(0); }
+    100% { filter:brightness(1) contrast(1) saturate(1) blur(0); }
+  }
+  @keyframes mobile-frame-dissolve {
+    0% { opacity:.14; filter:brightness(.36); }
+    18% { opacity:.3; filter:brightness(.52); }
+    42% { opacity:.66; filter:brightness(.75); }
+    62% { opacity:.92; filter:brightness(.98); }
+    76% { opacity:.56; filter:brightness(1.08); }
+    84% { opacity:.16; filter:brightness(1.04); }
+    88% { opacity:0; filter:brightness(1.02); }
+    100% { opacity:0; filter:brightness(1); }
+  }
+  @keyframes mobile-glass-awaken {
+    0%,28% { opacity:0; transform:translateX(-8%); }
+    49% { opacity:.07; }
+    68% { opacity:.22; transform:translateX(0); }
+    84% { opacity:.08; transform:translateX(3%); }
+    100% { opacity:0; transform:translateX(4%); }
+  }
+
   @keyframes fun-content-mobile-open {
     0%,24% { opacity:0; filter:brightness(.62) blur(2.6px); transform:scale(.955); }
     46% { opacity:.38; filter:brightness(.78) blur(1.35px); transform:scale(.975); }
@@ -1146,6 +1230,17 @@ body:has(.home-shell){overflow:hidden}
     0% { opacity:.64; transform:translate(-50%,-50%) scale(.55); }
     100% { opacity:0; transform:translate(-50%,-50%) scale(3.4); }
   }
+}
+
+@media (max-width:560px) and (prefers-reduced-motion:reduce) {
+  .phone-product,
+  .phone-product::before,
+  .phone-product::after,
+  .phone-product > .phone { animation:none!important; }
+  .phone-product { border-radius:0; transform:none; }
+  .phone-product::before,
+  .phone-product::after { opacity:0; }
+  .phone-product > .phone { filter:none; }
 }
 
 @media (max-width:560px) and (orientation:landscape) {
