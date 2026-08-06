@@ -53,6 +53,7 @@ export default function RootLayout({ children }: Readonly<{ children: React.Reac
   return (
     <html lang="en" suppressHydrationWarning>
       <head>
+        <style dangerouslySetInnerHTML={{ __html: ".phone-intro-pending .phone-product{visibility:hidden!important}" }} />
         <script dangerouslySetInnerHTML={{ __html: phoneIntroBootstrap }} />
       </head>
       <body>{children}</body>

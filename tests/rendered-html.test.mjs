@@ -20,6 +20,9 @@ test("renders the finished portfolio home", async () => {
   assert.match(html, /Welcome to my heart\. Have fun\./);
   assert.match(html, /Welcome to my heart\.<\/span><span[^>]*>Have fun\./);
   assert.match(html, /— Tian Xing/);
+  const introGuard = html.indexOf(".phone-intro-pending .phone-product{visibility:hidden!important}");
+  const phoneMarkup = html.indexOf('class="phone-product"');
+  assert.ok(introGuard >= 0 && phoneMarkup > introGuard, "the pre-paint phone guard must arrive before the phone markup");
   assert.doesNotMatch(html, /Portfolio · Edition 01|Selected work|2024—2026|Tian Xing delivers|Designed &amp; built by Tian Xing|New York/i);
   assert.doesNotMatch(html, /Choose an icon to open a project|Nine things I care about|makes things|systems thinking and play/i);
   assert.doesNotMatch(html, /codex-preview|react-loading-skeleton|Your site is taking shape/);
@@ -127,6 +130,8 @@ test("keeps the iPhone interactive and time-aware", async () => {
   assert.match(source, /<Phone3DIntro productRef=\{phoneProductRef\} \/>/);
   assert.match(source, /ref=\{phoneProductRef\}/);
   assert.match(phone3dSource, /true transparent aperture/);
+  assert.match(phone3dSource, /black structural liner/);
+  assert.match(phone3dSource, /linerGeometry/);
   assert.match(phone3dSource, /product\.style\.transform/);
   assert.doesNotMatch(phone3dSource, /host\.style\.visibility = "hidden"/);
   assert.doesNotMatch(source, /phone-edge edge-left/);

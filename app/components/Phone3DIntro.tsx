@@ -275,6 +275,21 @@ export function Phone3DIntro({ productRef }: { productRef: RefObject<HTMLDivElem
     bandGeometry.translate(0, 0, -(BAND_DEPTH - 0.084) / 2);
     phone.add(new THREE.Mesh(bandGeometry, steel));
 
+    // The real phone has a black structural liner between the stainless band
+    // and display assembly. Without it, an oblique camera angle can see the
+    // bright inner wall of the extruded steel ring through the screen opening.
+    const linerOuterWidth = PHONE_WIDTH - 0.17;
+    const linerOuterHeight = PHONE_HEIGHT - 0.17;
+    const linerShape = traceRoundedRect(new THREE.Shape(), linerOuterWidth, linerOuterHeight, 0.445);
+    linerShape.holes.push(traceRoundedRect(new THREE.Path(), linerOuterWidth - 0.11, linerOuterHeight - 0.11, 0.39));
+    const linerGeometry = new THREE.ExtrudeGeometry(linerShape, {
+      depth: BAND_DEPTH - 0.12,
+      bevelEnabled: false,
+      curveSegments: 52,
+    });
+    linerGeometry.translate(0, 0, -(BAND_DEPTH - 0.12) / 2);
+    phone.add(new THREE.Mesh(linerGeometry, matteBlack));
+
     // Antenna break lines, GSM layout: one up top, two low on the sides.
     const breakTop = new THREE.Mesh(new RoundedBoxGeometry(0.04, 0.13, 0.55, 2, 0.012), breakPlastic);
     breakTop.position.set(-0.6, PHONE_HEIGHT / 2 - 0.055, 0);
@@ -295,23 +310,6 @@ export function Phone3DIntro({ productRef }: { productRef: RefObject<HTMLDivElem
     frontGlassGeometry.translate(0, 0, GLASS_Z - 0.05);
     // Material 1 covers the extrude walls, so the aperture cut reads as a dark glass edge.
     phone.add(new THREE.Mesh(frontGlassGeometry, [frontGlass, glassEdge]));
-
-    const screenGlass = new THREE.Mesh(
-      new THREE.PlaneGeometry(SCREEN_WIDTH, SCREEN_HEIGHT),
-      new THREE.MeshPhysicalMaterial({
-        color: 0xbcd6e8,
-        transparent: true,
-        opacity: 0.055,
-        metalness: 0,
-        roughness: 0.03,
-        clearcoat: 1,
-        clearcoatRoughness: 0.025,
-        depthWrite: false,
-        side: THREE.FrontSide,
-      }),
-    );
-    screenGlass.position.z = SCREEN_PLANE_Z;
-    phone.add(screenGlass);
 
     // Earpiece slot with its metal mesh, and the front camera beside it.
     const earpiece = new THREE.Mesh(new RoundedBoxGeometry(0.56, 0.09, 0.016, 3, 0.04), matteBlack);
