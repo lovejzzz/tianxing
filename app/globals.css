@@ -83,7 +83,8 @@ body:has(.home-shell){overflow:hidden}
 .phone-3d-intro canvas { display:block; width:100%; height:100%; }
 .phone-3d-ready .phone-3d-intro { opacity:1; visibility:visible; }
 .phone-product { position:relative; z-index:3; width:432px; height:776px; display:grid; place-items:center; transform-style:preserve-3d; transform-origin:50% 50%; opacity:1; filter:drop-shadow(0 45px 70px rgba(0,0,0,.55)); }
-.phone-intro-pending .phone-product { visibility:hidden; }
+.phone-intro-pending .phone-product { visibility:visible; border:2px solid #50565c; border-radius:58px; background:radial-gradient(circle at 28% 16%,#23272b 0,#080a0c 24%,#010203 68%,#111417 100%); box-shadow:inset 0 0 0 5px #050607,0 38px 78px rgba(0,0,0,.62); transform:translate3d(-57px,18px,-127px) rotateX(.095rad) rotateY(2.921rad) rotateZ(-.024rad) scale(.9); }
+.phone-intro-pending .phone-product>* { visibility:hidden; }
 .phone-3d-ready .phone-product { z-index:10; will-change:transform; }
 .phone-3d-ready:not(.phone-3d-complete) .phone-product { pointer-events:none; }
 .phone-3d-ready .phone-product>.device,
@@ -103,6 +104,8 @@ body:has(.home-shell){overflow:hidden}
 .phone-3d-ready .phone-product .screen {
   backface-visibility:hidden;
   -webkit-backface-visibility:hidden;
+  transform:scale(1.035,1.012);
+  transform-origin:50% 50%;
 }
 .phone-3d-ready .phone-product .home-button {
   opacity:0;

@@ -20,7 +20,10 @@ const GLASS_WIDTH = 3.8;
 const GLASS_HEIGHT = 6.91;
 const GLASS_RADIUS = 0.46;
 const GLASS_Z = BAND_DEPTH / 2 - 0.01; // both glass plates sit just inside the steel chamfer
-const SCREEN_PLANE_Z = GLASS_Z + 0.004;
+// Keep the live DOM display on the same physical plane as the cover glass.
+// The small offset avoids z-fighting without turning the display into a second,
+// visibly displaced plane during the three-quarter view.
+const SCREEN_COMPOSITE_Z = GLASS_Z + 0.004;
 
 function smoothstep5(value: number) {
   return value * value * value * (value * (value * 6 - 15) + 10);
@@ -245,12 +248,7 @@ export function Phone3DIntro({ productRef }: { productRef: RefObject<HTMLDivElem
     // The front bezel stays optically black in both the static Next build and
     // the live Vite build. Highlights belong to the clear screen layer and the
     // stainless rim; letting PMREM light this broad face made it read as gray.
-    const frontGlass = new THREE.MeshStandardMaterial({
-      color: 0x010203,
-      metalness: 0,
-      roughness: 0.72,
-      envMapIntensity: 0.035,
-    });
+    const frontGlass = new THREE.MeshBasicMaterial({ color: 0x010203 });
     const matteBlack = new THREE.MeshStandardMaterial({ color: 0x040506, metalness: 0.1, roughness: 0.42 });
     const glassEdge = new THREE.MeshStandardMaterial({ color: 0x05070a, metalness: 0.1, roughness: 0.6 });
     const breakPlastic = new THREE.MeshStandardMaterial({ color: 0x141619, metalness: 0.05, roughness: 0.52 });
@@ -299,15 +297,16 @@ export function Phone3DIntro({ productRef }: { productRef: RefObject<HTMLDivElem
     });
 
     // --- Front glass --------------------------------------------------------
-    // A flat black glass plate with the screen cut clean through it. The live
-    // React screen sits behind that true transparent aperture from frame one,
-    // so there is never a second phone.
+    // A flush black glass sheet with the screen cut clean through it. This is
+    // intentionally a zero-depth surface: an extruded aperture creates a lit
+    // inner wall at oblique angles and makes the Retina display look recessed.
+    // The live React screen is slightly oversized beneath this mask.
     const faceShape = traceRoundedRect(new THREE.Shape(), GLASS_WIDTH, GLASS_HEIGHT, GLASS_RADIUS);
     faceShape.holes.push(traceRoundedRect(new THREE.Path(), SCREEN_WIDTH, SCREEN_HEIGHT, 0.05));
-    const frontGlassGeometry = new THREE.ExtrudeGeometry(faceShape, { depth: 0.05, bevelEnabled: false, curveSegments: 52 });
-    frontGlassGeometry.translate(0, 0, GLASS_Z - 0.05);
-    // Material 1 covers the extrude walls, so the aperture cut reads as a dark glass edge.
-    phone.add(new THREE.Mesh(frontGlassGeometry, [frontGlass, glassEdge]));
+    const frontGlassGeometry = new THREE.ShapeGeometry(faceShape, 52);
+    const frontGlassMesh = new THREE.Mesh(frontGlassGeometry, frontGlass);
+    frontGlassMesh.position.z = GLASS_Z;
+    phone.add(frontGlassMesh);
 
     // Earpiece slot with its metal mesh, and the front camera beside it.
     const earpiece = new THREE.Mesh(new RoundedBoxGeometry(0.56, 0.09, 0.016, 3, 0.04), matteBlack);
@@ -473,8 +472,8 @@ export function Phone3DIntro({ productRef }: { productRef: RefObject<HTMLDivElem
       const x = pose.x * pixelsPerUnit;
       const y = -pose.y * pixelsPerUnit;
       const z = pose.z * pixelsPerUnit;
-      const screenDepth = SCREEN_PLANE_Z * pixelsPerUnit;
-      const depthCompensation = 1 - SCREEN_PLANE_Z / CAMERA_Z;
+      const screenDepth = SCREEN_COMPOSITE_Z * pixelsPerUnit;
+      const depthCompensation = 1 - SCREEN_COMPOSITE_Z / CAMERA_Z;
       product.style.transform = `translate3d(${x}px, ${y}px, ${z}px) rotateX(${-pose.rotateX}rad) rotateY(${pose.rotateY}rad) rotateZ(${-pose.rotateZ}rad) scale(${pose.scale}) translateZ(${screenDepth}px) scale(${depthCompensation})`;
       product.style.visibility = Math.cos(pose.rotateY) > 0 ? "visible" : "hidden";
     };
