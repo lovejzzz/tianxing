@@ -137,6 +137,10 @@ test("keeps the iPhone interactive and time-aware", async () => {
   assert.match(phone3dSource, /linerGeometry/);
   assert.match(phone3dSource, /displayGasket = new THREE\.MeshBasicMaterial/);
   assert.match(phone3dSource, /new THREE\.Mesh\(linerGeometry, displayGasket\)/);
+  assert.match(phone3dSource, /createIntroScreenTexture/);
+  assert.match(phone3dSource, /new THREE\.PlaneGeometry\(SCREEN_WIDTH, SCREEN_HEIGHT\)/);
+  assert.match(phone3dSource, /product\.style\.visibility = hasCompleted \? "visible" : "hidden"/);
+  assert.match(phone3dSource, /introDisplay\.visible = false/);
   assert.match(phone3dSource, /new THREE\.ShapeGeometry\(faceShape/);
   assert.match(phone3dSource, /faceShape\.holes/);
   assert.match(phone3dSource, /SCREEN_COMPOSITE_Z = GLASS_Z \+ 0\.004/);
@@ -153,6 +157,7 @@ test("keeps the iPhone interactive and time-aware", async () => {
   assert.match(styles, /phone-product>\.phone:has\(\.screen\.phone-mode-folder\)/);
   assert.match(styles, /water-drops\.png/);
   assert.match(styles, /transform:scale\(1\.035,1\.012\)/);
+  assert.match(styles, /phone-3d-ready \.phone-product \.status-bar[\s\S]*padding-inline:13px/);
   assert.doesNotMatch(styles, /@keyframes phone-dom-handoff/);
   assert.doesNotMatch(styles, /\.edge-left/);
   assert.doesNotMatch(styles, /@keyframes phone-spine-reveal/);

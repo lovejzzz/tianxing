@@ -117,6 +117,9 @@ body:has(.home-shell){overflow:hidden}
   transform:scale(1.035,1.012);
   transform-origin:50% 50%;
 }
+.phone-3d-ready .phone-product .status-bar {
+  padding-inline:13px;
+}
 .phone-3d-ready .phone-product .home-button {
   opacity:0;
   background:transparent;

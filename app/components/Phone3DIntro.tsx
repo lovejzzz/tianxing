@@ -168,6 +168,153 @@ function createBackMarkTexture(): THREE.CanvasTexture | null {
   return texture;
 }
 
+const INTRO_PROJECT_ICONS = [
+  ["/art/work-icons/edutool.png", "EduTool"],
+  ["/art/work-icons/surge-method.png", "Surge"],
+  ["/art/work-icons/bebop-puzzle.png", "Bebop"],
+  ["/art/work-icons/quicky-resume.png", "Quicky"],
+  ["/art/work-icons/5279-emulsion.png", "5279"],
+  ["/art/work-icons/start-where-you-are.png", "Start Here"],
+  ["/art/work-icons/texas-jack.png", "Texas Jack"],
+  ["/art/work-icons/slotronome.png", "Slotronome"],
+  ["/art/work-icons/here-we-go-film-studio.png", "Here We Go"],
+] as const;
+
+function loadCanvasImage(source: string) {
+  return new Promise<HTMLImageElement | null>((resolve) => {
+    const image = new Image();
+    image.decoding = "async";
+    image.onload = () => resolve(image);
+    image.onerror = () => resolve(null);
+    image.src = source;
+  });
+}
+
+function roundedCanvasRect(context: CanvasRenderingContext2D, x: number, y: number, width: number, height: number, radius: number) {
+  context.beginPath();
+  context.moveTo(x + radius, y);
+  context.arcTo(x + width, y, x + width, y + height, radius);
+  context.arcTo(x + width, y + height, x, y + height, radius);
+  context.arcTo(x, y + height, x, y, radius);
+  context.arcTo(x, y, x + width, y, radius);
+  context.closePath();
+}
+
+function createIntroScreenTexture(renderer: THREE.WebGLRenderer, ownedTextures: THREE.Texture[]) {
+  const logicalWidth = 386;
+  const logicalHeight = 601;
+  const pixelRatio = 2;
+  const canvas = document.createElement("canvas");
+  canvas.width = logicalWidth * pixelRatio;
+  canvas.height = logicalHeight * pixelRatio;
+  const context = canvas.getContext("2d");
+  if (!context) return null;
+  context.scale(pixelRatio, pixelRatio);
+
+  const texture = new THREE.CanvasTexture(canvas);
+  texture.colorSpace = THREE.SRGBColorSpace;
+  texture.anisotropy = Math.min(8, renderer.capabilities.getMaxAnisotropy());
+  ownedTextures.push(texture);
+
+  const time = new Date().toLocaleTimeString([], { hour: "numeric", minute: "2-digit" });
+  const paint = (wallpaper: HTMLImageElement | null, icons: Array<HTMLImageElement | null>) => {
+    context.clearRect(0, 0, logicalWidth, logicalHeight);
+    context.fillStyle = "#c5c9cb";
+    context.fillRect(0, 0, logicalWidth, logicalHeight);
+    // Match the final DOM phone exactly: the 420 × 630 wallpaper is painted on
+    // the phone body at y=100, while the 386px display begins at x=16, y=79.
+    // Keeping that same crop removes the final-frame wallpaper "step".
+    if (wallpaper) context.drawImage(wallpaper, -16, 21, 420, 630);
+
+    const shade = context.createLinearGradient(0, 70, 0, logicalHeight);
+    shade.addColorStop(0, "rgba(7,24,37,.08)");
+    shade.addColorStop(1, "rgba(3,14,23,.32)");
+    context.fillStyle = shade;
+    context.fillRect(0, 70, logicalWidth, logicalHeight - 70);
+
+    const status = context.createLinearGradient(0, 0, 0, 21);
+    status.addColorStop(0, "#16304a");
+    status.addColorStop(1, "#0c1a2a");
+    context.fillStyle = status;
+    context.fillRect(0, 0, logicalWidth, 21);
+    context.fillStyle = "rgba(0,0,0,.65)";
+    context.fillRect(0, 20, logicalWidth, 1);
+
+    context.fillStyle = "rgba(255,255,255,.94)";
+    for (let bar = 0; bar < 5; bar += 1) {
+      context.globalAlpha = bar === 4 ? 0.28 : 1;
+      context.fillRect(13 + bar * 3, 16 - bar * 2, 2, 3 + bar * 2);
+    }
+    context.globalAlpha = 1;
+    context.font = '600 9px "Helvetica Neue", Arial, sans-serif';
+    context.textAlign = "center";
+    context.textBaseline = "middle";
+    context.fillText(time, logicalWidth / 2, 10.5);
+    context.font = '700 7px "Helvetica Neue", Arial, sans-serif';
+    context.textAlign = "right";
+    context.fillText("100%", logicalWidth - 34, 10.5);
+    context.strokeStyle = "rgba(255,255,255,.9)";
+    context.lineWidth = 1;
+    roundedCanvasRect(context, logicalWidth - 29, 6, 19, 9, 2);
+    context.stroke();
+    context.fillStyle = "#edf5ec";
+    context.fillRect(logicalWidth - 27, 8, 15, 5);
+    context.fillStyle = "#fff";
+    context.fillRect(logicalWidth - 9, 9, 2, 3);
+
+    const navigation = context.createLinearGradient(0, 21, 0, 70);
+    navigation.addColorStop(0, "rgba(91,126,158,.88)");
+    navigation.addColorStop(0.49, "rgba(27,51,75,.94)");
+    navigation.addColorStop(0.5, "rgba(13,30,48,.98)");
+    navigation.addColorStop(1, "rgba(22,44,65,.94)");
+    context.fillStyle = navigation;
+    context.fillRect(0, 21, logicalWidth, 49);
+    context.fillStyle = "rgba(255,255,255,.26)";
+    context.fillRect(0, 21, logicalWidth, 1);
+    context.fillStyle = "#fff";
+    context.font = '700 15px "Helvetica Neue", Arial, sans-serif';
+    context.textAlign = "center";
+    context.fillText("Fun", logicalWidth / 2, 45.5);
+
+    const centers = [72, 193, 314];
+    const rows = [90, 192, 294];
+    INTRO_PROJECT_ICONS.forEach(([, label], index) => {
+      const image = icons[index];
+      const x = centers[index % 3] - 32;
+      const y = rows[Math.floor(index / 3)];
+      if (image) {
+        context.save();
+        context.shadowColor = "rgba(0,0,0,.65)";
+        context.shadowBlur = 5;
+        context.shadowOffsetY = 3;
+        roundedCanvasRect(context, x, y, 64, 64, 13);
+        context.clip();
+        context.drawImage(image, x, y, 64, 64);
+        context.restore();
+      }
+      context.fillStyle = "#fff";
+      context.font = '600 8.5px "Helvetica Neue", Arial, sans-serif';
+      context.textAlign = "center";
+      context.shadowColor = "#000";
+      context.shadowBlur = 2;
+      context.shadowOffsetY = 1;
+      context.fillText(label, centers[index % 3], y + 74);
+      context.shadowColor = "transparent";
+    });
+    texture.needsUpdate = true;
+  };
+
+  paint(null, []);
+  void Promise.all([
+    loadCanvasImage("/media/ios4/water-drops.png"),
+    ...INTRO_PROJECT_ICONS.map(([source]) => loadCanvasImage(source)),
+  ]).then(([wallpaper, ...icons]) => {
+    paint(wallpaper, icons);
+    texture.userData.ready = true;
+  });
+  return texture;
+}
+
 export function Phone3DIntro({ productRef }: { productRef: RefObject<HTMLDivElement | null> }) {
   const hostRef = useRef<HTMLDivElement>(null);
 
@@ -224,6 +371,7 @@ export function Phone3DIntro({ productRef }: { productRef: RefObject<HTMLDivElem
     scene.add(phone);
 
     const ownedTextures: THREE.Texture[] = [];
+    const introScreenTexture = createIntroScreenTexture(renderer, ownedTextures);
 
     // Brushed steel: anisotropy stretches the streak highlights along the band,
     // a whisper of clearcoat keeps the chamfers crisp over the brushing.
@@ -310,6 +458,16 @@ export function Phone3DIntro({ productRef }: { productRef: RefObject<HTMLDivElem
     const frontGlassMesh = new THREE.Mesh(frontGlassGeometry, frontGlass);
     frontGlassMesh.position.z = GLASS_Z;
     phone.add(frontGlassMesh);
+    const introDisplay = introScreenTexture
+      ? new THREE.Mesh(
+          new THREE.PlaneGeometry(SCREEN_WIDTH, SCREEN_HEIGHT),
+          new THREE.MeshBasicMaterial({ map: introScreenTexture, toneMapped: false }),
+        )
+      : null;
+    if (introDisplay) {
+      introDisplay.position.z = GLASS_Z - 0.002;
+      phone.add(introDisplay);
+    }
 
     // Earpiece slot with its metal mesh, and the front camera beside it.
     const earpiece = new THREE.Mesh(new RoundedBoxGeometry(0.56, 0.09, 0.016, 3, 0.04), matteBlack);
@@ -465,6 +623,7 @@ export function Phone3DIntro({ productRef }: { productRef: RefObject<HTMLDivElem
 
     let currentPose = poseAt(0);
     let pixelsPerUnit = 1;
+    let hasCompleted = false;
     const applyPose = (pose: PhonePose) => {
       phone.rotation.set(pose.rotateX, pose.rotateY, pose.rotateZ, "XYZ");
       phone.position.set(pose.x, pose.y, pose.z);
@@ -478,7 +637,9 @@ export function Phone3DIntro({ productRef }: { productRef: RefObject<HTMLDivElem
       const screenDepth = SCREEN_COMPOSITE_Z * pixelsPerUnit;
       const depthCompensation = 1 - SCREEN_COMPOSITE_Z / CAMERA_Z;
       product.style.transform = `translate3d(${x}px, ${y}px, ${z}px) rotateX(${-pose.rotateX}rad) rotateY(${pose.rotateY}rad) rotateZ(${-pose.rotateZ}rad) scale(${pose.scale}) translateZ(${screenDepth}px) scale(${depthCompensation})`;
-      product.style.visibility = Math.cos(pose.rotateY) > 0 ? "visible" : "hidden";
+      // During the turn the display is a texture on the actual 3D glass plane.
+      // The interactive DOM screen only replaces it after the phone is flat.
+      product.style.visibility = hasCompleted ? "visible" : "hidden";
     };
 
     const resize = () => {
@@ -504,9 +665,11 @@ export function Phone3DIntro({ productRef }: { productRef: RefObject<HTMLDivElem
     observer.observe(host);
 
     let frame = 0;
-    const startedAt = performance.now() - (inspectionMs ?? 0);
+    const startedAt = performance.now();
     const render = (now: number) => {
-      const progress = Math.min(1, (now - startedAt) / INTRO_MS);
+      const progress = inspectionMs === null
+        ? Math.min(1, (now - startedAt) / INTRO_MS)
+        : inspectionMs / INTRO_MS;
       const eased = smoothstep5(progress);
       // The environment slides against the turn so one long highlight travels
       // down the band and across the glass — the classic product-spot sweep.
@@ -519,13 +682,18 @@ export function Phone3DIntro({ productRef }: { productRef: RefObject<HTMLDivElem
       currentPose = poseAt(progress);
       applyPose(currentPose);
       renderer.render(scene, camera);
-      if (inspectionMs !== null && progress < 1) return;
+      if (inspectionMs !== null && progress < 1) {
+        if (introScreenTexture && !introScreenTexture.userData.ready) frame = window.requestAnimationFrame(render);
+        return;
+      }
       if (progress < 1) frame = window.requestAnimationFrame(render);
       else {
         // Keep the screen at the same physical glass depth after handoff; a
         // transform reset here caused a subtle final-frame size jump.
+        hasCompleted = true;
         applyPose(poseAt(1));
-        product.style.visibility = "visible";
+        if (introDisplay) introDisplay.visible = false;
+        renderer.render(scene, camera);
         document.documentElement.classList.add("phone-3d-complete");
       }
     };
