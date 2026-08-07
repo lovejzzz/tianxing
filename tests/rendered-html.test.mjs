@@ -134,10 +134,11 @@ test("keeps the iPhone interactive and time-aware", async () => {
   assert.match(source, /<Phone3DIntro productRef=\{phoneProductRef\} \/>/);
   assert.match(source, /ref=\{phoneProductRef\}/);
   assert.match(phone3dSource, /zero-depth rounded glass face/i);
-  assert.match(phone3dSource, /black structural liner/);
-  assert.match(phone3dSource, /linerGeometry/);
+  assert.match(phone3dSource, /thin optical baffle/);
+  assert.match(phone3dSource, /gasketGeometry/);
   assert.match(phone3dSource, /displayGasket = new THREE\.MeshBasicMaterial/);
-  assert.match(phone3dSource, /new THREE\.Mesh\(linerGeometry, displayGasket\)/);
+  assert.match(phone3dSource, /new THREE\.Mesh\(gasketGeometry, displayGasket\)/);
+  assert.doesNotMatch(phone3dSource, /new THREE\.ExtrudeGeometry\(gasketShape/);
   // The rotating model and the resting phone now share the live DOM screen.
   // This removes the old canvas-texture crossfade (and its one-frame wallpaper/icon jump).
   assert.doesNotMatch(phone3dSource, /createIntroScreenTexture/);

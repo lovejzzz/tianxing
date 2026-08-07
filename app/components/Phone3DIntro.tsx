@@ -275,20 +275,17 @@ export function Phone3DIntro({ productRef }: { productRef: RefObject<HTMLDivElem
     bandGeometry.translate(0, 0, -(BAND_DEPTH - 0.084) / 2);
     phone.add(new THREE.Mesh(bandGeometry, steel));
 
-    // The real phone has a black structural liner between the stainless band
-    // and display assembly. Without it, an oblique camera angle can see the
-    // bright inner wall of the extruded steel ring through the screen opening.
-    const linerOuterWidth = PHONE_WIDTH - 0.17;
-    const linerOuterHeight = PHONE_HEIGHT - 0.17;
-    const linerShape = traceRoundedRect(new THREE.Shape(), linerOuterWidth, linerOuterHeight, 0.445);
-    linerShape.holes.push(traceRoundedRect(new THREE.Path(), linerOuterWidth - 0.11, linerOuterHeight - 0.11, 0.39));
-    const linerGeometry = new THREE.ExtrudeGeometry(linerShape, {
-      depth: BAND_DEPTH - 0.12,
-      bevelEnabled: false,
-      curveSegments: 52,
-    });
-    linerGeometry.translate(0, 0, -(BAND_DEPTH - 0.12) / 2);
-    phone.add(new THREE.Mesh(linerGeometry, displayGasket));
+    // A thin optical baffle sits immediately under the cover glass. The old
+    // version extruded this gasket through almost the full phone depth; at a
+    // three-quarter angle its inner wall became a broad black vertical bar.
+    // Keeping the baffle coplanar with the glass still masks the bright steel
+    // cavity, while leaving no tunnel wall for the camera to see.
+    const gasketShape = traceRoundedRect(new THREE.Shape(), PHONE_WIDTH - 0.17, PHONE_HEIGHT - 0.17, 0.445);
+    gasketShape.holes.push(traceRoundedRect(new THREE.Path(), SCREEN_WIDTH + 0.03, SCREEN_HEIGHT + 0.03, 0.065));
+    const gasketGeometry = new THREE.ShapeGeometry(gasketShape, 52);
+    const gasketMesh = new THREE.Mesh(gasketGeometry, displayGasket);
+    gasketMesh.position.z = GLASS_Z - 0.004;
+    phone.add(gasketMesh);
 
     // Antenna break lines, GSM layout: one up top, two low on the sides.
     const breakTop = new THREE.Mesh(new RoundedBoxGeometry(0.04, 0.13, 0.55, 2, 0.012), breakPlastic);
