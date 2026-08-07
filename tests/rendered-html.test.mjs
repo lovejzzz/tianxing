@@ -56,6 +56,7 @@ test("keeps the iPhone interactive and time-aware", async () => {
   const styles = await readFile(new URL("../app/globals.css", import.meta.url), "utf8");
   const photoManifest = await readFile(new URL("../app/photoManifest.ts", import.meta.url), "utf8");
   const projectSource = await readFile(new URL("../app/projects.ts", import.meta.url), "utf8");
+  const soundSource = await readFile(new URL("../app/sound.ts", import.meta.url), "utf8");
   assert.match(source, /toLocaleTimeString/);
   assert.match(source, /Go to iPhone Home screen/);
   assert.match(source, /matchMedia\("\(max-width: 560px\)"\)/);
@@ -101,7 +102,22 @@ test("keeps the iPhone interactive and time-aware", async () => {
   assert.match(source, /Reset timer/);
   assert.match(source, /role="slider"/);
   assert.match(source, /has hatched/);
-  assert.match(source, /AudioContext/);
+  // Every cue is synthesized in one shared engine, so the phone has a single
+  // voice and a single switch that silences it.
+  assert.match(soundSource, /AudioContext/);
+  assert.match(soundSource, /export function playSound/);
+  assert.match(soundSource, /export function toggleRinger/);
+  assert.match(soundSource, /tian-iphone-ringer/);
+  assert.doesNotMatch(soundSource, /\.mp3|\.wav|\.m4a|\.aac|decodeAudioData/);
+  assert.doesNotMatch(source, /new AudioContextClass|createOscillator/);
+  assert.match(source, /playSound\("shutter"\)/);
+  assert.match(source, /playSound\("send"\)/);
+  assert.match(source, /playSound\("chime"\)/);
+  assert.match(source, /function playKeyboardTick/);
+  assert.match(source, /status-ringer/);
+  assert.match(source, /ringer-hud/);
+  assert.match(styles, /\.ringer-switch\.is-silent/);
+  assert.match(styles, /@keyframes ringer-hud-card/);
   assert.match(source, /watchDragon/);
   assert.match(source, /dragonCombo/);
   assert.match(styles, /dragon-bond-chip/);

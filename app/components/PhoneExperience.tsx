@@ -7,6 +7,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import type { CSSProperties, FocusEvent as ReactFocusEvent, FormEvent, KeyboardEvent as ReactKeyboardEvent, MouseEvent as ReactMouseEvent, PointerEvent as ReactPointerEvent } from "react";
 import { projects } from "../projects";
 import { portfolioPhotos } from "../photoManifest";
+import { playSound, toggleRinger, useRinger } from "../sound";
 import { AppIcon } from "./AppIcon";
 import { Phone3DIntro } from "./Phone3DIntro";
 
@@ -197,8 +198,18 @@ type NoteDocument = {
   background?: string;
 };
 
+// The 2010 keyboard clicked on every character, on Delete and on Return, and
+// stayed quiet for modifiers and shortcuts.
+function playKeyboardTick(event: ReactKeyboardEvent<HTMLElement>) {
+  if (event.metaKey || event.ctrlKey || event.altKey) return;
+  if (event.key.length === 1 || event.key === "Backspace" || event.key === "Delete" || event.key === "Enter") playSound("key");
+}
+
 export function PhoneExperience() {
   const phoneProductRef = useRef<HTMLDivElement>(null);
+  const [ringerHud, setRingerHud] = useState(false);
+  const ringerHudTimer = useRef<number | null>(null);
+  const silenced = useRinger();
   const [mode, setMode] = useState<"folder" | "home" | "native">("folder");
   const [immersive, setImmersive] = useState(false);
   const [immersiveShift, setImmersiveShift] = useState(0);
@@ -336,8 +347,22 @@ export function PhoneExperience() {
     return true;
   };
 
+  // Flipping the switch shows the same brief translucent card iOS raised over
+  // whatever was on screen, so the state change is felt as well as heard.
+  const flipRinger = () => {
+    toggleRinger();
+    setRingerHud(true);
+    if (ringerHudTimer.current) window.clearTimeout(ringerHudTimer.current);
+    ringerHudTimer.current = window.setTimeout(() => setRingerHud(false), 1300);
+  };
+
+  useEffect(() => () => {
+    if (ringerHudTimer.current) window.clearTimeout(ringerHudTimer.current);
+  }, []);
+
   const openApp = (id: NativeApp | "folder", element?: HTMLElement | null) => {
     const fromIcon = rememberOrigin(element);
+    playSound("open");
     setLaunchFromIcon(Boolean(fromIcon));
     setClosing(false);
     if (id === "folder") {
@@ -351,6 +376,7 @@ export function PhoneExperience() {
 
   const goHome = () => {
     if (mode === "home" || closing) return;
+    playSound("close");
     const shouldReturnToFunIcon = mode === "folder" && !launchFromIcon;
     if (shouldReturnToFunIcon) {
       const funIcon = screenRef.current?.querySelector<HTMLElement>('.phone-home-layer [data-app-id="folder"]');
@@ -396,10 +422,18 @@ export function PhoneExperience() {
           <span className="back-flash" />
         </div>
 
-        <div className="device" aria-hidden="true">
-          <div className="device-button volume-up" />
-          <div className="device-button volume-down" />
-          <div className="device-button mute" />
+        <div className="device">
+          <div className="device-button volume-up" aria-hidden="true" />
+          <div className="device-button volume-down" aria-hidden="true" />
+          <button
+            type="button"
+            className={`device-button mute ringer-switch ${silenced ? "is-silent" : ""}`}
+            onClick={flipRinger}
+            aria-pressed={silenced}
+            title={silenced ? "Ringer off — turn interface sounds on" : "Ringer on — silence interface sounds"}
+          >
+            <span className="ringer-switch-label">{silenced ? "Turn interface sounds on" : "Silence interface sounds"}</span>
+          </button>
         </div>
 
         <div className="phone" role="application" aria-label="Tian Xing's iPhone">
@@ -419,7 +453,13 @@ export function PhoneExperience() {
               "--fun-home-saturation": 1 - motionProgress * .2,
             } as CSSProperties}
           >
-            <StatusBar time={time} />
+            <StatusBar time={time} silenced={silenced} onFlipRinger={flipRinger} />
+            {ringerHud && (
+              <div className={`ringer-hud ${silenced ? "is-silent" : ""}`} role="status" aria-live="polite">
+                <RingerBell silenced={silenced} />
+                <span>{silenced ? "Silent" : "Ringer"}</span>
+              </div>
+            )}
             <div className={`phone-home-layer ${mode === "home" || closing ? "is-active" : "is-background"} ${mode === "folder" && launchFromIcon ? "is-fun-background" : ""}`}>
               <HomeScreen calendarDay={calendarDay} calendarWeekday={calendarWeekday} onOpenApp={openApp} />
             </div>
@@ -464,13 +504,38 @@ export function PhoneExperience() {
   );
 }
 
-function StatusBar({ time }: { time: string }) {
+function StatusBar({ time, silenced, onFlipRinger }: { time: string; silenced: boolean; onFlipRinger: () => void }) {
   return (
     <div className="status-bar" aria-label={`Current time ${time}`}>
       <span className="signal" aria-hidden="true"><i /><i /><i /><i /><i /></span>
       <span className="status-time">{time}</span>
-      <span className="battery" aria-hidden="true"><b>100%</b><i /></span>
+      <span className="status-right">
+        {/* iOS 4 posted a struck bell in the status bar whenever the ringer was
+            off. Here it is also the control, since the steel band's switch is
+            not on screen at phone widths. */}
+        <button
+          type="button"
+          className={`status-ringer ${silenced ? "is-silent" : ""}`}
+          onClick={onFlipRinger}
+          aria-pressed={silenced}
+          aria-label={silenced ? "Interface sounds are off. Turn them on." : "Interface sounds are on. Turn them off."}
+          title={silenced ? "Interface sounds off" : "Interface sounds on"}
+        >
+          <RingerBell silenced={silenced} />
+        </button>
+        <span className="battery" aria-hidden="true"><b>100%</b><i /></span>
+      </span>
     </div>
+  );
+}
+
+function RingerBell({ silenced }: { silenced: boolean }) {
+  return (
+    <svg className="ringer-bell" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+      <path d="M12 3.4c-3 0-5 2.1-5 5.1 0 3.6-.7 5-1.8 6.1-.5.5-.2 1.4.6 1.4h12.4c.8 0 1.1-.9.6-1.4-1.1-1.1-1.8-2.5-1.8-6.1 0-3-2-5.1-5-5.1Z" />
+      <path d="M10.1 18.1a2 2 0 0 0 3.8 0Z" />
+      {silenced && <path className="ringer-bell-slash" d="M4.4 3.9 20.1 19.6" />}
+    </svg>
   );
 }
 
@@ -494,6 +559,7 @@ function FolderView({ onGoHome }: { onGoHome: () => void }) {
                 className="app-link"
                 href={`/projects/${project.slug}`}
                 key={project.slug}
+                onClick={() => playSound("open")}
                 style={{ "--delay": `${index * 24}ms` } as CSSProperties}
               >
                 <AppIcon project={project} />
@@ -665,6 +731,7 @@ function MessagesApp() {
   };
 
   const retry = (bubble: MessageBubble) => {
+    playSound("tock");
     setThread((current) => current.filter((item) => item.id !== bubble.id));
     setMessage(bubble.text);
     setStatus("idle");
@@ -689,6 +756,7 @@ function MessagesApp() {
     setThread((current) => [...current, bubble]);
     setMessage("");
     setStatus("sending");
+    playSound("send");
     const form = new URLSearchParams();
     form.set("message", cleanMessage);
     form.set("website", "");
@@ -707,11 +775,13 @@ function MessagesApp() {
       });
       setThread((current) => current.map((item) => item.id === id ? { ...item, state: "sent" } : item));
       setStatus("sent");
+      playSound("received");
       textareaRef.current?.focus();
       window.setTimeout(() => setStatus("idle"), 2400);
     } catch {
       setThread((current) => current.map((item) => item.id === id ? { ...item, state: "error" } : item));
       setStatus("error");
+      playSound("alert");
     } finally {
       window.clearTimeout(timeout);
     }
@@ -745,6 +815,7 @@ function MessagesApp() {
             if (status === "error") setStatus("idle");
           }}
           onKeyDown={(event) => {
+            playKeyboardTick(event);
             if (event.key === "Enter" && !event.shiftKey && !event.nativeEvent.isComposing) {
               event.preventDefault();
               event.currentTarget.form?.requestSubmit();
@@ -798,6 +869,7 @@ function CalendarApp() {
 
   const moveMonth = (offset: number) => {
     const next = new Date(month.getFullYear(), month.getMonth() + offset, 1);
+    playSound("swipe");
     setMonth(next);
     setSelected(1);
   };
@@ -807,12 +879,14 @@ function CalendarApp() {
     const next = { ...events, [key]: [...(events[key] ?? []), { text: draft.trim(), color: eventColor }] };
     setEvents(next);
     setDraft("");
+    playSound("pop");
     try { localStorage.setItem("tian-iphone-calendar", JSON.stringify(next)); } catch { /* local-only calendar */ }
   };
   const deleteEvent = (index: number) => {
     const nextItems = (events[key] ?? []).filter((_, itemIndex) => itemIndex !== index);
     const next = { ...events, [key]: nextItems };
     setEvents(next);
+    playSound("trash");
     try { localStorage.setItem("tian-iphone-calendar", JSON.stringify(next)); } catch { /* local-only calendar */ }
   };
 
@@ -830,7 +904,7 @@ function CalendarApp() {
             key={index}
             disabled={!day}
             className={`${day === selected ? "selected" : ""} ${isCurrentMonth && day === today.getDate() ? "today" : ""}`}
-            onClick={() => day && setSelected(day)}
+            onClick={() => { if (!day) return; playSound("tock"); setSelected(day); }}
           >
             {day || ""}{day && events[`${month.getFullYear()}-${String(month.getMonth() + 1).padStart(2, "0")}-${String(day).padStart(2, "0")}`]?.length ? <i /> : null}
           </button>
@@ -840,8 +914,8 @@ function CalendarApp() {
         <h3>{new Date(month.getFullYear(), month.getMonth(), selected).toLocaleDateString([], { weekday: "long", month: "short", day: "numeric" })}</h3>
         {(events[key] ?? []).map((item, index) => <p key={`${item.text}-${index}`}><i style={{ background: item.color }} /><span>{item.text}</span><button onClick={() => deleteEvent(index)} aria-label={`Delete ${item.text}`}>×</button></p>)}
         {!events[key]?.length && <p className="no-events">No events</p>}
-        <div className="calendar-colors" aria-label="Event color">{["#df3d36", "#e0a52c", "#4e9d63", "#4c78a8"].map((color) => <button key={color} className={eventColor === color ? "active" : ""} style={{ background: color }} onClick={() => setEventColor(color)} aria-label={`Use ${color} event color`} />)}</div>
-        <form onSubmit={addEvent}><input value={draft} onChange={(event) => setDraft(event.target.value)} placeholder="Make a plan…" aria-label="Add event" /><button>Add</button></form>
+        <div className="calendar-colors" aria-label="Event color">{["#df3d36", "#e0a52c", "#4e9d63", "#4c78a8"].map((color) => <button key={color} className={eventColor === color ? "active" : ""} style={{ background: color }} onClick={() => { playSound("tap"); setEventColor(color); }} aria-label={`Use ${color} event color`} />)}</div>
+        <form onSubmit={addEvent}><input value={draft} onChange={(event) => setDraft(event.target.value)} onKeyDown={playKeyboardTick} placeholder="Make a plan…" aria-label="Add event" /><button>Add</button></form>
       </section>
     </div>
   );
@@ -910,6 +984,7 @@ function PhotosApp({ base, captures, onDeleteCapture }: { base: string; captures
   const movePhoto = (direction: number) => {
     if (!photos.length) return;
     const next = (selectedIndex + direction + photos.length) % photos.length;
+    playSound("swipe");
     setSelected(photos[next].id);
     setConfirmingDelete(false);
     setStageOffset(0);
@@ -927,14 +1002,17 @@ function PhotosApp({ base, captures, onDeleteCapture }: { base: string; captures
     setConfirmingDelete(false);
     if (nextPhoto) setSelected(nextPhoto.id); else setViewing(false);
     showNotice(selectedPhoto.captured ? "Photo deleted from this device." : "Moved to Recently Deleted.");
+    playSound("trash");
     navigator.vibrate?.(16);
   };
   const restorePhotos = () => {
     setHiddenPhotos([]);
     try { localStorage.removeItem(PHOTO_HIDDEN_KEY); } catch { /* local album only */ }
     showNotice(`${hiddenPhotos.length} ${hiddenPhotos.length === 1 ? "photo" : "photos"} restored.`);
+    playSound("restore");
   };
   const closeViewer = () => {
+    playSound("close");
     setConfirmingDelete(false);
     setStageOffset(0);
     setViewing(false);
@@ -1008,7 +1086,7 @@ function PhotosApp({ base, captures, onDeleteCapture }: { base: string; captures
           <div className="photo-section-label"><strong>All Photos</strong><span>Tap to view · drag the filmstrip</span></div>
           <div className="photo-grid" role="group" aria-label="Camera Roll photos">
             {photos.map((photo, index) => (
-              <button key={photo.id} onClick={() => { choosePhoto(photo.id); setViewing(true); }} aria-label={`View photo ${index + 1}: ${photo.alt}`}>
+              <button key={photo.id} onClick={() => { playSound("open"); choosePhoto(photo.id); setViewing(true); }} aria-label={`View photo ${index + 1}: ${photo.alt}`}>
                 <img src={photo.src} alt="" loading={index > 7 ? "lazy" : "eager"} draggable={false} />
                 {photo.captured && <i aria-hidden="true"><b /></i>}
               </button>
@@ -1029,7 +1107,7 @@ function PhotosApp({ base, captures, onDeleteCapture }: { base: string; captures
           <div className="photo-viewer-bar">
             <button className="photo-back" onClick={closeViewer}><i>‹</i>Camera Roll</button>
             <span><strong>{selectedIndex + 1} of {photos.length}</strong><small>{selectedPhoto.captured ? "Photo Booth" : "Tian Xing"}</small></span>
-            <button className="photo-trash" onClick={() => setConfirmingDelete(true)} aria-label="Delete this photo"><i /><span>Delete</span></button>
+            <button className="photo-trash" onClick={() => { playSound("tock"); setConfirmingDelete(true); }} aria-label="Delete this photo"><i /><span>Delete</span></button>
           </div>
           <div className={`photo-viewer-stage ${stageOffset ? "is-dragging" : ""}`} onPointerDown={startStageDrag} onPointerMove={moveStageDrag} onPointerUp={endStageDrag} onPointerCancel={endStageDrag} onLostPointerCapture={endStageDrag}>
             <button className="photo-step photo-step-previous" onClick={() => movePhoto(-1)} aria-label="Previous photo">‹</button>
@@ -1040,7 +1118,7 @@ function PhotosApp({ base, captures, onDeleteCapture }: { base: string; captures
             <button className="photo-step photo-step-next" onClick={() => movePhoto(1)} aria-label="Next photo">›</button>
           </div>
           <div className="photo-viewer-strip" ref={stripRef} onPointerDown={startStripDrag} onPointerMove={moveStripDrag} onPointerUp={endStripDrag} onPointerCancel={endStripDrag} onLostPointerCapture={endStripDrag} aria-label="Draggable photo filmstrip">
-            {photos.map((photo, index) => <button key={photo.id} data-photo-index={index} className={selectedPhoto.id === photo.id ? "selected" : ""} onClick={() => { if (!stripDrag.current.moved) choosePhoto(photo.id); }} aria-label={`View photo ${index + 1}: ${photo.alt}`}><img src={photo.src} alt="" draggable={false} /></button>)}
+            {photos.map((photo, index) => <button key={photo.id} data-photo-index={index} className={selectedPhoto.id === photo.id ? "selected" : ""} onClick={() => { if (stripDrag.current.moved) return; playSound("tap"); choosePhoto(photo.id); }} aria-label={`View photo ${index + 1}: ${photo.alt}`}><img src={photo.src} alt="" draggable={false} /></button>)}
           </div>
           {confirmingDelete && (
             <div className="photo-delete-backdrop" onPointerDown={(event) => { if (event.target === event.currentTarget) setConfirmingDelete(false); }}>
@@ -1048,7 +1126,7 @@ function PhotosApp({ base, captures, onDeleteCapture }: { base: string; captures
                 <img src={selectedPhoto.src} alt="" />
                 <h2 id="delete-photo-title">Delete Photo?</h2>
                 <p id="delete-photo-message">{selectedPhoto.captured ? "This Photo Booth picture will be permanently removed from this device." : "This photo will move to Recently Deleted, where you can restore it later."}</p>
-                <div><button ref={confirmDeleteRef} className="confirm-photo-delete" onClick={deleteSelected}>Delete Photo</button><button ref={cancelDeleteRef} onClick={() => setConfirmingDelete(false)}>Cancel</button></div>
+                <div><button ref={confirmDeleteRef} className="confirm-photo-delete" onClick={deleteSelected}>Delete Photo</button><button ref={cancelDeleteRef} onClick={() => { playSound("tock"); setConfirmingDelete(false); }}>Cancel</button></div>
               </section>
             </div>
           )}
@@ -1110,6 +1188,7 @@ function CameraApp({ captures, onCapture, onDeleteCapture }: {
 
   const switchCamera = () => {
     const next = facing === "environment" ? "user" : "environment";
+    playSound("tock");
     setFacing(next);
     startCamera(next);
   };
@@ -1155,6 +1234,7 @@ function CameraApp({ captures, onCapture, onDeleteCapture }: {
     }
     context.putImageData(frame, 0, 0);
     const src = canvas.toDataURL("image/jpeg", 0.82);
+    playSound("shutter");
     setFlash(true);
     window.setTimeout(() => setFlash(false), 180);
     onCapture(src);
@@ -1164,6 +1244,7 @@ function CameraApp({ captures, onCapture, onDeleteCapture }: {
     if (status !== "ready" || countdown !== null) return;
     let value = 3;
     setCountdown(value);
+    playSound("beep");
     countdownTimer.current = window.setInterval(() => {
       value -= 1;
       if (value <= 0) {
@@ -1173,6 +1254,7 @@ function CameraApp({ captures, onCapture, onDeleteCapture }: {
         takePhoto();
       } else {
         setCountdown(value);
+        playSound("beep");
       }
     }, 700);
   };
@@ -1189,10 +1271,10 @@ function CameraApp({ captures, onCapture, onDeleteCapture }: {
         {flash && <i className="camera-flash" />}
       </div>
       <div className="booth-effects" aria-label="Photo Booth effects">
-        {boothEffects.map((item) => <button key={item.id} className={effect === item.id ? "active" : ""} onClick={() => setEffect(item.id)} aria-pressed={effect === item.id}><i className={`effect-${item.id}`} /><span>{item.label}</span></button>)}
+        {boothEffects.map((item) => <button key={item.id} className={effect === item.id ? "active" : ""} onClick={() => { playSound("tap"); setEffect(item.id); }} aria-pressed={effect === item.id}><i className={`effect-${item.id}`} /><span>{item.label}</span></button>)}
       </div>
       <div className="camera-controls">
-        <button className="latest-shot" onClick={() => setReviewing(true)} disabled={!latest} aria-label={latest ? `Open latest photo. ${captures.length} photos in camera roll` : "Camera roll is empty"}>
+        <button className="latest-shot" onClick={() => { playSound("open"); setReviewing(true); }} disabled={!latest} aria-label={latest ? `Open latest photo. ${captures.length} photos in camera roll` : "Camera roll is empty"}>
           {latest && <img src={latest.src} alt="Latest capture" />}
         </button>
         <button className="shutter booth-shutter" onClick={beginCapture} disabled={status !== "ready" || countdown !== null} aria-label="Take Photo Booth photo"><span /></button>
@@ -1201,14 +1283,14 @@ function CameraApp({ captures, onCapture, onDeleteCapture }: {
       {reviewing && latest && (
         <div className="camera-review" role="dialog" aria-modal="true" aria-label="Latest camera photo">
           <div className="camera-review-toolbar">
-            <button onClick={() => setReviewing(false)}>Camera</button>
+            <button onClick={() => { playSound("close"); setReviewing(false); }}>Camera</button>
             <strong>Camera Roll</strong>
             <span>1 of {captures.length}</span>
           </div>
           <div className="camera-review-photo"><img src={latest.src} alt={`Photo taken ${new Date(latest.createdAt).toLocaleString()}`} /></div>
           <div className="camera-review-actions">
             <time dateTime={latest.createdAt}>{new Date(latest.createdAt).toLocaleString([], { month: "short", day: "numeric", hour: "numeric", minute: "2-digit" })}</time>
-            <button onClick={() => { onDeleteCapture(latest.id); setReviewing(false); }} aria-label="Delete latest photo">Delete Photo</button>
+            <button onClick={() => { playSound("trash"); onDeleteCapture(latest.id); setReviewing(false); }} aria-label="Delete latest photo">Delete Photo</button>
           </div>
         </div>
       )}
@@ -1398,6 +1480,7 @@ function WeatherApp() {
 
   const changeUnit = (nextUnit: WeatherUnit) => {
     if (nextUnit === unit) return;
+    playSound("tock");
     setWeather(null);
     setUnit(nextUnit);
   };
@@ -1416,12 +1499,12 @@ function WeatherApp() {
     >
       <WeatherScene code={weather?.code ?? 0} isDay={weather?.isDay ?? true} />
       <header className="weather-topbar">
-        <button className="weather-place-button" onClick={() => setPickerOpen(true)} aria-label="Choose weather location">
+        <button className="weather-place-button" onClick={() => { playSound("open"); setPickerOpen(true); }} aria-label="Choose weather location">
           <strong>{weather?.place.name ?? place.name}</strong><span>{weather?.place.admin || weather?.place.country || "Live forecast"} ▾</span>
         </button>
         <div className="weather-actions">
           <button onClick={() => changeUnit(unit === "fahrenheit" ? "celsius" : "fahrenheit")} aria-label={`Switch to degrees ${unit === "fahrenheit" ? "Celsius" : "Fahrenheit"}`}>°{unit === "fahrenheit" ? "F" : "C"}</button>
-          <button className={loading ? "is-loading" : ""} onClick={() => void loadWeather(place)} aria-label="Refresh weather">↻</button>
+          <button className={loading ? "is-loading" : ""} onClick={() => { playSound("swipe"); void loadWeather(place); }} aria-label="Refresh weather">↻</button>
         </div>
       </header>
 
@@ -1471,11 +1554,11 @@ function WeatherApp() {
 
       {pickerOpen && (
         <div className="weather-picker" role="dialog" aria-modal="true" aria-label="Choose a city">
-          <header><button onClick={() => setPickerOpen(false)}>Cancel</button><strong>Choose a City</strong><span /></header>
-          <form onSubmit={searchLocations}><input value={query} onChange={(event) => setQuery(event.target.value)} placeholder="City or postal code" aria-label="Search city" autoFocus /><button disabled={searching || query.trim().length < 2}>{searching ? "…" : "Search"}</button></form>
+          <header><button onClick={() => { playSound("close"); setPickerOpen(false); }}>Cancel</button><strong>Choose a City</strong><span /></header>
+          <form onSubmit={searchLocations}><input value={query} onChange={(event) => setQuery(event.target.value)} onKeyDown={playKeyboardTick} placeholder="City or postal code" aria-label="Search city" autoFocus /><button disabled={searching || query.trim().length < 2}>{searching ? "…" : "Search"}</button></form>
           <button className="weather-current-location" onClick={useCurrentLocation} disabled={locating}><i>◎</i><span><strong>{locating ? "Finding you…" : "My Location"}</strong><small>Use this device’s location</small></span></button>
           <div className="weather-search-results">
-            {results.map((result) => <button key={`${result.latitude}-${result.longitude}`} onClick={() => { setPlace(result); setPickerOpen(false); setQuery(""); setResults([]); }}><span><strong>{result.name}</strong><small>{[result.admin, result.country].filter(Boolean).join(", ")}</small></span><i>›</i></button>)}
+            {results.map((result) => <button key={`${result.latitude}-${result.longitude}`} onClick={() => { playSound("pop"); setPlace(result); setPickerOpen(false); setQuery(""); setResults([]); }}><span><strong>{result.name}</strong><small>{[result.admin, result.country].filter(Boolean).join(", ")}</small></span><i>›</i></button>)}
           </div>
           {error && <p>{error}</p>}
         </div>
@@ -1605,7 +1688,7 @@ function ClockApp({ time }: { time: string }) {
   });
   const [activeDragonId, setActiveDragonId] = useState<string | null>(null);
   const endTimeRef = useRef<number | null>(null);
-  const audioRef = useRef<AudioContext | null>(null);
+  const lastTickRef = useRef(0);
   const lastHapticMinute = useRef(5);
   const dragonKindRef = useRef(0);
   const reactionTimerRef = useRef<number | null>(null);
@@ -1632,33 +1715,10 @@ function ClockApp({ time }: { time: string }) {
     mythic: mythicPercent,
   };
 
-  const playTone = useCallback((frequency: number, duration: number, delay = 0, volume = .035) => {
-    try {
-      const AudioContextClass = window.AudioContext || (window as unknown as { webkitAudioContext?: typeof AudioContext }).webkitAudioContext;
-      if (!AudioContextClass) return;
-      const context = audioRef.current ?? new AudioContextClass();
-      audioRef.current = context;
-      void context.resume();
-      const oscillator = context.createOscillator();
-      const gain = context.createGain();
-      const start = context.currentTime + delay;
-      oscillator.type = "sine";
-      oscillator.frequency.setValueAtTime(frequency, start);
-      gain.gain.setValueAtTime(.0001, start);
-      gain.gain.exponentialRampToValueAtTime(volume, start + .008);
-      gain.gain.exponentialRampToValueAtTime(.0001, start + duration);
-      oscillator.connect(gain).connect(context.destination);
-      oscillator.start(start);
-      oscillator.stop(start + duration + .02);
-    } catch { /* Sound is an enhancement; the timer remains fully visual. */ }
-  }, []);
-
   const ringTimer = useCallback(() => {
-    playTone(880, .28, 0, .055);
-    playTone(660, .28, .32, .05);
-    playTone(880, .42, .64, .06);
+    playSound("chime");
     navigator.vibrate?.([120, 70, 120, 70, 180]);
-  }, [playTone]);
+  }, []);
 
   useEffect(() => {
     window.localStorage.setItem(DRAGON_COLLECTION_KEY, JSON.stringify(dragonCollection));
@@ -1675,6 +1735,12 @@ function ClockApp({ time }: { time: string }) {
       if (endTimeRef.current === null) return;
       const remaining = Math.max(0, Math.ceil((endTimeRef.current - Date.now()) / 1000));
       setSeconds((value) => value === remaining ? value : remaining);
+      // The last five seconds count themselves down, the way a mechanical
+      // kitchen timer gets louder as it runs out.
+      if (remaining > 0 && remaining <= 5 && remaining !== lastTickRef.current) {
+        lastTickRef.current = remaining;
+        playSound("tick");
+      }
       if (remaining === 0) {
         endTimeRef.current = null;
         setRunning(false);
@@ -1689,6 +1755,7 @@ function ClockApp({ time }: { time: string }) {
         setDragonCollection((cards) => [hatchling, ...cards].slice(0, 60));
         setFinished(true);
         ringTimer();
+        playSound("sparkle");
       }
     };
     update();
@@ -1708,7 +1775,11 @@ function ClockApp({ time }: { time: string }) {
     setFinished(false);
     if (haptic) {
       const nextMinute = Math.ceil(next / 60);
-      if (nextMinute !== lastHapticMinute.current) navigator.vibrate?.(5);
+      // One detent per minute, so dragging the pin feels like a notched dial.
+      if (nextMinute !== lastHapticMinute.current) {
+        navigator.vibrate?.(5);
+        playSound("tick");
+      }
       lastHapticMinute.current = nextMinute;
     }
   };
@@ -1722,9 +1793,10 @@ function ClockApp({ time }: { time: string }) {
     applyTimerSeconds(angle * 10, true);
   };
   const toggleTimer = () => {
-    playTone(430, .045, 0, .025);
+    playSound(running ? "tock" : "charge");
     navigator.vibrate?.(8);
     setFinished(false);
+    lastTickRef.current = 0;
     if (running) {
       if (endTimeRef.current !== null) setSeconds(Math.max(0, Math.ceil((endTimeRef.current - Date.now()) / 1000)));
       endTimeRef.current = null;
@@ -1741,7 +1813,8 @@ function ClockApp({ time }: { time: string }) {
     setRunning(false);
     setFinished(false);
     setSeconds(lastSetSeconds);
-    playTone(310, .055, 0, .022);
+    lastTickRef.current = 0;
+    playSound("tock");
     navigator.vibrate?.(10);
   };
   const interactDragon = (event: ReactMouseEvent<HTMLButtonElement>) => {
@@ -1778,10 +1851,7 @@ function ClockApp({ time }: { time: string }) {
     if (bondGain > 0 && activeDragon) {
       setDragonCollection((cards) => cards.map((card) => card.id === activeDragon.id ? { ...card, bond: Math.min(99, card.bond + bondGain) } : card));
     }
-    if (next === "fire") { playTone(330, .09, 0, .025); playTone(520, .12, .08, .025); }
-    else if (next === "happy") { playTone(660, .08, 0, .022); playTone(880, .12, .1, .025); }
-    else if (next === "spin") playTone(740, .16, 0, .024);
-    else playTone(260, .16, 0, .018);
+    playSound(next === "fire" ? "spark" : next === "spin" ? "zoom" : "purr");
     navigator.vibrate?.(next === "fire" ? [20, 20, 35] : 12);
     reactionTimerRef.current = window.setTimeout(() => {
       setDragonReaction(null);
@@ -1802,6 +1872,7 @@ function ClockApp({ time }: { time: string }) {
     event.currentTarget.style.setProperty("--dragon-look-y", "0px");
   };
   const openDragonCodex = () => {
+    playSound("swipe");
     setDragonView("codex");
     window.requestAnimationFrame(() => window.requestAnimationFrame(() => {
       const track = codexTrackRef.current;
@@ -1823,8 +1894,7 @@ function ClockApp({ time }: { time: string }) {
     setDragonMessage(dragonTrait(card).greeting);
     setDragonCombo(0);
     setDragonView("ritual");
-    playTone(620, .08, 0, .02);
-    playTone(820, .12, .09, .024);
+    playSound("pop");
     navigator.vibrate?.(12);
     if (reactionTimerRef.current !== null) window.clearTimeout(reactionTimerRef.current);
     reactionTimerRef.current = window.setTimeout(() => {
@@ -1888,7 +1958,7 @@ function ClockApp({ time }: { time: string }) {
         >
           {dragonView === "codex" ? (
             <section className="dragon-codex" aria-label="Dragon card collection">
-              <header><button onClick={() => setDragonView("ritual")}>‹ EGG</button><div><strong>DRAGON CODEX</strong><span>{dragonCollection.length} HATCHED</span></div><i>✦</i></header>
+              <header><button onClick={() => { playSound("close"); setDragonView("ritual"); }}>‹ EGG</button><div><strong>DRAGON CODEX</strong><span>{dragonCollection.length} HATCHED</span></div><i>✦</i></header>
               <div ref={codexTrackRef} className="dragon-card-track">
                 {codexEntries.map(({ card, kind }) => {
                   const locked = card === null;
@@ -1976,7 +2046,7 @@ function ClockApp({ time }: { time: string }) {
           <p className="timer-live" role="status" aria-live="assertive">{finished ? dragonMessage ? `${activeKind.name}: ${dragonMessage}` : `${activeKind.name} has hatched` : ""}</p>
         </div>
       )}
-      <nav className="clock-tabs"><button className={tab === "clock" ? "active" : ""} onClick={() => setTab("clock")}><i>◷</i>World Clock</button><button className={tab === "timer" ? "active" : ""} onClick={() => setTab("timer")}><i>◴</i>Timer</button></nav>
+      <nav className="clock-tabs"><button className={tab === "clock" ? "active" : ""} onClick={() => { playSound("tock"); setTab("clock"); }}><i>◷</i>World Clock</button><button className={tab === "timer" ? "active" : ""} onClick={() => { playSound("tock"); setTab("timer"); }}><i>◴</i>Timer</button></nav>
     </div>
   );
 }
@@ -2112,6 +2182,7 @@ function NotesApp() {
 
   const createNote = () => {
     const note = createBlankNote();
+    playSound("pop");
     setNotes((current) => [note, ...current]);
     setActiveNoteId(note.id);
     setView("editor");
@@ -2122,6 +2193,7 @@ function NotesApp() {
   const deleteNote = (id: string) => {
     const remaining = notes.filter((note) => note.id !== id);
     const next = remaining.length ? remaining : [createBlankNote()];
+    playSound("trash");
     setNotes(next);
     if (id === activeNoteId) setActiveNoteId(next[0].id);
     setRedoStrokes([]);
@@ -2129,6 +2201,7 @@ function NotesApp() {
 
   const undoDrawing = () => {
     if (!activeNote?.strokes.length) return;
+    playSound("tap");
     const removed = activeNote.strokes[activeNote.strokes.length - 1];
     setNotes((current) => current.map((note) => note.id === activeNote.id ? { ...note, strokes: note.strokes.slice(0, -1), updatedAt: new Date().toISOString() } : note));
     setRedoStrokes((current) => [...current, removed]);
@@ -2137,18 +2210,20 @@ function NotesApp() {
   const redoDrawing = () => {
     const stroke = redoStrokes[redoStrokes.length - 1];
     if (!stroke || !activeNote) return;
+    playSound("tap");
     setNotes((current) => current.map((note) => note.id === activeNote.id ? { ...note, strokes: [...note.strokes, stroke], updatedAt: new Date().toISOString() } : note));
     setRedoStrokes((current) => current.slice(0, -1));
   };
 
   const clearDrawing = () => {
     if (!activeNote) return;
+    playSound("trash");
     setNotes((current) => current.map((note) => note.id === activeNote.id ? { ...note, strokes: [], doodleSeed: false, background: undefined, updatedAt: new Date().toISOString() } : note));
     setRedoStrokes([]);
   };
 
   const copyNote = async () => {
-    try { await navigator.clipboard.writeText(activeNote.text); setSaveStatus("Copied"); window.setTimeout(() => setSaveStatus("Saved"), 1400); } catch { setSaveStatus("Copy failed"); }
+    try { await navigator.clipboard.writeText(activeNote.text); playSound("pop"); setSaveStatus("Copied"); window.setTimeout(() => setSaveStatus("Saved"), 1400); } catch { playSound("alert"); setSaveStatus("Copy failed"); }
   };
 
   const filteredNotes = notes.filter((note) => note.text.toLowerCase().includes(search.trim().toLowerCase()));
@@ -2163,7 +2238,7 @@ function NotesApp() {
           <div className="notes-list" role="list">
             {filteredNotes.map((note) => (
               <div className="notes-list-row" role="listitem" key={note.id}>
-                <button className="notes-open" onClick={() => { setActiveNoteId(note.id); setView("editor"); setRedoStrokes([]); }}>
+                <button className="notes-open" onClick={() => { playSound("open"); setActiveNoteId(note.id); setView("editor"); setRedoStrokes([]); }}>
                   <strong>{noteTitle(note)}</strong><span>{notePreview(note)}</span><time dateTime={note.updatedAt}>{formatNoteDate(note.updatedAt)}</time>
                 </button>
                 <button className="notes-delete-row" onClick={() => deleteNote(note.id)} aria-label={`Delete ${noteTitle(note)}`}>×</button>
@@ -2176,13 +2251,13 @@ function NotesApp() {
       ) : (
         <div className={`notes-editor notes-mode-${mode}`}>
           <header className="notes-editor-bar">
-            <button onClick={() => setView("list")} aria-label="Back to all notes">‹ Notes</button>
+            <button onClick={() => { playSound("close"); setView("list"); }} aria-label="Back to all notes">‹ Notes</button>
             <span>{saveStatus}</span>
             <button onClick={createNote} aria-label="Create a new note">＋</button>
           </header>
           <div className="notes-paper">
             {mode === "write" ? (
-              <textarea aria-label="Edit note" value={activeNote.text} onChange={(event) => updateActiveText(event.target.value)} placeholder="Start writing…" />
+              <textarea aria-label="Edit note" value={activeNote.text} onChange={(event) => updateActiveText(event.target.value)} onKeyDown={playKeyboardTick} placeholder="Start writing…" />
             ) : (
               <div className="notes-canvas-wrap">
                 {activeNote.background && <img src={activeNote.background} alt="Earlier saved sketch" />}
@@ -2193,15 +2268,15 @@ function NotesApp() {
           </div>
           <div className="notes-meta"><span>{mode === "write" ? `${characterCount} characters` : `${activeNote.strokes.length} strokes`}</span><time dateTime={activeNote.updatedAt}>{formatNoteDate(activeNote.updatedAt)}</time></div>
           <div className="notes-toolbar" aria-label="Note tools">
-            <button className={mode === "write" ? "active" : ""} onClick={() => setMode("write")} aria-label="Write text"><b>Aa</b><span>Write</span></button>
-            <button className={mode === "draw" ? "active" : ""} onClick={() => setMode("draw")} aria-label="Draw"><b>✎</b><span>Draw</span></button>
+            <button className={mode === "write" ? "active" : ""} onClick={() => { playSound("tock"); setMode("write"); }} aria-label="Write text"><b>Aa</b><span>Write</span></button>
+            <button className={mode === "draw" ? "active" : ""} onClick={() => { playSound("tock"); setMode("draw"); }} aria-label="Draw"><b>✎</b><span>Draw</span></button>
             {mode === "write" ? (
               <><button onClick={copyNote} aria-label="Copy note"><b>⧉</b><span>Copy</span></button><button onClick={() => deleteNote(activeNote.id)} aria-label="Delete note"><b>⌫</b><span>Delete</span></button></>
             ) : (
               <>
-                {["#263c8f", "#c52c31", "#27804a", "#191919"].map((color) => <button key={color} className={`notes-ink ${ink === color && !eraser ? "active" : ""}`} onClick={() => { setInk(color); setEraser(false); }} aria-label={`Draw in ${noteColorName(color)}`}><i style={{ background: color }} /></button>)}
-                <button className={eraser ? "active" : ""} onClick={() => setEraser((value) => !value)} aria-label="Toggle eraser"><b>▱</b></button>
-                <button onClick={() => setBrushSize((value) => value >= 7 ? 2 : value + 2)} aria-label={`Brush size ${brushSize}`}><i className="notes-brush-size" style={{ width: brushSize + 4, height: brushSize + 4 }} /></button>
+                {["#263c8f", "#c52c31", "#27804a", "#191919"].map((color) => <button key={color} className={`notes-ink ${ink === color && !eraser ? "active" : ""}`} onClick={() => { playSound("tap"); setInk(color); setEraser(false); }} aria-label={`Draw in ${noteColorName(color)}`}><i style={{ background: color }} /></button>)}
+                <button className={eraser ? "active" : ""} onClick={() => { playSound("tock"); setEraser((value) => !value); }} aria-label="Toggle eraser"><b>▱</b></button>
+                <button onClick={() => { playSound("tap"); setBrushSize((value) => value >= 7 ? 2 : value + 2); }} aria-label={`Brush size ${brushSize}`}><i className="notes-brush-size" style={{ width: brushSize + 4, height: brushSize + 4 }} /></button>
                 <button onClick={undoDrawing} disabled={!activeNote.strokes.length} aria-label="Undo drawing"><b>↶</b></button>
                 <button onClick={redoDrawing} disabled={!redoStrokes.length} aria-label="Redo drawing"><b>↷</b></button>
                 <button onClick={clearDrawing} aria-label="Clear drawing"><b>×</b></button>
@@ -2247,9 +2322,9 @@ function ContactApp({ base }: { base: string }) {
     <div className="contact-app">
       <img className="contact-photo" src={`${base}/media/about/tian-xing-iphone4.jpg`} alt="Tian Xing" />
       <h2>Tian Xing</h2><p>Visual artist · filmmaker · builder</p>
-      <a href="https://xingpicture.myportfolio.com" target="_blank" rel="noreferrer"><b>Photo</b><span>xingpicture.myportfolio.com</span></a>
-      <a href="https://github.com/lovejzzz" target="_blank" rel="noreferrer"><b>GitHub</b><span>lovejzzz</span></a>
-      <a href="https://www.youtube.com/@HereWeGoFilmStudio" target="_blank" rel="noreferrer"><b>Film Studio</b><span>Here We Go</span></a>
+      <a href="https://xingpicture.myportfolio.com" target="_blank" rel="noreferrer" onClick={() => playSound("open")}><b>Photo</b><span>xingpicture.myportfolio.com</span></a>
+      <a href="https://github.com/lovejzzz" target="_blank" rel="noreferrer" onClick={() => playSound("open")}><b>GitHub</b><span>lovejzzz</span></a>
+      <a href="https://www.youtube.com/@HereWeGoFilmStudio" target="_blank" rel="noreferrer" onClick={() => playSound("open")}><b>Film Studio</b><span>Here We Go</span></a>
     </div>
   );
 }
@@ -2260,9 +2335,9 @@ function MailApp() {
       <div className="mail-paper">
         <img className="mail-stamp" src="/media/about/tian-xing-iphone4.jpg" alt="" aria-hidden="true" />
         <p>CONTACT CARD</p><h2>Tian Xing</h2><small>New York · available for thoughtful collaborations</small>
-        <a className="contact-line" href="mailto:xingpicture@gmail.com"><i className="mail-mini-icon">✉</i><span><b>Email</b>xingpicture@gmail.com</span><em>›</em></a>
-        <a className="contact-line" href="https://www.instagram.com/xing_tian_lifeitself/" target="_blank" rel="noreferrer"><i className="instagram-icon"><b /></i><span><b>Instagram</b>@xing_tian_lifeitself</span><em>›</em></a>
-        <a className="compose-mail-button" href="mailto:xingpicture@gmail.com?subject=Hello%20Tian">Compose Email</a>
+        <a className="contact-line" href="mailto:xingpicture@gmail.com" onClick={() => playSound("open")}><i className="mail-mini-icon">✉</i><span><b>Email</b>xingpicture@gmail.com</span><em>›</em></a>
+        <a className="contact-line" href="https://www.instagram.com/xing_tian_lifeitself/" target="_blank" rel="noreferrer" onClick={() => playSound("open")}><i className="instagram-icon"><b /></i><span><b>Instagram</b>@xing_tian_lifeitself</span><em>›</em></a>
+        <a className="compose-mail-button" href="mailto:xingpicture@gmail.com?subject=Hello%20Tian" onClick={() => playSound("send")}>Compose Email</a>
       </div>
     </div>
   );
@@ -2296,7 +2371,11 @@ function SafariApp() {
   const visitPortal = (index: number) => {
     setPortalIndex(index);
     setVisited((current) => {
-      if (current.includes(index)) return current;
+      if (current.includes(index)) {
+        playSound("pop");
+        return current;
+      }
+      playSound("stamp");
       const next = [...current, index];
       try { window.localStorage.setItem(SAFARI_STAMPS_KEY, JSON.stringify(next)); } catch { /* keep the session copy */ }
       return next;
@@ -2305,6 +2384,7 @@ function SafariApp() {
 
   const startExpedition = () => {
     if (travelling) return;
+    playSound("whoosh");
     if ("vibrate" in navigator) navigator.vibrate(12);
     const undiscovered = safariPortals.map((_, index) => index).filter((index) => !visited.includes(index));
     const pool = undiscovered.length ? undiscovered : safariPortals.map((_, index) => index).filter((index) => index !== portalIndex);
@@ -2322,6 +2402,7 @@ function SafariApp() {
 
   const resetExpedition = () => {
     if (travelling) return;
+    playSound("trash");
     setVisited([]);
     try { window.localStorage.removeItem(SAFARI_STAMPS_KEY); } catch { /* reset the session copy */ }
   };
@@ -2356,7 +2437,7 @@ function SafariApp() {
           <article className="safari-discovery" key={portal.host} style={{ "--portal-color": portal.color } as CSSProperties}>
             <span className="discovery-mark">{portal.mark}</span>
             <div><small>{portal.direction} · {portal.biome}</small><h2>{travelling ? "Following a signal…" : portal.title}</h2><p>{travelling ? "Keep the compass steady." : portal.description}</p></div>
-            <a href={portal.url} target="_blank" rel="noreferrer" aria-label={`Open ${portal.title}`}><b>OPEN</b><span>↗</span></a>
+            <a href={portal.url} target="_blank" rel="noreferrer" onClick={() => playSound("open")} aria-label={`Open ${portal.title}`}><b>OPEN</b><span>↗</span></a>
           </article>
         </div>
 
@@ -2365,7 +2446,7 @@ function SafariApp() {
             <button
               className={visited.includes(index) ? "is-stamped" : ""}
               key={destination.host}
-              onClick={() => visited.includes(index) && setPortalIndex(index)}
+              onClick={() => { if (!visited.includes(index)) return; playSound("tock"); setPortalIndex(index); }}
               aria-label={visited.includes(index) ? `Review ${destination.title}` : "Undiscovered destination"}
             >
               <i style={{ "--stamp-color": destination.color } as CSSProperties}>{visited.includes(index) ? destination.mark : "?"}</i>
