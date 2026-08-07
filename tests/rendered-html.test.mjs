@@ -137,6 +137,9 @@ test("keeps the iPhone interactive and time-aware", async () => {
   assert.match(phone3dSource, /function withoutInwardFaces/);
   assert.match(phone3dSource, /const bandGeometry = withoutInwardFaces\(rawBandGeometry\)/);
   assert.match(phone3dSource, /pointsInward/);
+  assert.match(phone3dSource, /function machinedButtonGeometry/);
+  assert.match(phone3dSource, /new THREE\.LatheGeometry/);
+  assert.match(phone3dSource, /bevelSegments: 10/);
   assert.doesNotMatch(phone3dSource, /displayGasket|gasketGeometry|linerGeometry/);
   // The rotating model and the resting phone now share the live DOM screen.
   // This removes the old canvas-texture crossfade (and its one-frame wallpaper/icon jump).

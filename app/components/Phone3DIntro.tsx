@@ -78,6 +78,24 @@ function roundedFrameGeometry(outerWidth: number, outerHeight: number, outerRadi
   return new THREE.ExtrudeGeometry(shape, { depth, bevelEnabled: false, curveSegments: 28 });
 }
 
+// A machined button is not a flat cylinder: its rim rolls into the side wall
+// and the exposed face has a barely crowned profile. A lathed cross-section
+// gives that small piece the same soft, finger-safe finish as the steel band.
+function machinedButtonGeometry(radius: number, depth: number) {
+  const halfDepth = depth / 2;
+  return new THREE.LatheGeometry([
+    new THREE.Vector2(0, -halfDepth),
+    new THREE.Vector2(radius * 0.76, -halfDepth),
+    new THREE.Vector2(radius * 0.91, -halfDepth * 0.84),
+    new THREE.Vector2(radius * 0.985, -halfDepth * 0.48),
+    new THREE.Vector2(radius, 0),
+    new THREE.Vector2(radius * 0.975, halfDepth * 0.46),
+    new THREE.Vector2(radius * 0.9, halfDepth * 0.78),
+    new THREE.Vector2(radius * 0.72, halfDepth),
+    new THREE.Vector2(0, halfDepth),
+  ], 72);
+}
+
 // ExtrudeGeometry builds a wall around both the outside of a ring and the
 // inside of its hole. The latter cannot exist in this composite: the live DOM
 // display sits behind a transparent WebGL aperture, so the camera would see
@@ -271,15 +289,22 @@ export function Phone3DIntro({ productRef }: { productRef: RefObject<HTMLDivElem
     // Brushed steel: anisotropy stretches the streak highlights along the band,
     // a whisper of clearcoat keeps the chamfers crisp over the brushing.
     const steel = new THREE.MeshPhysicalMaterial({
-      color: 0x989ea3,
+      color: 0x9da3a8,
       metalness: 1,
-      roughness: 0.34,
-      anisotropy: 0.28,
-      clearcoat: 0.25,
-      clearcoatRoughness: 0.2,
-      envMapIntensity: 0.88,
+      roughness: 0.3,
+      anisotropy: 0.34,
+      clearcoat: 0.32,
+      clearcoatRoughness: 0.24,
+      envMapIntensity: 0.84,
     });
-    const steelButton = new THREE.MeshPhysicalMaterial({ color: 0xa0a6ab, metalness: 1, roughness: 0.34, envMapIntensity: 0.9 });
+    const steelButton = new THREE.MeshPhysicalMaterial({
+      color: 0xa8adb1,
+      metalness: 1,
+      roughness: 0.3,
+      clearcoat: 0.28,
+      clearcoatRoughness: 0.22,
+      envMapIntensity: 0.86,
+    });
     const backGlass = new THREE.MeshPhysicalMaterial({
       color: 0x000102,
       metalness: 0,
@@ -306,10 +331,10 @@ export function Phone3DIntro({ productRef }: { productRef: RefObject<HTMLDivElem
     const rawBandGeometry = new THREE.ExtrudeGeometry(bandShape, {
       depth: BAND_DEPTH - 0.084,
       bevelEnabled: true,
-      bevelThickness: 0.042,
-      bevelSize: 0.02,
-      bevelSegments: 6,
-      curveSegments: 64,
+      bevelThickness: 0.064,
+      bevelSize: 0.038,
+      bevelSegments: 10,
+      curveSegments: 72,
     });
     const bandGeometry = withoutInwardFaces(rawBandGeometry);
     rawBandGeometry.dispose();
@@ -436,13 +461,19 @@ export function Phone3DIntro({ productRef }: { productRef: RefObject<HTMLDivElem
 
     // --- Band furniture -----------------------------------------------------
     // Left edge: mute switch above two round volume buttons.
-    const mute = new THREE.Mesh(new RoundedBoxGeometry(0.09, 0.23, 0.13, 3, 0.03), steelButton);
-    mute.position.set(-(PHONE_WIDTH / 2 + 0.025), 2.39, 0.01);
+    const mute = new THREE.Mesh(new RoundedBoxGeometry(0.11, 0.25, 0.15, 6, 0.045), steelButton);
+    mute.position.set(-(PHONE_WIDTH / 2 + 0.032), 2.39, 0.01);
     phone.add(mute);
+    const buttonWellMaterial = new THREE.MeshStandardMaterial({ color: 0x171a1d, metalness: 0.35, roughness: 0.56 });
     [1.64, 1.09].forEach((y) => {
-      const volume = new THREE.Mesh(new THREE.CylinderGeometry(0.19, 0.19, 0.08, 40), steelButton);
+      const well = new THREE.Mesh(new THREE.TorusGeometry(0.184, 0.011, 12, 64), buttonWellMaterial);
+      well.rotation.y = Math.PI / 2;
+      well.position.set(-(PHONE_WIDTH / 2 + 0.008), y, 0.02);
+      phone.add(well);
+
+      const volume = new THREE.Mesh(machinedButtonGeometry(0.19, 0.105), steelButton);
       volume.rotation.z = Math.PI / 2;
-      volume.position.set(-(PHONE_WIDTH / 2 + 0.035), y, 0.02);
+      volume.position.set(-(PHONE_WIDTH / 2 + 0.05), y, 0.02);
       phone.add(volume);
     });
 
@@ -453,8 +484,8 @@ export function Phone3DIntro({ productRef }: { productRef: RefObject<HTMLDivElem
     const topMic = new THREE.Mesh(new THREE.CylinderGeometry(0.032, 0.032, 0.016, 24), matteBlack);
     topMic.position.set(-0.94, PHONE_HEIGHT / 2 + 0.002, 0);
     phone.add(topMic);
-    const power = new THREE.Mesh(new RoundedBoxGeometry(0.52, 0.09, 0.2, 3, 0.035), steelButton);
-    power.position.set(1.1, PHONE_HEIGHT / 2 + 0.02, 0.01);
+    const power = new THREE.Mesh(new RoundedBoxGeometry(0.54, 0.11, 0.21, 6, 0.052), steelButton);
+    power.position.set(1.1, PHONE_HEIGHT / 2 + 0.032, 0.01);
     phone.add(power);
 
     // Bottom edge: 30-pin dock, pentalobe screws, speaker and mic grilles.
