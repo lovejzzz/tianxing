@@ -194,12 +194,20 @@ test("keeps the iPhone interactive and time-aware", async () => {
   assert.match(source, /stored on this device/);
   assert.doesNotMatch(source, /type="range"/);
   assert.match(source, /radio\.garden/);
-  assert.match(source, /Surprise me again/);
+  assert.match(source, /THE WILD WEB/);
+  assert.match(source, /SAFARI_STAMPS_KEY/);
+  assert.match(source, /startExpedition/);
+  assert.match(source, /safari-passport/);
+  assert.match(styles, /safari-compass/);
+  assert.match(styles, /safari-signal-pulse/);
   assert.equal((source.match(/media\/ios4\/icons\//g) ?? []).length, 2);
   assert.doesNotMatch(source, /Photo Portfolio/);
   for (const icon of ["messages", "calendar", "photos", "camera", "weather", "clock", "notes", "phone", "mail", "safari", "music"]) {
     await access(new URL(`../public/media/ios4/icons/${icon}.png`, import.meta.url));
   }
+  const safariIcon = await readFile(new URL("../public/media/ios4/icons/safari.png", import.meta.url));
+  assert.equal(safariIcon.readUInt32BE(16), 512);
+  assert.equal(safariIcon.readUInt32BE(20), 512);
   assert.match(projectSource, /slug: "edutool"[\s\S]{0,180}year: "2026"/);
   assert.match(projectSource, /slug: "start-where-you-are"[\s\S]{0,180}year: "2025"/);
   assert.match(projectSource, /slug: "texas-jack"[\s\S]{0,180}year: "2024"/);

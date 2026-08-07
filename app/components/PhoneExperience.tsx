@@ -46,11 +46,11 @@ const boothEffects: Array<{ id: BoothEffectId; label: string; filter: string }> 
 ];
 
 const safariPortals = [
-  { title: "Radio Garden", host: "radio.garden", description: "Spin the globe. Listen anywhere.", url: "https://radio.garden/", mark: "◉" },
-  { title: "WindowSwap", host: "window-swap.com", description: "Borrow somebody else’s window for a while.", url: "https://www.window-swap.com/", mark: "▤" },
-  { title: "A Picture from Space", host: "apod.nasa.gov", description: "One new window into the universe every day.", url: "https://apod.nasa.gov/apod/astropix.html", mark: "✦" },
-  { title: "Public Domain Review", host: "publicdomainreview.org", description: "Beautiful oddities from art, film, and history.", url: "https://publicdomainreview.org/", mark: "∞" },
-  { title: "Earth", host: "earth.nullschool.net", description: "Watch the planet breathe in real time.", url: "https://earth.nullschool.net/", mark: "≈" },
+  { title: "Radio Garden", host: "radio.garden", description: "Catch a live radio signal from somewhere you have never been.", url: "https://radio.garden/", mark: "◉", direction: "E", biome: "SOUND", bearing: 64, color: "#76dfc2" },
+  { title: "WindowSwap", host: "window-swap.com", description: "Borrow a stranger’s window and stay for one quiet minute.", url: "https://www.window-swap.com/", mark: "▤", direction: "S", biome: "PEOPLE", bearing: 162, color: "#f2a769" },
+  { title: "A Picture from Space", host: "apod.nasa.gov", description: "Bring back today’s photograph from beyond the atmosphere.", url: "https://apod.nasa.gov/apod/astropix.html", mark: "✦", direction: "N", biome: "COSMOS", bearing: 8, color: "#b9a7ff" },
+  { title: "Public Domain Review", host: "publicdomainreview.org", description: "Excavate a beautiful oddity from art, film, or history.", url: "https://publicdomainreview.org/", mark: "∞", direction: "W", biome: "MEMORY", bearing: 278, color: "#f1d16f" },
+  { title: "Earth", host: "earth.nullschool.net", description: "Watch the winds move and see the planet breathing in real time.", url: "https://earth.nullschool.net/", mark: "≈", direction: "NE", biome: "WEATHER", bearing: 38, color: "#65bdf0" },
 ];
 
 const homeApps: HomeApp[] = [
@@ -76,6 +76,7 @@ const PHOTO_HIDDEN_KEY = "tian-iphone-hidden-photos";
 const MESSAGE_DRAFT_KEY = "tian-iphone-message-draft";
 const MESSAGE_THREAD_KEY = "tian-iphone-message-thread";
 const MESSAGE_ENDPOINT = "https://script.google.com/macros/s/AKfycbyXBqJ3mfDqYPFESbxJTi6TXbwpQIh_59aGxw-lP_lxn7EyTrFS2wSR0spqosGWDM1EbQ/exec";
+const SAFARI_STAMPS_KEY = "tian-wild-web-stamps";
 const WEATHER_LOCATION_KEY = "tian-iphone-weather-location";
 const WEATHER_UNIT_KEY = "tian-iphone-weather-unit";
 const WEATHER_CACHE_KEY = "tian-iphone-weather-cache-v2";
@@ -2264,25 +2265,106 @@ function MailApp() {
 
 function SafariApp({ onOpenWork }: { onOpenWork: () => void }) {
   const [portalIndex, setPortalIndex] = useState(0);
+  const [visited, setVisited] = useState<number[]>([]);
+  const [travelling, setTravelling] = useState(false);
+  const [needleTurn, setNeedleTurn] = useState(safariPortals[0].bearing);
+  const travelTimer = useRef<number | null>(null);
   const portal = safariPortals[portalIndex];
-  const shufflePortal = () => setPortalIndex((current) => {
-    const jump = 1 + Math.floor(Math.random() * (safariPortals.length - 1));
-    return (current + jump) % safariPortals.length;
-  });
+
+  useEffect(() => {
+    try {
+      const saved = JSON.parse(window.localStorage.getItem(SAFARI_STAMPS_KEY) ?? "[]");
+      if (Array.isArray(saved)) setVisited(saved.filter((value) => Number.isInteger(value) && value >= 0 && value < safariPortals.length));
+    } catch {
+      // The expedition still works when private browsing blocks local storage.
+    }
+    return () => {
+      if (travelTimer.current !== null) window.clearTimeout(travelTimer.current);
+    };
+  }, []);
+
+  const visitPortal = (index: number) => {
+    setPortalIndex(index);
+    setVisited((current) => {
+      if (current.includes(index)) return current;
+      const next = [...current, index];
+      try { window.localStorage.setItem(SAFARI_STAMPS_KEY, JSON.stringify(next)); } catch { /* keep the session copy */ }
+      return next;
+    });
+  };
+
+  const startExpedition = () => {
+    if (travelling) return;
+    const undiscovered = safariPortals.map((_, index) => index).filter((index) => !visited.includes(index));
+    const pool = undiscovered.length ? undiscovered : safariPortals.map((_, index) => index).filter((index) => index !== portalIndex);
+    const nextIndex = pool[Math.floor(Math.random() * pool.length)] ?? portalIndex;
+    const next = safariPortals[nextIndex];
+    setTravelling(true);
+    setNeedleTurn((current) => current + 720 + ((next.bearing - current) % 360 + 360) % 360);
+    if (travelTimer.current !== null) window.clearTimeout(travelTimer.current);
+    travelTimer.current = window.setTimeout(() => {
+      visitPortal(nextIndex);
+      setTravelling(false);
+      travelTimer.current = null;
+    }, 780);
+  };
+
+  const resetExpedition = () => {
+    if (travelling) return;
+    setVisited([]);
+    try { window.localStorage.removeItem(SAFARI_STAMPS_KEY); } catch { /* reset the session copy */ }
+  };
+
   return (
     <div className="safari-app">
-      <div className="safari-address"><span>https://</span><b>somewhere.good</b><button onClick={shufflePortal} aria-label="Shuffle destination">↻</button></div>
-      <section className="safari-home">
-        <div className="safari-portal">
-          <small>TIAN’S INTERNET</small><i>{portal.mark}</i><h2>{portal.title}</h2><p>{portal.description}</p>
-          <a href={portal.url} target="_blank" rel="noreferrer">Take me there <b>→</b></a>
-          <button onClick={shufflePortal}>Surprise me again</button>
+      <div className="safari-address"><span>tian://</span><b>wild-web/field-guide</b><button onClick={resetExpedition} aria-label="Reset expedition">×</button></div>
+      <section className={`safari-expedition ${travelling ? "is-travelling" : ""}`}>
+        <header className="safari-expedition-head">
+          <span><small>INTERNET SAFARI</small><strong>THE WILD WEB</strong></span>
+          <b>{visited.length}/{safariPortals.length}<small> FOUND</small></b>
+        </header>
+
+        <div className="safari-compass-field">
+          <i className="safari-orbit orbit-one" aria-hidden="true" />
+          <i className="safari-orbit orbit-two" aria-hidden="true" />
+          <button
+            className="safari-compass"
+            onClick={startExpedition}
+            aria-label={travelling ? "Searching the wild web" : "Spin compass to find a destination"}
+            disabled={travelling}
+            style={{ "--needle-turn": `${needleTurn}deg` } as CSSProperties}
+          >
+            <span className="compass-n">N</span><span className="compass-e">E</span><span className="compass-s">S</span><span className="compass-w">W</span>
+            <i className="safari-needle"><b /></i><em>{travelling ? "SCANNING" : "HUNT"}</em>
+          </button>
+
+          <article className="safari-discovery" style={{ "--portal-color": portal.color } as CSSProperties}>
+            <span className="discovery-mark">{portal.mark}</span>
+            <div><small>{portal.direction} · {portal.biome}</small><h2>{travelling ? "Following a signal…" : portal.title}</h2><p>{travelling ? "Keep the compass steady." : portal.description}</p></div>
+            <a href={portal.url} target="_blank" rel="noreferrer" aria-label={`Open ${portal.title}`}>↗</a>
+          </article>
         </div>
-        <h2>Keep close</h2>
-        <button onClick={onOpenWork}><i className="bookmark-work"><FunShelf compact /></i><span><b>Fun</b>Nine projects</span><em>›</em></button>
-        <a href="https://xingpicture.myportfolio.com" target="_blank" rel="noreferrer"><i className="bookmark-photo">▣</i><span><b>Photo</b>xingpicture.myportfolio.com</span><em>›</em></a>
+
+        <div className="safari-passport" aria-label={`${visited.length} destinations discovered`}>
+          {safariPortals.map((destination, index) => (
+            <button
+              className={visited.includes(index) ? "is-stamped" : ""}
+              key={destination.host}
+              onClick={() => visited.includes(index) && setPortalIndex(index)}
+              aria-label={visited.includes(index) ? `Review ${destination.title}` : "Undiscovered destination"}
+            >
+              <i style={{ "--stamp-color": destination.color } as CSSProperties}>{visited.includes(index) ? destination.mark : "?"}</i>
+              <span>{visited.includes(index) ? destination.biome : "UNKNOWN"}</span>
+            </button>
+          ))}
+        </div>
+
+        <div className="safari-basecamp">
+          <button onClick={onOpenWork}><i><FunShelf compact /></i><span><small>BASE CAMP</small>Fun</span></button>
+          <a href="https://xingpicture.myportfolio.com" target="_blank" rel="noreferrer"><i>▣</i><span><small>FIELD NOTES</small>Photo</span></a>
+        </div>
       </section>
-      <nav><span>‹</span><span>›</span><button onClick={shufflePortal} aria-label="New surprise">＋</button><span>▤</span></nav>
+      <nav><span>‹</span><span>›</span><button onClick={startExpedition} aria-label="Start a new expedition">⌖</button><span>▤</span></nav>
     </div>
   );
 }
