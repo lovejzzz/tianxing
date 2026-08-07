@@ -201,6 +201,9 @@ test("keeps the iPhone interactive and time-aware", async () => {
   assert.match(source, /SAFARI_STAMPS_KEY/);
   assert.match(source, /startExpedition/);
   assert.match(source, /safari-passport/);
+  assert.match(source, /safari-starfield/);
+  assert.match(source, /safari-compass-glass/);
+  assert.doesNotMatch(source, /safari-basecamp/);
   assert.match(styles, /safari-compass/);
   assert.match(styles, /safari-signal-pulse/);
   assert.equal((source.match(/media\/ios4\/icons\//g) ?? []).length, 2);

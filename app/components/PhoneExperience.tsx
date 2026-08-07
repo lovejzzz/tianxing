@@ -311,10 +311,17 @@ export function PhoneExperience() {
     const layerHeight = Math.max(1, homeLayer.clientHeight);
     const scaleX = layerWidth / Math.max(1, layer.width);
     const scaleY = layerHeight / Math.max(1, layer.height);
-    const left = (icon.left - layer.left) * scaleX;
-    const top = (icon.top - layer.top) * scaleY;
-    const width = icon.width * scaleX;
-    const height = icon.height * scaleY;
+    // Read the icon's layout box, not its pressed visual box. iOS compresses
+    // an icon under the finger; getBoundingClientRect() includes that temporary
+    // scale and used to move the Fun portal a few pixels down and right before
+    // it opened. The transformed centre is stable, while offsetWidth/Height
+    // preserve the real shared-element size.
+    const width = iconTarget.offsetWidth;
+    const height = iconTarget.offsetHeight;
+    const centreX = (icon.left + icon.width / 2 - layer.left) * scaleX;
+    const centreY = (icon.top + icon.height / 2 - layer.top) * scaleY;
+    const left = centreX - width / 2;
+    const top = centreY - height / 2;
     setOrigin({
       x: ((left + width / 2) / layerWidth) * 100,
       y: ((top + height / 2) / layerHeight) * 100,
@@ -441,7 +448,6 @@ export function PhoneExperience() {
                     captures={captures}
                     onCapture={saveCapture}
                     onDeleteCapture={deleteCapture}
-                    onOpenWork={() => openApp("folder")}
                     onGoHome={goHome}
                   />
                 )}
@@ -522,7 +528,7 @@ function HomeScreen({ calendarDay, calendarWeekday, onOpenApp }: {
         {homeApps.map((app) => (
           <button className="system-app" data-app-id={app.id} key={app.id} onClick={(event) => onOpenApp(app.id, event.currentTarget)}>
             <SystemAppIcon id={app.id} calendarDay={calendarDay} calendarWeekday={calendarWeekday} />
-            <span>{app.label}</span>
+            <span className="system-app-label">{app.label}</span>
           </button>
         ))}
       </div>
@@ -575,14 +581,13 @@ function SystemAppIcon({ id, calendarDay, calendarWeekday }: {
   );
 }
 
-function NativeAppView({ app, base, time, captures, onCapture, onDeleteCapture, onOpenWork, onGoHome }: {
+function NativeAppView({ app, base, time, captures, onCapture, onDeleteCapture, onGoHome }: {
   app: NativeApp;
   base: string;
   time: string;
   captures: CapturedPhoto[];
   onCapture: (src: string) => void;
   onDeleteCapture: (id: string) => void;
-  onOpenWork: () => void;
   onGoHome: () => void;
 }) {
   const titles: Record<NativeApp, string> = {
@@ -615,7 +620,7 @@ function NativeAppView({ app, base, time, captures, onCapture, onDeleteCapture, 
         {app === "notes" && <NotesApp />}
         {app === "phone" && <ContactApp base={base} />}
         {app === "mail" && <MailApp />}
-        {app === "safari" && <SafariApp onOpenWork={onOpenWork} />}
+        {app === "safari" && <SafariApp />}
         {app === "music" && <MusicApp />}
       </div>
     </div>
@@ -2263,21 +2268,26 @@ function MailApp() {
   );
 }
 
-function SafariApp({ onOpenWork }: { onOpenWork: () => void }) {
+function SafariApp() {
   const [portalIndex, setPortalIndex] = useState(0);
-  const [visited, setVisited] = useState<number[]>([]);
+  const [visited, setVisited] = useState<number[]>(() => {
+    if (typeof window === "undefined") return [];
+    try {
+      const saved = JSON.parse(window.localStorage.getItem(SAFARI_STAMPS_KEY) ?? "[]");
+      return Array.isArray(saved)
+        ? saved.filter((value) => Number.isInteger(value) && value >= 0 && value < safariPortals.length)
+        : [];
+    } catch {
+      return [];
+    }
+  });
   const [travelling, setTravelling] = useState(false);
   const [needleTurn, setNeedleTurn] = useState(safariPortals[0].bearing);
   const travelTimer = useRef<number | null>(null);
   const portal = safariPortals[portalIndex];
+  const expeditionComplete = visited.length === safariPortals.length;
 
   useEffect(() => {
-    try {
-      const saved = JSON.parse(window.localStorage.getItem(SAFARI_STAMPS_KEY) ?? "[]");
-      if (Array.isArray(saved)) setVisited(saved.filter((value) => Number.isInteger(value) && value >= 0 && value < safariPortals.length));
-    } catch {
-      // The expedition still works when private browsing blocks local storage.
-    }
     return () => {
       if (travelTimer.current !== null) window.clearTimeout(travelTimer.current);
     };
@@ -2295,6 +2305,7 @@ function SafariApp({ onOpenWork }: { onOpenWork: () => void }) {
 
   const startExpedition = () => {
     if (travelling) return;
+    if ("vibrate" in navigator) navigator.vibrate(12);
     const undiscovered = safariPortals.map((_, index) => index).filter((index) => !visited.includes(index));
     const pool = undiscovered.length ? undiscovered : safariPortals.map((_, index) => index).filter((index) => index !== portalIndex);
     const nextIndex = pool[Math.floor(Math.random() * pool.length)] ?? portalIndex;
@@ -2318,30 +2329,34 @@ function SafariApp({ onOpenWork }: { onOpenWork: () => void }) {
   return (
     <div className="safari-app">
       <div className="safari-address"><span>tian://</span><b>wild-web/field-guide</b><button onClick={resetExpedition} aria-label="Reset expedition">×</button></div>
-      <section className={`safari-expedition ${travelling ? "is-travelling" : ""}`}>
+      <section className={`safari-expedition ${travelling ? "is-travelling" : ""} ${expeditionComplete ? "is-complete" : ""}`}>
         <header className="safari-expedition-head">
-          <span><small>INTERNET SAFARI</small><strong>THE WILD WEB</strong></span>
-          <b>{visited.length}/{safariPortals.length}<small> FOUND</small></b>
+          <span><small>{expeditionComplete ? "FIELD GUIDE COMPLETE" : "INTERNET SAFARI"}</small><strong>THE WILD WEB</strong></span>
+          <b>{visited.length}/{safariPortals.length}<small>{expeditionComplete ? " MASTERED" : " FOUND"}</small></b>
         </header>
 
         <div className="safari-compass-field">
+          <div className="safari-starfield" aria-hidden="true">{Array.from({ length: 14 }, (_, index) => <i key={index} />)}</div>
           <i className="safari-orbit orbit-one" aria-hidden="true" />
           <i className="safari-orbit orbit-two" aria-hidden="true" />
+          <i className="safari-scan-sweep" aria-hidden="true" />
           <button
             className="safari-compass"
             onClick={startExpedition}
             aria-label={travelling ? "Searching the wild web" : "Spin compass to find a destination"}
             disabled={travelling}
-            style={{ "--needle-turn": `${needleTurn}deg` } as CSSProperties}
+            style={{ "--needle-turn": `${needleTurn}deg`, "--map-degrees": `${visited.length * 72}deg` } as CSSProperties}
           >
+            <i className="safari-compass-glass" aria-hidden="true" />
+            <i className="safari-compass-rose" aria-hidden="true" />
             <span className="compass-n">N</span><span className="compass-e">E</span><span className="compass-s">S</span><span className="compass-w">W</span>
             <i className="safari-needle"><b /></i><em>{travelling ? "SCANNING" : "HUNT"}</em>
           </button>
 
-          <article className="safari-discovery" style={{ "--portal-color": portal.color } as CSSProperties}>
+          <article className="safari-discovery" key={portal.host} style={{ "--portal-color": portal.color } as CSSProperties}>
             <span className="discovery-mark">{portal.mark}</span>
             <div><small>{portal.direction} · {portal.biome}</small><h2>{travelling ? "Following a signal…" : portal.title}</h2><p>{travelling ? "Keep the compass steady." : portal.description}</p></div>
-            <a href={portal.url} target="_blank" rel="noreferrer" aria-label={`Open ${portal.title}`}>↗</a>
+            <a href={portal.url} target="_blank" rel="noreferrer" aria-label={`Open ${portal.title}`}><b>OPEN</b><span>↗</span></a>
           </article>
         </div>
 
@@ -2359,10 +2374,6 @@ function SafariApp({ onOpenWork }: { onOpenWork: () => void }) {
           ))}
         </div>
 
-        <div className="safari-basecamp">
-          <button onClick={onOpenWork}><i><FunShelf compact /></i><span><small>BASE CAMP</small>Fun</span></button>
-          <a href="https://xingpicture.myportfolio.com" target="_blank" rel="noreferrer"><i>▣</i><span><small>FIELD NOTES</small>Photo</span></a>
-        </div>
       </section>
       <nav><span>‹</span><span>›</span><button onClick={startExpedition} aria-label="Start a new expedition">⌖</button><span>▤</span></nav>
     </div>
