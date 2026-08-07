@@ -78,6 +78,49 @@ function roundedFrameGeometry(outerWidth: number, outerHeight: number, outerRadi
   return new THREE.ExtrudeGeometry(shape, { depth, bevelEnabled: false, curveSegments: 28 });
 }
 
+// ExtrudeGeometry builds a wall around both the outside of a ring and the
+// inside of its hole. The latter cannot exist in this composite: the live DOM
+// display sits behind a transparent WebGL aperture, so the camera would see
+// that inner steel wall as a wide vertical bar near profile. Strip only faces
+// whose normals point back toward the ring centre; caps, chamfers and every
+// outward-facing part of the stainless band remain untouched.
+function withoutInwardFaces(source: THREE.BufferGeometry) {
+  const positions = source.getAttribute("position");
+  const normals = source.getAttribute("normal");
+  const keptVertices: number[] = [];
+
+  for (let vertex = 0; vertex < positions.count; vertex += 3) {
+    let centreX = 0;
+    let centreY = 0;
+    let normalX = 0;
+    let normalY = 0;
+    for (let corner = 0; corner < 3; corner += 1) {
+      const index = vertex + corner;
+      centreX += positions.getX(index);
+      centreY += positions.getY(index);
+      normalX += normals.getX(index);
+      normalY += normals.getY(index);
+    }
+    const pointsInward = normalX * centreX + normalY * centreY < -0.0001;
+    if (!pointsInward) keptVertices.push(vertex, vertex + 1, vertex + 2);
+  }
+
+  const geometry = new THREE.BufferGeometry();
+  Object.entries(source.attributes).forEach(([name, attribute]) => {
+    const values = new Float32Array(keptVertices.length * attribute.itemSize);
+    const sourceValues = attribute.array as ArrayLike<number>;
+    keptVertices.forEach((vertex, outputVertex) => {
+      for (let component = 0; component < attribute.itemSize; component += 1) {
+        values[outputVertex * attribute.itemSize + component] = sourceValues[vertex * attribute.itemSize + component];
+      }
+    });
+    geometry.setAttribute(name, new THREE.BufferAttribute(values, attribute.itemSize, attribute.normalized));
+  });
+  geometry.computeBoundingBox();
+  geometry.computeBoundingSphere();
+  return geometry;
+}
+
 // A minimal virtual studio: long gradient softboxes on a near-black dome.
 // PMREM turns the emissive planes into the elegant streak reflections that
 // read as product-spot lighting on the steel chamfers and the glass.
@@ -249,10 +292,6 @@ export function Phone3DIntro({ productRef }: { productRef: RefObject<HTMLDivElem
     // the live Vite build. Highlights belong to the clear screen layer and the
     // stainless rim; letting PMREM light this broad face made it read as gray.
     const frontGlass = new THREE.MeshBasicMaterial({ color: 0x010203 });
-    // The display gasket sits beneath the cover glass, outside the illuminated
-    // studio volume. Keep it optically black so an oblique view reads as one
-    // continuous bezel instead of a diffuse gray vertical strip.
-    const displayGasket = new THREE.MeshBasicMaterial({ color: 0x010203 });
     const matteBlack = new THREE.MeshStandardMaterial({ color: 0x040506, metalness: 0.1, roughness: 0.42 });
     const glassEdge = new THREE.MeshStandardMaterial({ color: 0x05070a, metalness: 0.1, roughness: 0.6 });
     const breakPlastic = new THREE.MeshStandardMaterial({ color: 0x141619, metalness: 0.05, roughness: 0.52 });
@@ -264,7 +303,7 @@ export function Phone3DIntro({ productRef }: { productRef: RefObject<HTMLDivElem
     // two polished bevels — the iPhone 4's signature silhouette.
     const bandShape = traceRoundedRect(new THREE.Shape(), PHONE_WIDTH - 0.04, PHONE_HEIGHT - 0.04, 0.505);
     bandShape.holes.push(traceRoundedRect(new THREE.Path(), PHONE_WIDTH - 0.18, PHONE_HEIGHT - 0.18, 0.44));
-    const bandGeometry = new THREE.ExtrudeGeometry(bandShape, {
+    const rawBandGeometry = new THREE.ExtrudeGeometry(bandShape, {
       depth: BAND_DEPTH - 0.084,
       bevelEnabled: true,
       bevelThickness: 0.042,
@@ -272,20 +311,10 @@ export function Phone3DIntro({ productRef }: { productRef: RefObject<HTMLDivElem
       bevelSegments: 6,
       curveSegments: 64,
     });
+    const bandGeometry = withoutInwardFaces(rawBandGeometry);
+    rawBandGeometry.dispose();
     bandGeometry.translate(0, 0, -(BAND_DEPTH - 0.084) / 2);
     phone.add(new THREE.Mesh(bandGeometry, steel));
-
-    // A thin optical baffle sits immediately under the cover glass. The old
-    // version extruded this gasket through almost the full phone depth; at a
-    // three-quarter angle its inner wall became a broad black vertical bar.
-    // Keeping the baffle coplanar with the glass still masks the bright steel
-    // cavity, while leaving no tunnel wall for the camera to see.
-    const gasketShape = traceRoundedRect(new THREE.Shape(), PHONE_WIDTH - 0.17, PHONE_HEIGHT - 0.17, 0.445);
-    gasketShape.holes.push(traceRoundedRect(new THREE.Path(), SCREEN_WIDTH + 0.03, SCREEN_HEIGHT + 0.03, 0.065));
-    const gasketGeometry = new THREE.ShapeGeometry(gasketShape, 52);
-    const gasketMesh = new THREE.Mesh(gasketGeometry, displayGasket);
-    gasketMesh.position.z = GLASS_Z - 0.004;
-    phone.add(gasketMesh);
 
     // Antenna break lines, GSM layout: one up top, two low on the sides.
     const breakTop = new THREE.Mesh(new RoundedBoxGeometry(0.04, 0.13, 0.55, 2, 0.012), breakPlastic);
@@ -471,6 +500,10 @@ export function Phone3DIntro({ productRef }: { productRef: RefObject<HTMLDivElem
       phone.position.set(pose.x, pose.y, pose.z);
       phone.scale.setScalar(pose.scale);
       rearGroup.visible = Math.cos(pose.rotateY) < 0;
+      // The turn presents the left button rail. The far-side SIM seam is
+      // physically hidden by the handset; without a solid display slab it can
+      // otherwise project through the transparent screen aperture.
+      simSeam.visible = pose.rotateY < 0.12;
 
       // CSS pixel space points y down, which mirrors rotations about X and Z.
       const x = pose.x * pixelsPerUnit;
