@@ -300,7 +300,7 @@ export function PhoneExperience() {
     const layer = homeLayer?.getBoundingClientRect();
     const iconTarget = element?.querySelector<HTMLElement>(".system-app-icon") ?? element;
     const icon = iconTarget?.getBoundingClientRect();
-    if (!screenElement || !screen || !homeLayer || !layer || !icon) return false;
+    if (!screenElement || !screen || !homeLayer || !layer || !iconTarget || !icon) return false;
 
     // The desktop phone is slightly scaled to sit at the same physical glass
     // depth as the Three.js model. Viewport pixels therefore cannot be fed
