@@ -345,9 +345,11 @@ export function Phone3DIntro({ productRef }: { productRef: RefObject<HTMLDivElem
     const breakTop = new THREE.Mesh(new RoundedBoxGeometry(0.04, 0.13, 0.55, 2, 0.012), breakPlastic);
     breakTop.position.set(-0.6, PHONE_HEIGHT / 2 - 0.055, 0);
     phone.add(breakTop);
+    let farSideAntennaGap: THREE.Mesh | null = null;
     [-1, 1].forEach((side) => {
       const gap = new THREE.Mesh(new RoundedBoxGeometry(0.13, 0.04, 0.55, 2, 0.012), breakPlastic);
       gap.position.set(side * (PHONE_WIDTH / 2 - 0.06), -2.66, 0);
+      if (side > 0) farSideAntennaGap = gap;
       phone.add(gap);
     });
 
@@ -535,6 +537,10 @@ export function Phone3DIntro({ productRef }: { productRef: RefObject<HTMLDivElem
       // physically hidden by the handset; without a solid display slab it can
       // otherwise project through the transparent screen aperture.
       simSeam.visible = pose.rotateY < 0.12;
+      // The lower antenna break on that same far rail needs the same culling.
+      // Otherwise its depth projects through the live DOM screen as a short
+      // black line near the lower-right corner during the oblique turn.
+      if (farSideAntennaGap) farSideAntennaGap.visible = pose.rotateY < 0.12;
 
       // CSS pixel space points y down, which mirrors rotations about X and Z.
       const x = pose.x * pixelsPerUnit;
