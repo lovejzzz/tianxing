@@ -172,8 +172,11 @@ test("keeps the iPhone interactive and time-aware", async () => {
   assert.match(phone3dSource, /new THREE\.LatheGeometry/);
   assert.match(phone3dSource, /homeButtonGroup\.position\.z = -0\.0065 \* homeButtonDepth/);
   assert.doesNotMatch(phone3dSource, /const pressedScale/);
-  assert.match(phone3dSource, /const homeGlyphMaterial = new THREE\.MeshStandardMaterial/);
-  assert.match(phone3dSource, /homeCapMaterial\.envMapIntensity = THREE\.MathUtils\.lerp\(0\.1, 0\.07/);
+  assert.match(phone3dSource, /const homeSeamMaterial = new THREE\.MeshBasicMaterial/);
+  assert.match(phone3dSource, /const homeCapMaterial = new THREE\.MeshBasicMaterial/);
+  assert.match(phone3dSource, /const homeGlyphMaterial = new THREE\.MeshBasicMaterial/);
+  assert.doesNotMatch(phone3dSource, /homeCapMaterial\.(?:roughness|clearcoatRoughness|envMapIntensity)\s*=/);
+  assert.doesNotMatch(phone3dSource, /homeGlyphMaterial\.(?:roughness|color)\s*=/);
   assert.doesNotMatch(phone3dSource, /const glyphMetal/);
   assert.match(styles, /translateY\(\.45px\) scale\(\.996\)/);
   assert.match(soundSource, /hiss\(\{ from: 1350, to: 620/);
