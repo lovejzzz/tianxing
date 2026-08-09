@@ -55,6 +55,11 @@ export default function RootLayout({ children }: Readonly<{ children: React.Reac
   return (
     <html lang="en" suppressHydrationWarning>
       <head>
+        <link
+          rel="preload"
+          as="image"
+          href="/media/cases/red-fuji-case.jpg"
+        />
         <style dangerouslySetInnerHTML={{ __html: "html.phone-intro-pending{background:#020305!important}html.phone-intro-pending body{visibility:hidden!important}" }} />
         <script dangerouslySetInnerHTML={{ __html: phoneIntroBootstrap }} />
       </head>

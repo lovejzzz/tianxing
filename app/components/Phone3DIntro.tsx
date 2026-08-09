@@ -24,7 +24,7 @@ const GLASS_Z = BAND_DEPTH / 2 - 0.01; // both glass plates sit just inside the 
 // The small offset avoids z-fighting without turning the display into a second,
 // visibly displaced plane during the three-quarter view.
 const SCREEN_COMPOSITE_Z = GLASS_Z + 0.004;
-const FUJI_CASE_ART = "https://file.nbfox.com/wp-content/uploads/2020/03/19/20200319083057-5e732dc1a4b9c.jpg";
+const FUJI_CASE_ART = "/media/cases/red-fuji-case.jpg";
 
 function smoothstep5(value: number) {
   return value * value * value * (value * (value * 6 - 15) + 10);
@@ -288,6 +288,8 @@ export function Phone3DIntro({ productRef }: { productRef: RefObject<HTMLDivElem
 
     const ownedTextures: THREE.Texture[] = [];
     let modelActive = true;
+    let caseTextureReady = !showFujiCase;
+    let startIntro: (() => void) | null = null;
 
     // Brushed steel: anisotropy stretches the streak highlights along the band,
     // a whisper of clearcoat keeps the chamfers crisp over the brushing.
@@ -454,17 +456,21 @@ export function Phone3DIntro({ productRef }: { productRef: RefObject<HTMLDivElem
     cameraCutout.absellipse(-1.225, 2.95, 0.355, 0.225, 0, Math.PI * 2, true, 0);
     caseShape.holes.push(cameraCutout);
 
-    const caseTexture = new THREE.TextureLoader().load(FUJI_CASE_ART, () => {
-      if (modelActive) renderer.render(scene, camera);
-    });
+    const markCaseTextureReady = () => {
+      caseTextureReady = true;
+      if (modelActive) startIntro?.();
+    };
+    const caseTexture = new THREE.TextureLoader().load(
+      FUJI_CASE_ART,
+      markCaseTextureReady,
+      undefined,
+      markCaseTextureReady,
+    );
     caseTexture.colorSpace = THREE.SRGBColorSpace;
     caseTexture.anisotropy = Math.min(renderer.capabilities.getMaxAnisotropy(), 8);
-    // A tall crop keeps the red mountain and blue sky legible on the handset.
-    // ShapeGeometry UVs use model units, so this also performs normalization.
-    const cropWidth = 0.37;
-    const cropStart = 0.57;
-    caseTexture.repeat.set(cropWidth / caseWidth, 1 / caseHeight);
-    caseTexture.offset.set(cropStart + cropWidth / 2, 0.5);
+    // ShapeGeometry UVs use model units; normalize the bundled portrait texture.
+    caseTexture.repeat.set(1 / caseWidth, 1 / caseHeight);
+    caseTexture.offset.set(0.5, 0.5);
     ownedTextures.push(caseTexture);
 
     const caseArtMaterial = new THREE.MeshPhysicalMaterial({
@@ -673,16 +679,12 @@ export function Phone3DIntro({ productRef }: { productRef: RefObject<HTMLDivElem
       applyPose(currentPose);
       renderer.render(scene, camera);
     };
-    resize();
-    // Reveal only after a complete WebGL frame exists. This removes the brief
-    // DOM-phone flash that used to appear while Three.js was still preparing.
-    document.documentElement.classList.add("phone-3d-ready");
-    document.documentElement.classList.remove("phone-3d-complete", "phone-intro-pending");
     const observer = new ResizeObserver(resize);
     observer.observe(host);
 
     let frame = 0;
-    const startedAt = performance.now();
+    let startedAt = 0;
+    let introStarted = false;
     const render = (now: number) => {
       const progress = inspectionMs === null
         ? Math.min(1, (now - startedAt) / INTRO_MS)
@@ -709,7 +711,19 @@ export function Phone3DIntro({ productRef }: { productRef: RefObject<HTMLDivElem
         document.documentElement.classList.add("phone-3d-complete");
       }
     };
-    frame = window.requestAnimationFrame(render);
+    startIntro = () => {
+      if (!modelActive || introStarted || !caseTextureReady) return;
+      introStarted = true;
+      resize();
+      // Reveal only after the model and the case artwork have both produced a
+      // complete WebGL frame. Animation time begins here as well, so waiting
+      // for the case texture never skips or compresses the opening frames.
+      document.documentElement.classList.add("phone-3d-ready");
+      document.documentElement.classList.remove("phone-3d-complete", "phone-intro-pending");
+      startedAt = performance.now();
+      frame = window.requestAnimationFrame(render);
+    };
+    startIntro();
 
     return () => {
       modelActive = false;

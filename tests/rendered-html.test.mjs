@@ -174,6 +174,11 @@ test("keeps the iPhone interactive and time-aware", async () => {
   assert.match(phone3dSource, /FUJI_CASE_ART/);
   assert.match(phone3dSource, /const frostedCaseMaterial = new THREE\.MeshPhysicalMaterial/);
   assert.match(phone3dSource, /cameraCutout\.absellipse/);
+  assert.match(phone3dSource, /let caseTextureReady = !showFujiCase/);
+  assert.match(phone3dSource, /if \(!modelActive \|\| introStarted \|\| !caseTextureReady\) return/);
+  assert.match(phone3dSource, /startedAt = performance\.now\(\)/);
+  assert.match(phone3dSource, /\/media\/cases\/red-fuji-case\.jpg/);
+  assert.doesNotMatch(phone3dSource, /file\.nbfox\.com/);
   assert.match(phone3dSource, /product\.style\.transform/);
   assert.match(phone3dSource, /introRequestedForDocument/);
   assert.match(phone3dSource, /delete document\.documentElement\.dataset\.phoneIntro/);
