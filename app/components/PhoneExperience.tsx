@@ -181,30 +181,12 @@ type Origin = {
   scaleY: number;
   bodyScaleY: number;
 };
-type MessageCapsuleGift = {
-  kind: "photo" | "music" | "note" | "dragon" | "project";
-  eyebrow: string;
-  title: string;
-  detail: string;
-  image?: string;
-  href?: string;
-  action?: string;
-};
 type MessageBubble = {
   id: string;
   text: string;
   time: string;
-  direction: "outgoing" | "incoming";
   state: "sending" | "sent" | "error";
 };
-
-function messageReplyForGift(returnedGift: MessageCapsuleGift) {
-  if (returnedGift.kind === "photo") return "It arrived. I’m glad this photograph found you.";
-  if (returnedGift.kind === "music") return "It arrived. Keep this song for a quiet hour.";
-  if (returnedGift.kind === "dragon") return "It arrived. Take good care of the little one.";
-  if (returnedGift.kind === "note") return "It arrived. Maybe keep this thought for later.";
-  return "It arrived. There’s a door inside—open it when you feel like it.";
-}
 type NotePoint = { x: number; y: number };
 type NoteStroke = { color: string; width: number; erase: boolean; points: NotePoint[] };
 type NoteDocument = {
@@ -749,58 +731,8 @@ function MessagesApp() {
     } catch { return []; }
   });
   const [status, setStatus] = useState<"idle" | "sending" | "sent" | "error">("idle");
-  const [phase, setPhase] = useState<"messages" | "transforming" | "machine" | "dispensing" | "gift" | "returning">("messages");
-  const [gift, setGift] = useState<MessageCapsuleGift | null>(null);
-  const [waitingGift, setWaitingGift] = useState<MessageCapsuleGift | null>(null);
-  const [turnProgress, setTurnProgress] = useState(0);
   const threadRef = useRef<HTMLDivElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
-  const dialRef = useRef<HTMLButtonElement>(null);
-  const dialPointer = useRef<{ id: number; angle: number; total: number; moved: boolean } | null>(null);
-  const dispenseStarted = useRef(false);
-  const revealTimers = useRef<number[]>([]);
-  const replyDelivered = useRef(false);
-  const returnStarted = useRef(false);
-  const autoReturnTimer = useRef<number | null>(null);
-
-  const gifts = useMemo<MessageCapsuleGift[]>(() => [
-    {
-      kind: "photo",
-      eyebrow: "A FRAME FROM TIAN",
-      title: "Something I noticed",
-      detail: "A photograph from my camera roll, returned without explanation.",
-      image: portfolioPhotos[7]?.src ?? portfolioPhotos[0].src,
-    },
-    {
-      kind: "music",
-      eyebrow: "A RECORD FOR LATER",
-      title: "The Jazz I Love",
-      detail: "Put this on when the room is quiet enough to hear the space between notes.",
-      href: "https://open.spotify.com/playlist/6hYj1RoYJ85hj8c1kaDFJ2",
-      action: "Listen on Spotify",
-    },
-    {
-      kind: "note",
-      eyebrow: "A NOTE FROM MY POCKET",
-      title: "Happiness comes from solving problems.",
-      detail: "— Mark Manson",
-    },
-    {
-      kind: "dragon",
-      eyebrow: "A SMALL STOWAWAY",
-      title: "Mossling found you",
-      detail: "It sleeps beneath old roots and wakes when rain touches stone.",
-    },
-    {
-      kind: "project",
-      eyebrow: "A SECRET DOOR",
-      title: "Bebop Puzzle",
-      detail: "Jazz theory, turned into something you can move with your hands.",
-      image: "/media/projects/bebop-live.png",
-      href: "https://beboppuzzle.com",
-      action: "Open the door",
-    },
-  ], []);
 
   useEffect(() => {
     try {
@@ -818,105 +750,42 @@ function MessagesApp() {
     threadRef.current?.scrollTo({ top: threadRef.current.scrollHeight, behavior: "smooth" });
   }, [thread]);
 
-  useEffect(() => () => revealTimers.current.forEach((timer) => window.clearTimeout(timer)), []);
-
   const resizeComposer = (element: HTMLTextAreaElement) => {
     element.style.height = "34px";
     element.style.height = `${Math.min(element.scrollHeight, 104)}px`;
   };
 
-  const chooseGift = useCallback((text: string) => {
-    const seed = dragonHash(`${text}:${new Date().toISOString().slice(0, 13)}`);
-    const selected = { ...gifts[seed % gifts.length] };
-    if (selected.kind === "photo") {
-      const photo = portfolioPhotos[Math.floor(seed / gifts.length) % portfolioPhotos.length];
-      selected.image = photo.src;
-      selected.title = `Photograph ${Math.floor(seed / gifts.length) % portfolioPhotos.length + 1}`;
-    }
-    if (selected.kind === "dragon") {
-      const kind = DRAGON_KINDS[Math.floor(seed / 11) % DRAGON_KINDS.length];
-      selected.title = `${kind.name} found you`;
-      selected.detail = kind.lore;
-    }
-    return selected;
-  }, [gifts]);
-
-  const revealMachine = () => {
-    const transformTimer = window.setTimeout(() => {
-      setPhase("transforming");
-      playSound("whoosh");
-      const machineTimer = window.setTimeout(() => setPhase("machine"), 640);
-      revealTimers.current.push(machineTimer);
-    }, 520);
-    revealTimers.current.push(transformTimer);
+  const retry = (bubble: MessageBubble) => {
+    playSound("tock");
+    setThread((current) => current.filter((item) => item.id !== bubble.id));
+    setMessage(bubble.text);
+    setStatus("idle");
+    window.requestAnimationFrame(() => {
+      if (!textareaRef.current) return;
+      textareaRef.current.focus();
+      resizeComposer(textareaRef.current);
+    });
   };
-
-  const returnToMessages = useCallback((returnedGift: MessageCapsuleGift | null) => {
-    if (!returnedGift || returnStarted.current || phase === "returning" || phase === "messages") return;
-    returnStarted.current = true;
-    if (autoReturnTimer.current !== null) window.clearTimeout(autoReturnTimer.current);
-    setPhase("returning");
-    playSound("whoosh");
-    const revealMessagesTimer = window.setTimeout(() => {
-      setPhase("messages");
-      setGift(null);
-      setWaitingGift(null);
-      setTurnProgress(0);
-      setStatus("idle");
-      const replyTimer = window.setTimeout(() => {
-        if (replyDelivered.current) return;
-        replyDelivered.current = true;
-        setThread((current) => [...current, {
-          id: crypto.randomUUID(),
-          text: messageReplyForGift(returnedGift),
-          time: new Date().toLocaleTimeString([], { hour: "numeric", minute: "2-digit" }),
-          direction: "incoming",
-          state: "sent",
-        }]);
-        playSound("received");
-        window.requestAnimationFrame(() => textareaRef.current?.focus());
-      }, 680);
-      revealTimers.current.push(replyTimer);
-    }, 520);
-    revealTimers.current.push(revealMessagesTimer);
-  }, [phase]);
-
-  useEffect(() => {
-    if (phase !== "gift" || !gift) return;
-    const timer = window.setTimeout(() => returnToMessages(gift), 7200);
-    autoReturnTimer.current = timer;
-    revealTimers.current.push(timer);
-    return () => {
-      window.clearTimeout(timer);
-      if (autoReturnTimer.current === timer) autoReturnTimer.current = null;
-    };
-  }, [gift, phase, returnToMessages]);
 
   const submit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     const cleanMessage = message.trim();
-    if (!cleanMessage || status === "sending" || phase !== "messages") return;
+    if (!cleanMessage || status === "sending") return;
     const id = crypto.randomUUID();
     const bubble: MessageBubble = {
       id,
       text: cleanMessage,
       time: new Date().toLocaleTimeString([], { hour: "numeric", minute: "2-digit" }),
-      direction: "outgoing",
       state: "sending",
     };
-    const nextGift = chooseGift(cleanMessage);
     setThread((current) => [...current, bubble]);
     setMessage("");
     setStatus("sending");
-    setWaitingGift(nextGift);
-    replyDelivered.current = false;
-    returnStarted.current = false;
     playSound("send");
     const form = new URLSearchParams();
     form.set("message", cleanMessage);
     form.set("website", "");
     form.set("site_key", "tian-heart-2026");
-    form.set("capsule", `${nextGift.eyebrow}: ${nextGift.title}`);
     form.set("sent_at", new Date().toISOString());
     const controller = new AbortController();
     const timeout = window.setTimeout(() => controller.abort(), 12_000);
@@ -932,8 +801,11 @@ function MessagesApp() {
       });
       setThread((current) => current.map((item) => item.id === id ? { ...item, state: "sent" } : item));
       setStatus("sent");
+      // This is delivery confirmation, not a new incoming message; a quiet
+      // tactile pop avoids falsely suggesting that Tian has already replied.
       playSound("pop");
-      revealMachine();
+      textareaRef.current?.focus();
+      window.setTimeout(() => setStatus("idle"), 2400);
     } catch {
       setThread((current) => current.map((item) => item.id === id ? { ...item, state: "error" } : item));
       setStatus("error");
@@ -942,194 +814,54 @@ function MessagesApp() {
       window.clearTimeout(timeout);
     }
   };
-
-  const retry = (bubble: MessageBubble) => {
-    playSound("tock");
-    setThread((current) => current.filter((item) => item.id !== bubble.id));
-    setMessage(bubble.text);
-    setStatus("idle");
-    window.requestAnimationFrame(() => {
-      if (!textareaRef.current) return;
-      textareaRef.current.focus();
-      resizeComposer(textareaRef.current);
-    });
-  };
-
-  const dispenseGift = useCallback(() => {
-    if (!waitingGift || dispenseStarted.current || phase !== "machine") return;
-    dispenseStarted.current = true;
-    setTurnProgress(1);
-    setPhase("dispensing");
-    playSound("stamp");
-    const timer = window.setTimeout(() => {
-      setGift(waitingGift);
-      setPhase("gift");
-      dispenseStarted.current = false;
-      playSound("sparkle");
-    }, 980);
-    revealTimers.current.push(timer);
-  }, [phase, waitingGift]);
-
-  const dialAngle = (event: ReactPointerEvent<HTMLButtonElement>) => {
-    const rect = event.currentTarget.getBoundingClientRect();
-    return Math.atan2(event.clientY - (rect.top + rect.height / 2), event.clientX - (rect.left + rect.width / 2)) * 180 / Math.PI;
-  };
-
-  const beginTurn = (event: ReactPointerEvent<HTMLButtonElement>) => {
-    if (phase !== "machine") return;
-    event.currentTarget.setPointerCapture(event.pointerId);
-    dialPointer.current = { id: event.pointerId, angle: dialAngle(event), total: turnProgress * 250, moved: false };
-    playSound("tock");
-  };
-
-  const turnDial = (event: ReactPointerEvent<HTMLButtonElement>) => {
-    const pointer = dialPointer.current;
-    if (!pointer || pointer.id !== event.pointerId || phase !== "machine") return;
-    const angle = dialAngle(event);
-    const delta = ((angle - pointer.angle + 540) % 360) - 180;
-    pointer.angle = angle;
-    if (Math.abs(delta) > 1.2) pointer.moved = true;
-    pointer.total = Math.max(0, Math.min(250, pointer.total + delta));
-    const progress = pointer.total / 250;
-    setTurnProgress(progress);
-    if (progress >= .985) {
-      dialPointer.current = null;
-      dispenseGift();
-    }
-  };
-
-  const endTurn = (event: ReactPointerEvent<HTMLButtonElement>) => {
-    const pointer = dialPointer.current;
-    if (!pointer || pointer.id !== event.pointerId) return;
-    if (event.currentTarget.hasPointerCapture(event.pointerId)) event.currentTarget.releasePointerCapture(event.pointerId);
-    const wasTap = !pointer.moved;
-    dialPointer.current = null;
-    if (wasTap && phase === "machine") {
-      setTurnProgress(1);
-      window.setTimeout(dispenseGift, 230);
-    }
-  };
-
   return (
-    <div className={`message-exchange exchange-${phase}`}>
-      <form className="message-compose" onSubmit={submit} aria-hidden={phase !== "messages" && phase !== "transforming"}>
-        <div className="message-thread" ref={threadRef} aria-label="Conversation with Tian">
-          <div className="message-intro">
-            <img src="/media/about/tian-xing-iphone4.jpg" alt="" aria-hidden="true" />
-            <strong>Tian Xing</strong>
-            <span>Your message goes straight to my email.</span>
+    <form className="message-compose" onSubmit={submit}>
+      <div className="message-thread" ref={threadRef} aria-label="Conversation with Tian">
+        <div className="message-intro">
+          <img src="/media/about/tian-xing-iphone4.jpg" alt="" aria-hidden="true" />
+          <strong>Tian Xing</strong>
+          <span>Your message goes straight to my email.</span>
+        </div>
+        <p className="message-received">Hi, I’m Tian. Nice to meet you.</p>
+        {thread.map((bubble) => (
+          <div className={`message-outgoing message-${bubble.state}`} key={bubble.id}>
+            <p>{bubble.text}</p>
+            <span>
+              {bubble.time} · {bubble.state === "sending" ? "Sending…" : bubble.state === "sent" ? "Sent" : "Not sent"}
+            </span>
+            {bubble.state === "error" && <button type="button" onClick={() => retry(bubble)}>Try Again</button>}
           </div>
-          <p className="message-received">Hi, I’m Tian. Nice to meet you.</p>
-          {thread.map((bubble) => bubble.direction === "incoming" ? (
-            <p className="message-received message-received-new" key={bubble.id}>{bubble.text}</p>
-          ) : (
-            <div className={`message-outgoing message-${bubble.state}`} key={bubble.id}>
-              <p>{bubble.text}</p>
-              <span>{bubble.time} · {bubble.state === "sending" ? "Sending…" : bubble.state === "sent" ? "Sent" : "Not sent"}</span>
-              {bubble.state === "error" && <button type="button" onClick={() => retry(bubble)}>Try Again</button>}
-            </div>
-          ))}
-        </div>
-        <div className="message-composer">
-          <textarea
-            ref={textareaRef}
-            value={message}
-            onChange={(event) => {
-              setMessage(event.target.value);
-              resizeComposer(event.currentTarget);
-              if (status === "error") setStatus("idle");
-            }}
-            onKeyDown={(event) => {
-              playKeyboardTick(event);
-              if (event.key === "Enter" && !event.shiftKey && !event.nativeEvent.isComposing) {
-                event.preventDefault();
-                event.currentTarget.form?.requestSubmit();
-              }
-            }}
-            required
-            maxLength={1200}
-            rows={1}
-            enterKeyHint="send"
-            placeholder="Message"
-            aria-label="Message Tian"
-          />
-          <button type="submit" disabled={!message.trim() || status === "sending"} aria-label="Send message">Send</button>
-        </div>
-        <div className={`message-status status-${status}`} role="status" aria-live="polite">
-          {status === "sending" ? "Sending…" : status === "sent" ? "Message sent." : status === "error" ? "No connection. Your message is safe above." : "No account needed · private to Tian"}
-        </div>
-      </form>
-
-      <div className="message-capsule-app" aria-hidden={phase === "messages"}>
-        <div className="capsule-machine" aria-label="A hidden capsule machine">
-        <div className="capsule-machine-brand" aria-hidden="true"><i>✦</i><span>HEART EXCHANGE</span><i>✦</i></div>
-        <div className="capsule-window">
-          <div className="capsule-window-glow" aria-hidden="true" />
-          {!gift && (
-            <div className="message-capsule is-loaded" aria-hidden="true">
-              <i className="capsule-half capsule-top" />
-              <i className="capsule-paper"><b>•••</b></i>
-              <i className="capsule-half capsule-bottom" />
-            </div>
-          )}
-          {gift && (
-            <article
-              className={`capsule-gift gift-${gift.kind}`}
-              aria-live="polite"
-              onPointerEnter={() => {
-                if (autoReturnTimer.current !== null) window.clearTimeout(autoReturnTimer.current);
-                autoReturnTimer.current = null;
-              }}
-              onPointerDown={() => {
-                if (autoReturnTimer.current !== null) window.clearTimeout(autoReturnTimer.current);
-                autoReturnTimer.current = null;
-              }}
-            >
-              <span>{gift.eyebrow}</span>
-              {gift.kind === "photo" && gift.image && <img src={gift.image} alt="A randomly returned photograph from Tian" />}
-              {gift.kind === "music" && <div className="gift-record" aria-hidden="true"><i /><b>♪</b></div>}
-              {gift.kind === "note" && <div className="gift-note-mark" aria-hidden="true">“</div>}
-              {gift.kind === "dragon" && <div className="gift-dragon"><DragonSprite card /></div>}
-              {gift.kind === "project" && gift.image && <img src={gift.image} alt="Bebop Puzzle" />}
-              <strong>{gift.title}</strong>
-              <p>{gift.detail}</p>
-              {gift.href && <a href={gift.href} target="_blank" rel="noreferrer" onClick={() => playSound("open")}>{gift.action} <b>↗</b></a>}
-            </article>
-          )}
-          <div className="capsule-glass-sheen" aria-hidden="true" />
-        </div>
-        <div className="capsule-machine-deck">
-          <div className="capsule-readout" role="status" aria-live="polite">
-            {(phase === "transforming" || phase === "machine") && <><strong>MESSAGE RECEIVED</strong><span>Turn the dial. Take something with you.</span></>}
-            {phase === "dispensing" && <><strong>THE MACHINE IS THINKING</strong><span>Somewhere inside, a small door opened.</span></>}
-            {phase === "gift" && <><strong>MESSAGE RECEIVED</strong><span>The machine left something for you.</span></>}
-          </div>
-          <button
-            ref={dialRef}
-            type="button"
-            className="capsule-dial"
-            style={{ "--dial-turn": `${turnProgress * 250}deg` } as CSSProperties}
-            onPointerDown={beginTurn}
-            onPointerMove={turnDial}
-            onPointerUp={endTurn}
-            onPointerCancel={endTurn}
-            onKeyDown={(event) => {
-              if (phase !== "machine" || (event.key !== "Enter" && event.key !== " ")) return;
+        ))}
+      </div>
+      <div className="message-composer">
+        <textarea
+          ref={textareaRef}
+          value={message}
+          onChange={(event) => {
+            setMessage(event.target.value);
+            resizeComposer(event.currentTarget);
+            if (status === "error") setStatus("idle");
+          }}
+          onKeyDown={(event) => {
+            playKeyboardTick(event);
+            if (event.key === "Enter" && !event.shiftKey && !event.nativeEvent.isComposing) {
               event.preventDefault();
-              setTurnProgress(1);
-              window.setTimeout(dispenseGift, 230);
-            }}
-            disabled={phase !== "machine"}
-            aria-label={phase === "machine" ? "Turn clockwise to receive something from Tian" : "Message capsule dial"}
-          >
-            <i /><b>TURN</b>
-          </button>
-          <div className="capsule-chute" aria-hidden="true"><i /></div>
-        </div>
+              event.currentTarget.form?.requestSubmit();
+            }
+          }}
+          required
+          maxLength={1200}
+          rows={1}
+          enterKeyHint="send"
+          placeholder="Message"
+          aria-label="Message Tian"
+        />
+        <button type="submit" disabled={!message.trim() || status === "sending"} aria-label="Send message">Send</button>
       </div>
-        {phase === "gift" && <button className="capsule-secondary-action" type="button" onClick={() => returnToMessages(gift)}>Back to Messages</button>}
+      <div className={`message-status status-${status}`} role="status" aria-live="polite">
+        {status === "sending" ? "Sending…" : status === "sent" ? "Message sent." : status === "error" ? "No connection. Your message is safe above." : "No account needed · private to Tian"}
       </div>
-    </div>
+    </form>
   );
 }
 
