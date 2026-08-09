@@ -1394,7 +1394,7 @@ function WeatherApp() {
     if (typeof window === "undefined") return defaultWeatherPlace;
     try { return JSON.parse(window.localStorage.getItem(WEATHER_LOCATION_KEY) ?? "null") ?? defaultWeatherPlace; } catch { return defaultWeatherPlace; }
   });
-  const [unit, setUnit] = useState<WeatherUnit>(() => {
+  const [unit] = useState<WeatherUnit>(() => {
     if (typeof window === "undefined") return "fahrenheit";
     return window.localStorage.getItem(WEATHER_UNIT_KEY) === "celsius" ? "celsius" : "fahrenheit";
   });
@@ -1544,83 +1544,26 @@ function WeatherApp() {
     );
   };
 
-  const changeUnit = (nextUnit: WeatherUnit) => {
-    if (nextUnit === unit) return;
-    playSound("tock");
-    setWeather(null);
-    setUnit(nextUnit);
-  };
-
-  const today = weather?.daily[0];
-  const peakRain = weather ? Math.max(...weather.hourly.map((hour) => hour.precipitation)) : 0;
   const theme = weatherTheme(weather?.code ?? 0, weather?.isDay ?? true);
 
   return (
     <div
-      className={`weather-app ${theme} ${pickerOpen ? "weather-picker-open" : ""}`}
+      className={`weather-app weather-cinematic ${theme} ${pickerOpen ? "weather-picker-open" : ""}`}
       style={{ "--weather-rx": `${tilt.y}deg`, "--weather-ry": `${tilt.x}deg` } as CSSProperties}
       onPointerMove={(event) => { if (event.pointerType === "touch") return; const bounds = event.currentTarget.getBoundingClientRect(); setTilt({ x: ((event.clientX - bounds.left) / bounds.width - .5) * 7, y: -((event.clientY - bounds.top) / bounds.height - .5) * 5 }); }}
       onPointerLeave={() => setTilt({ x: 0, y: 0 })}
       aria-busy={loading}
     >
       <WeatherScene code={weather?.code ?? 0} isDay={weather?.isDay ?? true} place={weather?.place ?? place} />
-      <header className="weather-topbar">
-        <button className="weather-place-button" onClick={() => { playSound("open"); setPickerOpen(true); }} aria-label="Choose weather location">
-          <strong>{weather?.place.name ?? place.name}</strong><span>{weather?.place.admin || weather?.place.country || "Live forecast"} ▾</span>
-        </button>
-        <div className="weather-actions">
-          <button onClick={() => changeUnit(unit === "fahrenheit" ? "celsius" : "fahrenheit")} aria-label={`Switch to degrees ${unit === "fahrenheit" ? "Celsius" : "Fahrenheit"}`}>°{unit === "fahrenheit" ? "F" : "C"}</button>
-          <button className={loading ? "is-loading" : ""} onClick={() => { playSound("swipe"); void loadWeather(place); }} aria-label="Refresh weather">↻</button>
-        </div>
-      </header>
-
-      <section className="weather-hero" aria-label="Current weather">
-        <p>{weather ? weatherLabel(weather.code) : "Loading live conditions"}</p>
-        <div className="weather-temperature"><i>{weatherSymbol(weather?.code ?? 0, weather?.isDay ?? true)}</i><strong>{weather ? Math.round(weather.temperature) : "—"}<sup>°</sup></strong></div>
-        <span>{weather ? `Feels like ${Math.round(weather.apparent)}° · H:${Math.round(weather.high)}° L:${Math.round(weather.low)}°` : "Finding the sky above you…"}</span>
-        {weather && <small>{peakRain >= 30 ? `Rain chance peaks at ${peakRain}% in the next 12 hours.` : weatherNarrative(weather.code, weather.isDay)}</small>}
-      </section>
-
-      <section className="weather-glass-card weather-hourly-card" aria-label="Hourly forecast">
-        <header><strong>HOURLY</strong><span>{weather ? `Updated ${formatWeatherTime(weather.updatedAt)} ${weather.timezone}` : "Updating"}</span></header>
-        <div className="weather-hourly" role="list">
-          {weather?.hourly.map((hour, index) => (
-            <div key={hour.time} role="listitem">
-              <strong>{index === 0 ? "Now" : formatWeatherHour(hour.time)}</strong>
-              <i>{weatherSymbol(hour.code, hour.isDay)}</i>
-              <em>{hour.precipitation ? `${Math.round(hour.precipitation)}%` : ""}</em>
-              <b>{Math.round(hour.temperature)}°</b>
-            </div>
-          )) ?? Array.from({ length: 6 }, (_, index) => <div className="weather-skeleton" key={index} />)}
-        </div>
-      </section>
-
-      <section className="weather-glass-card weather-daily-card" aria-label="Seven day forecast">
-        <header><strong>7-DAY FORECAST</strong></header>
-        {weather?.daily.map((day) => (
-          <div className="weather-day-row" key={day.date}>
-            <strong>{day.day}</strong><i>{weatherSymbol(day.code, true)}</i><em>{day.precipitation ? `${Math.round(day.precipitation)}%` : ""}</em>
-            <span>{Math.round(day.low)}°</span><div><i style={{ "--low": `${Math.min(80, Math.max(4, day.low - weather.low + 8))}%`, "--high": `${Math.min(96, Math.max(22, day.high - weather.low + 38))}%` } as CSSProperties} /></div><b>{Math.round(day.high)}°</b>
-          </div>
-        ))}
-      </section>
-
-      <section className="weather-metrics" aria-label="Weather details">
-        <article><span>PRECIPITATION</span><strong>{weather ? `${Math.round(weather.precipitation * (unit === "fahrenheit" ? 100 : 10)) / (unit === "fahrenheit" ? 100 : 10)} ${unit === "fahrenheit" ? "in" : "mm"}` : "—"}</strong><small>Right now</small></article>
-        <article><span>HUMIDITY</span><strong>{weather ? `${Math.round(weather.humidity)}%` : "—"}</strong><small>{weather && weather.humidity > 70 ? "Air feels humid" : "Comfortable"}</small></article>
-        <article><span>WIND</span><strong>{weather ? `${windCompass(weather.windDirection)} ${Math.round(weather.wind)}` : "—"}</strong><small>{unit === "fahrenheit" ? "mph" : "km/h"}</small></article>
-        <article><span>VISIBILITY</span><strong>{weather ? formatVisibility(weather.visibility, unit) : "—"}</strong><small>{weather && weather.visibility > (unit === "fahrenheit" ? 32808 : 10000) ? "Perfectly clear" : "Reduced"}</small></article>
-        <article><span>PRESSURE</span><strong>{weather ? `${Math.round(weather.pressure)}` : "—"}</strong><small>hPa</small></article>
-        <article><span>UV INDEX</span><strong>{today ? `${Math.round(today.uv)}` : "—"}</strong><small>{today ? uvLabel(today.uv) : ""}</small></article>
-        <article className="weather-sun-card"><span>SUNRISE & SUNSET</span><div><i /><b /></div><strong>{today ? `${formatWeatherTime(today.sunrise)} — ${formatWeatherTime(today.sunset)}` : "—"}</strong></article>
-      </section>
-
-      {error && <div className="weather-error" role="status">{error}</div>}
-      <footer className="weather-credit">Forecast by Open-Meteo</footer>
+      <button className="weather-city-chip" onClick={() => { playSound("open"); setPickerOpen(true); }} aria-label="Choose weather location">
+        <span><strong>{weather?.place.name ?? place.name}</strong><small>{weather ? `${weatherLabel(weather.code)} · Open-Meteo` : "Finding the sky…"}</small></span>
+        <b>{loading && !weather ? "…" : `${Math.round(weather?.temperature ?? 0)}°`}</b><i>⌄</i>
+      </button>
+      {error && <div className="weather-error weather-error-minimal" role="status">{error}</div>}
 
       {pickerOpen && (
         <div className="weather-picker" role="dialog" aria-modal="true" aria-label="Choose a city">
-          <header><button onClick={() => { playSound("close"); setPickerOpen(false); }}>Cancel</button><strong>Choose a City</strong><span /></header>
+          <header><button onClick={() => { playSound("close"); setPickerOpen(false); }}>Cancel</button><strong>City</strong><span /></header>
           <form onSubmit={searchLocations}><input value={query} onChange={(event) => setQuery(event.target.value)} onKeyDown={playKeyboardTick} placeholder="City or postal code" aria-label="Search city" autoFocus /><button disabled={searching || query.trim().length < 2}>{searching ? "…" : "Search"}</button></form>
           <button className="weather-current-location" onClick={useCurrentLocation} disabled={locating}><i>◎</i><span><strong>{locating ? "Finding you…" : "My Location"}</strong><small>Use this device’s location</small></span></button>
           <div className="weather-search-results">

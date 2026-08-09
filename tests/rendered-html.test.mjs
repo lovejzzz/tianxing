@@ -115,11 +115,11 @@ test("keeps the iPhone interactive and time-aware", async () => {
     "penthouse",
   ].map((room) => access(new URL(`../public/media/weather/noir-${room}-v1.jpg`, import.meta.url))));
   assert.match(source, /geocoding-api\.open-meteo\.com/);
-  assert.match(source, /7-DAY FORECAST/);
-  assert.match(source, /Switch to degrees/);
+  assert.match(source, /weather-city-chip/);
+  assert.match(source, /Finding the sky…/);
   assert.match(source, /WEATHER_CACHE_KEY/);
   assert.match(source, /precipitation_probability/);
-  assert.match(source, /SUNRISE & SUNSET/);
+  assert.doesNotMatch(source, /7-DAY FORECAST|SUNRISE & SUNSET|Switch to degrees/);
   assert.match(source, /Dragon egg timer/);
   assert.match(source, /endTimeRef/);
   assert.match(source, /Reset timer/);
