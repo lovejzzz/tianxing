@@ -58,17 +58,28 @@ function poseAt(progress: number): PhonePose {
 }
 
 function traceRoundedRect<T extends THREE.Path>(path: T, width: number, height: number, radius: number): T {
+  return traceRoundedRectAt(path, 0, 0, width, height, radius);
+}
+
+function traceRoundedRectAt<T extends THREE.Path>(
+  path: T,
+  centerX: number,
+  centerY: number,
+  width: number,
+  height: number,
+  radius: number,
+): T {
   const x = width / 2;
   const y = height / 2;
-  path.moveTo(-x + radius, -y);
-  path.lineTo(x - radius, -y);
-  path.absarc(x - radius, -y + radius, radius, -Math.PI / 2, 0, false);
-  path.lineTo(x, y - radius);
-  path.absarc(x - radius, y - radius, radius, 0, Math.PI / 2, false);
-  path.lineTo(-x + radius, y);
-  path.absarc(-x + radius, y - radius, radius, Math.PI / 2, Math.PI, false);
-  path.lineTo(-x, -y + radius);
-  path.absarc(-x + radius, -y + radius, radius, Math.PI, Math.PI * 1.5, false);
+  path.moveTo(centerX - x + radius, centerY - y);
+  path.lineTo(centerX + x - radius, centerY - y);
+  path.absarc(centerX + x - radius, centerY - y + radius, radius, -Math.PI / 2, 0, false);
+  path.lineTo(centerX + x, centerY + y - radius);
+  path.absarc(centerX + x - radius, centerY + y - radius, radius, 0, Math.PI / 2, false);
+  path.lineTo(centerX - x + radius, centerY + y);
+  path.absarc(centerX - x + radius, centerY + y - radius, radius, Math.PI / 2, Math.PI, false);
+  path.lineTo(centerX - x, centerY - y + radius);
+  path.absarc(centerX - x + radius, centerY - y + radius, radius, Math.PI, Math.PI * 1.5, false);
   path.closePath();
   return path;
 }
@@ -336,6 +347,42 @@ export function Phone3DIntro({ productRef }: { productRef: RefObject<HTMLDivElem
     const breakPlastic = new THREE.MeshStandardMaterial({ color: 0x141619, metalness: 0.05, roughness: 0.52 });
     const glyphMetal = new THREE.MeshStandardMaterial({ color: 0x74787c, metalness: 0.6, roughness: 0.35 });
     const lensGlass = new THREE.MeshPhysicalMaterial({ color: 0x0a1420, metalness: 0.2, roughness: 0.06, clearcoat: 1 });
+    // The rear camera is a recessed optical assembly, not a polished plastic
+    // button. Separate the deep well, satin anodized bezel and coated glass so
+    // highlights broaden and fall off instead of clipping to a bright ring.
+    const rearCameraWell = new THREE.MeshStandardMaterial({
+      color: 0x050607,
+      metalness: 0.12,
+      roughness: 0.74,
+      envMapIntensity: 0.2,
+    });
+    const rearCameraBezel = new THREE.MeshPhysicalMaterial({
+      color: 0x111416,
+      metalness: 0.72,
+      roughness: 0.48,
+      clearcoat: 0.08,
+      clearcoatRoughness: 0.68,
+      envMapIntensity: 0.34,
+    });
+    const rearLensGlass = new THREE.MeshPhysicalMaterial({
+      color: 0x071018,
+      metalness: 0,
+      roughness: 0.25,
+      ior: 1.52,
+      specularIntensity: 0.46,
+      specularColor: new THREE.Color(0x73808b),
+      clearcoat: 0.3,
+      clearcoatRoughness: 0.34,
+      envMapIntensity: 0.26,
+    });
+    const rearLensCore = new THREE.MeshPhysicalMaterial({
+      color: 0x010407,
+      metalness: 0.04,
+      roughness: 0.36,
+      clearcoat: 0.16,
+      clearcoatRoughness: 0.42,
+      envMapIntensity: 0.18,
+    });
 
     // --- Stainless band -----------------------------------------------------
     // A single extruded rounded-rect ring with chamfered edges: flat side wall,
@@ -452,8 +499,9 @@ export function Phone3DIntro({ productRef }: { productRef: RefObject<HTMLDivElem
     const caseWidth = GLASS_WIDTH + 0.13;
     const caseHeight = GLASS_HEIGHT + 0.13;
     const caseShape = traceRoundedRect(new THREE.Shape(), caseWidth, caseHeight, GLASS_RADIUS + 0.055);
-    const cameraCutout = new THREE.Path();
-    cameraCutout.absellipse(-1.225, 2.95, 0.355, 0.225, 0, Math.PI * 2, true, 0);
+    // A true rounded rectangle follows the case's corner language while
+    // leaving a deliberate bridge around the camera and flash assembly.
+    const cameraCutout = traceRoundedRectAt(new THREE.Path(), -1.225, 2.95, 0.73, 0.47, 0.115);
     caseShape.holes.push(cameraCutout);
 
     const markCaseTextureReady = () => {
@@ -526,24 +574,34 @@ export function Phone3DIntro({ productRef }: { productRef: RefObject<HTMLDivElem
     rearGroup.add(caseRim);
 
     // Camera at the top-left of the back, LED flash beside it.
-    const cameraBase = new THREE.Mesh(new THREE.CylinderGeometry(0.175, 0.175, 0.014, 48), matteBlack);
+    const cameraBase = new THREE.Mesh(new THREE.CylinderGeometry(0.176, 0.176, 0.014, 64), rearCameraWell);
     cameraBase.rotation.x = Math.PI / 2;
     cameraBase.position.set(-1.39, 2.95, GLASS_Z + 0.004);
     rearGroup.add(cameraBase);
-    const cameraLens = new THREE.Mesh(new THREE.CylinderGeometry(0.12, 0.12, 0.016, 48), lensGlass);
+    const cameraBezel = new THREE.Mesh(new THREE.TorusGeometry(0.126, 0.018, 16, 72), rearCameraBezel);
+    cameraBezel.position.set(-1.39, 2.95, GLASS_Z + 0.014);
+    rearGroup.add(cameraBezel);
+    const cameraLens = new THREE.Mesh(new THREE.CylinderGeometry(0.108, 0.108, 0.016, 64), rearLensGlass);
     cameraLens.rotation.x = Math.PI / 2;
-    cameraLens.position.set(-1.39, 2.95, GLASS_Z + 0.008);
+    cameraLens.position.set(-1.39, 2.95, GLASS_Z + 0.012);
     rearGroup.add(cameraLens);
     const cameraPupil = new THREE.Mesh(
-      new THREE.CylinderGeometry(0.052, 0.052, 0.014, 32),
-      new THREE.MeshPhysicalMaterial({ color: 0x02070c, metalness: 0.3, roughness: 0.05, clearcoat: 1 }),
+      new THREE.CylinderGeometry(0.047, 0.047, 0.014, 48),
+      rearLensCore,
     );
     cameraPupil.rotation.x = Math.PI / 2;
-    cameraPupil.position.set(-1.39, 2.95, GLASS_Z + 0.013);
+    cameraPupil.position.set(-1.39, 2.95, GLASS_Z + 0.017);
     rearGroup.add(cameraPupil);
     const flash = new THREE.Mesh(
       new THREE.CylinderGeometry(0.095, 0.095, 0.012, 32),
-      new THREE.MeshStandardMaterial({ color: 0xf2eed6, emissive: 0x5c5844, emissiveIntensity: 0.4, roughness: 0.3 }),
+      new THREE.MeshStandardMaterial({
+        color: 0xd8d3bd,
+        emissive: 0x252319,
+        emissiveIntensity: 0.18,
+        metalness: 0.02,
+        roughness: 0.54,
+        envMapIntensity: 0.28,
+      }),
     );
     flash.rotation.x = Math.PI / 2;
     flash.position.set(-1.06, 2.95, GLASS_Z + 0.005);

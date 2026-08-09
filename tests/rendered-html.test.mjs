@@ -173,7 +173,11 @@ test("keeps the iPhone interactive and time-aware", async () => {
   assert.match(phone3dSource, /ior: 1\.52/);
   assert.match(phone3dSource, /FUJI_CASE_ART/);
   assert.match(phone3dSource, /const frostedCaseMaterial = new THREE\.MeshPhysicalMaterial/);
-  assert.match(phone3dSource, /cameraCutout\.absellipse/);
+  assert.match(phone3dSource, /function traceRoundedRectAt/);
+  assert.match(phone3dSource, /const cameraCutout = traceRoundedRectAt/);
+  assert.match(phone3dSource, /const rearCameraBezel = new THREE\.MeshPhysicalMaterial/);
+  assert.match(phone3dSource, /new THREE\.TorusGeometry\(0\.126, 0\.018/);
+  assert.doesNotMatch(phone3dSource, /cameraCutout\.absellipse/);
   assert.match(phone3dSource, /let caseTextureReady = !showFujiCase/);
   assert.match(phone3dSource, /if \(!modelActive \|\| introStarted \|\| !caseTextureReady\) return/);
   assert.match(phone3dSource, /startedAt = performance\.now\(\)/);
