@@ -212,11 +212,11 @@ const cues: Record<PhoneSound, () => void> = {
     tone({ from: 940, to: 520, dur: .032, level: .026 });
   },
   home: () => {
-    // Two surfaces, nearly together: the glass cap yielding, then the rubber
-    // dome under it. Short and low enough to feel physical rather than musical.
-    hiss({ from: 1800, to: 820, dur: .018, level: .036, q: 1.1 });
-    tone({ from: 230, to: 132, dur: .052, level: .046, shape: "triangle", attack: .002 });
-    tone({ from: 460, to: 245, at: .012, dur: .035, level: .018, shape: "sine", attack: .002 });
+    // A dry, restrained switch click: one tiny contact transient and the
+    // muted rubber dome beneath it. No bright second tone, so it cannot read
+    // as a UI confirmation or a spring bouncing back out of the glass.
+    hiss({ from: 1350, to: 620, dur: .011, level: .021, q: 1.35 });
+    tone({ from: 185, to: 118, dur: .031, level: .029, shape: "triangle", attack: .0015 });
   },
   key: () => {
     hiss({ from: 3500, to: 2200, dur: .016, level: .038, q: 2.2 });
