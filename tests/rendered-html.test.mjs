@@ -157,7 +157,7 @@ test("keeps the iPhone interactive and time-aware", async () => {
   assert.match(phone3dSource, /new THREE\.LatheGeometry/);
   assert.match(phone3dSource, /bevelSegments: 10/);
   assert.match(phone3dSource, /anisotropy: 0\.58/);
-  assert.match(phone3dSource, /toneMappingExposure = 0\.9/);
+  assert.match(phone3dSource, /toneMappingExposure = 0\.86/);
   assert.doesNotMatch(phone3dSource, /const polishedSteel/);
   assert.doesNotMatch(phone3dSource, /frontChamfer|rearChamfer/);
   assert.doesNotMatch(phone3dSource, /clearcoat: 0\.32/);

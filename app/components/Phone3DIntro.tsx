@@ -190,11 +190,11 @@ function createStudioEnvironment(): { studio: THREE.Scene; dispose: () => void }
     studio.add(panel);
     owned.push(panel.geometry, material);
   };
-  softbox(16, 20, 0xffffff, 1.08, [-8, 4, 7]);    // broad key, bright enough to shape but not flatten
-  softbox(10, 14, 0xf4f7fa, 0.3, [3, 0.5, 10]);  // restrained frontal fill
-  softbox(2.5, 16, 0xcfe4ff, 2.15, [7, 1, -5.5]); // cool rim with retained highlight detail
-  softbox(18, 3, 0xffffff, 1.25, [0, 9, 2]);      // soft top chamfer streak
-  softbox(12, 3, 0xffe9da, 0.58, [0, -9, 3]);     // low warm bounce
+  softbox(16, 20, 0xffffff, 1, [-8, 4, 7]);        // broad key, bright enough to shape but not flatten
+  softbox(10, 14, 0xf4f7fa, 0.25, [3, 0.5, 10]);  // restrained frontal fill
+  softbox(2.5, 16, 0xcfe4ff, 2, [7, 1, -5.5]);     // cool rim with retained highlight detail
+  softbox(18, 3, 0xffffff, 1.15, [0, 9, 2]);       // soft top chamfer streak
+  softbox(12, 3, 0xffe9da, 0.5, [0, -9, 3]);       // low warm bounce
 
   return {
     studio,
@@ -278,7 +278,7 @@ export function Phone3DIntro({ productRef }: { productRef: RefObject<HTMLDivElem
     renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
     renderer.outputColorSpace = THREE.SRGBColorSpace;
     renderer.toneMapping = THREE.ACESFilmicToneMapping;
-    renderer.toneMappingExposure = 0.9;
+    renderer.toneMappingExposure = 0.86;
     renderer.setClearColor(0x000000, 0);
     renderer.domElement.setAttribute("aria-hidden", "true");
     host.appendChild(renderer.domElement);
@@ -683,14 +683,14 @@ export function Phone3DIntro({ productRef }: { productRef: RefObject<HTMLDivElem
 
     // --- Studio lighting ----------------------------------------------------
     // The environment does the heavy lifting; direct lights only shape form.
-    scene.add(new THREE.HemisphereLight(0xd6e6f2, 0x0a0c0e, 0.2));
-    const keyLight = new THREE.DirectionalLight(0xffffff, 1.02);
+    scene.add(new THREE.HemisphereLight(0xd6e6f2, 0x0a0c0e, 0.17));
+    const keyLight = new THREE.DirectionalLight(0xffffff, 0.92);
     keyLight.position.set(-4.5, 6, 7.5);
     scene.add(keyLight);
-    const rimLight = new THREE.DirectionalLight(0xbcd8ff, 1.05);
+    const rimLight = new THREE.DirectionalLight(0xbcd8ff, 0.95);
     rimLight.position.set(-5.5, 1.5, -6);
     scene.add(rimLight);
-    const warmFill = new THREE.PointLight(0xffe4d4, 2.7, 18, 2);
+    const warmFill = new THREE.PointLight(0xffe4d4, 2.35, 18, 2);
     warmFill.position.set(4, -4.5, 4.5);
     scene.add(warmFill);
 
@@ -754,8 +754,8 @@ export function Phone3DIntro({ productRef }: { productRef: RefObject<HTMLDivElem
       keyLight.position.x = THREE.MathUtils.lerp(-6.4, -4.2, eased);
       // Let the hero frame settle into true black glass. The key is strongest
       // across the turn, then slips off-axis instead of flattening the face.
-      keyLight.intensity = THREE.MathUtils.lerp(1.02, 0.5, eased);
-      warmFill.intensity = THREE.MathUtils.lerp(2.7, 1.25, eased);
+      keyLight.intensity = THREE.MathUtils.lerp(0.92, 0.44, eased);
+      warmFill.intensity = THREE.MathUtils.lerp(2.35, 1.08, eased);
       currentPose = poseAt(progress);
       applyPose(currentPose);
       renderer.render(scene, camera);
