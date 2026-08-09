@@ -93,8 +93,14 @@ test("keeps the iPhone interactive and time-aware", async () => {
   assert.match(source, /Turn the dial\. Take something with you\./);
   assert.match(source, /The machine left something for you\./);
   assert.match(source, /Back to Messages/);
+  assert.match(source, /It arrived\. I’m glad this photograph found you\./);
+  assert.match(source, /Take good care of the little one\./);
+  assert.match(source, /direction: "incoming"/);
+  assert.match(source, /phase !== "gift"/);
   assert.match(styles, /message-secret-door/);
   assert.match(styles, /machine-secret-reveal/);
+  assert.match(styles, /message-reply-arrive/);
+  assert.match(styles, /message-return-reveal/);
   assert.match(source, /enterKeyHint="send"/);
   assert.doesNotMatch(source, /Delivered ✓/);
   assert.match(source, /Photo Booth effects/);

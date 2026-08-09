@@ -194,8 +194,17 @@ type MessageBubble = {
   id: string;
   text: string;
   time: string;
+  direction: "outgoing" | "incoming";
   state: "sending" | "sent" | "error";
 };
+
+function messageReplyForGift(returnedGift: MessageCapsuleGift) {
+  if (returnedGift.kind === "photo") return "It arrived. I’m glad this photograph found you.";
+  if (returnedGift.kind === "music") return "It arrived. Keep this song for a quiet hour.";
+  if (returnedGift.kind === "dragon") return "It arrived. Take good care of the little one.";
+  if (returnedGift.kind === "note") return "It arrived. Maybe keep this thought for later.";
+  return "It arrived. There’s a door inside—open it when you feel like it.";
+}
 type NotePoint = { x: number; y: number };
 type NoteStroke = { color: string; width: number; erase: boolean; points: NotePoint[] };
 type NoteDocument = {
@@ -740,7 +749,7 @@ function MessagesApp() {
     } catch { return []; }
   });
   const [status, setStatus] = useState<"idle" | "sending" | "sent" | "error">("idle");
-  const [phase, setPhase] = useState<"messages" | "transforming" | "machine" | "dispensing" | "gift">("messages");
+  const [phase, setPhase] = useState<"messages" | "transforming" | "machine" | "dispensing" | "gift" | "returning">("messages");
   const [gift, setGift] = useState<MessageCapsuleGift | null>(null);
   const [waitingGift, setWaitingGift] = useState<MessageCapsuleGift | null>(null);
   const [turnProgress, setTurnProgress] = useState(0);
@@ -750,6 +759,9 @@ function MessagesApp() {
   const dialPointer = useRef<{ id: number; angle: number; total: number; moved: boolean } | null>(null);
   const dispenseStarted = useRef(false);
   const revealTimers = useRef<number[]>([]);
+  const replyDelivered = useRef(false);
+  const returnStarted = useRef(false);
+  const autoReturnTimer = useRef<number | null>(null);
 
   const gifts = useMemo<MessageCapsuleGift[]>(() => [
     {
@@ -839,6 +851,47 @@ function MessagesApp() {
     revealTimers.current.push(transformTimer);
   };
 
+  const returnToMessages = useCallback((returnedGift: MessageCapsuleGift | null) => {
+    if (!returnedGift || returnStarted.current || phase === "returning" || phase === "messages") return;
+    returnStarted.current = true;
+    if (autoReturnTimer.current !== null) window.clearTimeout(autoReturnTimer.current);
+    setPhase("returning");
+    playSound("whoosh");
+    const revealMessagesTimer = window.setTimeout(() => {
+      setPhase("messages");
+      setGift(null);
+      setWaitingGift(null);
+      setTurnProgress(0);
+      setStatus("idle");
+      const replyTimer = window.setTimeout(() => {
+        if (replyDelivered.current) return;
+        replyDelivered.current = true;
+        setThread((current) => [...current, {
+          id: crypto.randomUUID(),
+          text: messageReplyForGift(returnedGift),
+          time: new Date().toLocaleTimeString([], { hour: "numeric", minute: "2-digit" }),
+          direction: "incoming",
+          state: "sent",
+        }]);
+        playSound("received");
+        window.requestAnimationFrame(() => textareaRef.current?.focus());
+      }, 680);
+      revealTimers.current.push(replyTimer);
+    }, 520);
+    revealTimers.current.push(revealMessagesTimer);
+  }, [phase]);
+
+  useEffect(() => {
+    if (phase !== "gift" || !gift) return;
+    const timer = window.setTimeout(() => returnToMessages(gift), 7200);
+    autoReturnTimer.current = timer;
+    revealTimers.current.push(timer);
+    return () => {
+      window.clearTimeout(timer);
+      if (autoReturnTimer.current === timer) autoReturnTimer.current = null;
+    };
+  }, [gift, phase, returnToMessages]);
+
   const submit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     const cleanMessage = message.trim();
@@ -848,6 +901,7 @@ function MessagesApp() {
       id,
       text: cleanMessage,
       time: new Date().toLocaleTimeString([], { hour: "numeric", minute: "2-digit" }),
+      direction: "outgoing",
       state: "sending",
     };
     const nextGift = chooseGift(cleanMessage);
@@ -855,6 +909,8 @@ function MessagesApp() {
     setMessage("");
     setStatus("sending");
     setWaitingGift(nextGift);
+    replyDelivered.current = false;
+    returnStarted.current = false;
     playSound("send");
     const form = new URLSearchParams();
     form.set("message", cleanMessage);
@@ -954,16 +1010,6 @@ function MessagesApp() {
     }
   };
 
-  const returnToMessages = () => {
-    playSound("tock");
-    setPhase("messages");
-    setGift(null);
-    setWaitingGift(null);
-    setTurnProgress(0);
-    setStatus("idle");
-    window.requestAnimationFrame(() => textareaRef.current?.focus());
-  };
-
   return (
     <div className={`message-exchange exchange-${phase}`}>
       <form className="message-compose" onSubmit={submit} aria-hidden={phase !== "messages" && phase !== "transforming"}>
@@ -974,7 +1020,9 @@ function MessagesApp() {
             <span>Your message goes straight to my email.</span>
           </div>
           <p className="message-received">Hi—I’m Tian. Say something.</p>
-          {thread.map((bubble) => (
+          {thread.map((bubble) => bubble.direction === "incoming" ? (
+            <p className="message-received message-received-new" key={bubble.id}>{bubble.text}</p>
+          ) : (
             <div className={`message-outgoing message-${bubble.state}`} key={bubble.id}>
               <p>{bubble.text}</p>
               <span>{bubble.time} · {bubble.state === "sending" ? "Sending…" : bubble.state === "sent" ? "Sent" : "Not sent"}</span>
@@ -1025,7 +1073,18 @@ function MessagesApp() {
             </div>
           )}
           {gift && (
-            <article className={`capsule-gift gift-${gift.kind}`} aria-live="polite">
+            <article
+              className={`capsule-gift gift-${gift.kind}`}
+              aria-live="polite"
+              onPointerEnter={() => {
+                if (autoReturnTimer.current !== null) window.clearTimeout(autoReturnTimer.current);
+                autoReturnTimer.current = null;
+              }}
+              onPointerDown={() => {
+                if (autoReturnTimer.current !== null) window.clearTimeout(autoReturnTimer.current);
+                autoReturnTimer.current = null;
+              }}
+            >
               <span>{gift.eyebrow}</span>
               {gift.kind === "photo" && gift.image && <img src={gift.image} alt="A randomly returned photograph from Tian" />}
               {gift.kind === "music" && <div className="gift-record" aria-hidden="true"><i /><b>♪</b></div>}
@@ -1068,7 +1127,7 @@ function MessagesApp() {
           <div className="capsule-chute" aria-hidden="true"><i /></div>
         </div>
       </div>
-        {phase === "gift" && <button className="capsule-secondary-action" type="button" onClick={returnToMessages}>Back to Messages</button>}
+        {phase === "gift" && <button className="capsule-secondary-action" type="button" onClick={() => returnToMessages(gift)}>Back to Messages</button>}
       </div>
     </div>
   );
