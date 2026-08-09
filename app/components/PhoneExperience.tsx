@@ -1358,6 +1358,37 @@ type WeatherData = {
 
 const defaultWeatherPlace: WeatherPlace = { name: "New York", country: "United States", admin: "New York", latitude: 40.7128, longitude: -74.006 };
 
+type WeatherRoomProfile = {
+  room: "study" | "hotel" | "studio" | "observatory" | "cafe" | "penthouse";
+  window: "tall" | "arched" | "wide" | "triptych";
+  accent: string;
+  lamp: string;
+  skyline: number[];
+  shift: number;
+};
+
+const weatherRoomProfiles: WeatherRoomProfile[] = [
+  { room: "study", window: "tall", accent: "#8f2637", lamp: "#ffc967", skyline: [42, 68, 55, 92, 63, 78, 48, 86, 57], shift: -3 },
+  { room: "hotel", window: "arched", accent: "#5b2037", lamp: "#f2ac57", skyline: [36, 52, 73, 49, 82, 58, 69, 43, 61], shift: 5 },
+  { room: "studio", window: "wide", accent: "#193d52", lamp: "#ffd18a", skyline: [49, 74, 44, 63, 87, 54, 71, 39, 79], shift: 1 },
+  { room: "observatory", window: "triptych", accent: "#4b2e55", lamp: "#d7b8ff", skyline: [32, 46, 65, 83, 51, 72, 91, 59, 38], shift: -6 },
+  { room: "cafe", window: "wide", accent: "#6f3423", lamp: "#ffbb68", skyline: [39, 57, 46, 70, 52, 76, 61, 48, 67], shift: 4 },
+  { room: "penthouse", window: "arched", accent: "#223f38", lamp: "#f5cf78", skyline: [51, 89, 62, 75, 47, 94, 68, 56, 81], shift: -1 },
+];
+
+function weatherCityProfile(place: WeatherPlace) {
+  const label = `${place.name} ${place.admin ?? ""} ${place.country ?? ""}`.toLowerCase();
+  const namedProfile = label.includes("new york") ? 0
+    : label.includes("paris") || label.includes("london") ? 1
+      : label.includes("tokyo") || label.includes("seoul") || label.includes("shanghai") ? 2
+        : label.includes("san francisco") || label.includes("seattle") ? 3
+          : label.includes("rome") || label.includes("madrid") || label.includes("lisbon") ? 4
+            : -1;
+  const seed = dragonHash(`${label}:${place.latitude.toFixed(2)}:${place.longitude.toFixed(2)}`);
+  const profile = weatherRoomProfiles[namedProfile >= 0 ? namedProfile : seed % weatherRoomProfiles.length];
+  return { ...profile, seed };
+}
+
 function WeatherApp() {
   const [place, setPlace] = useState<WeatherPlace>(() => {
     if (typeof window === "undefined") return defaultWeatherPlace;
@@ -1532,7 +1563,7 @@ function WeatherApp() {
       onPointerLeave={() => setTilt({ x: 0, y: 0 })}
       aria-busy={loading}
     >
-      <WeatherScene code={weather?.code ?? 0} isDay={weather?.isDay ?? true} />
+      <WeatherScene code={weather?.code ?? 0} isDay={weather?.isDay ?? true} place={weather?.place ?? place} />
       <header className="weather-topbar">
         <button className="weather-place-button" onClick={() => { playSound("open"); setPickerOpen(true); }} aria-label="Choose weather location">
           <strong>{weather?.place.name ?? place.name}</strong><span>{weather?.place.admin || weather?.place.country || "Live forecast"} ▾</span>
@@ -1602,21 +1633,52 @@ function WeatherApp() {
   );
 }
 
-function WeatherScene({ code, isDay }: { code: number; isDay: boolean }) {
+function WeatherScene({ code, isDay, place }: { code: number; isDay: boolean; place: WeatherPlace }) {
+  const profile = weatherCityProfile(place);
   const precipitation = code >= 51;
   const snow = (code >= 71 && code <= 77) || code === 85 || code === 86;
   const cloudy = code >= 1;
   const thunder = code >= 95;
+  const fog = code === 45 || code === 48;
+  const cityStyle = {
+    "--noir-accent": profile.accent,
+    "--noir-lamp": profile.lamp,
+    "--city-shift": `${profile.shift}px`,
+    "--city-seed": profile.seed % 11,
+  } as CSSProperties;
   return (
-    <div className="weather-scene" aria-hidden="true">
-      <div className="weather-atmosphere"><i /><i /><i /></div>
-      <div className="weather-horizon"><i /><i /><span /></div>
-      <i className={isDay ? "weather-sun" : "weather-moon"} />
-      {cloudy && <><i className="weather-cloud weather-cloud-one" /><i className="weather-cloud weather-cloud-two" /></>}
-      {precipitation && <div className={snow ? "weather-snow" : "weather-rain"}>{Array.from({ length: 26 }, (_, index) => <i key={index} style={{ "--drop": index } as CSSProperties} />)}</div>}
-      {thunder && <i className="weather-lightning" />}
-      {!isDay && <div className="weather-stars">{Array.from({ length: 18 }, (_, index) => <i key={index} style={{ "--star": index } as CSSProperties} />)}</div>}
-      <span className="weather-haze" />
+    <div className={`weather-scene noir-room room-${profile.room} window-${profile.window}`} style={cityStyle} aria-hidden="true">
+      <div className="noir-wall"><i /><i /></div>
+      <div className="noir-window-wrap">
+        <i className="noir-curtain noir-curtain-left" />
+        <i className="noir-curtain noir-curtain-right" />
+        <div className="noir-window">
+          <div className="noir-sky">
+            <i className={isDay ? "noir-sun" : "noir-moon"} />
+            {!isDay && <div className="noir-stars">{Array.from({ length: 15 }, (_, index) => <i key={index} style={{ "--star": index } as CSSProperties} />)}</div>}
+            {cloudy && <div className="noir-clouds"><i /><i /><i /></div>}
+            <div className="noir-city noir-city-back">
+              {profile.skyline.map((height, index) => <i key={index} style={{ "--building-height": `${height}%`, "--building-index": index } as CSSProperties}><span /><b /></i>)}
+            </div>
+            <div className="noir-city noir-city-front">
+              {[...profile.skyline].reverse().map((height, index) => <i key={index} style={{ "--building-height": `${Math.min(98, height + 9)}%`, "--building-index": index } as CSSProperties}><span /><b /></i>)}
+            </div>
+            {precipitation && <div className={snow ? "noir-snow" : "noir-rain"}>{Array.from({ length: 34 }, (_, index) => <i key={index} style={{ "--drop": index } as CSSProperties} />)}</div>}
+            {fog && <div className="noir-fog"><i /><i /></div>}
+            {thunder && <><i className="noir-lightning" /><i className="noir-storm-flash" /></>}
+          </div>
+          <div className="noir-window-grid"><i /><i /><i /></div>
+          <i className="noir-glass-reflection" />
+        </div>
+      </div>
+      <div className="noir-sconce"><i /><b /></div>
+      <div className="noir-furniture">
+        <i className="noir-desk" />
+        <i className="noir-chair" />
+        <i className="noir-room-prop" />
+      </div>
+      <i className="noir-shadow-pass" />
+      <i className="noir-film-grain" />
     </div>
   );
 }

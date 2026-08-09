@@ -96,6 +96,14 @@ test("keeps the iPhone interactive and time-aware", async () => {
   assert.match(source, /Photo Booth effects/);
   assert.match(source, /photo-viewer/);
   assert.match(source, /WeatherScene/);
+  assert.match(source, /weatherCityProfile/);
+  assert.match(source, /room-\$\{profile\.room\}/);
+  assert.match(source, /noir-window/);
+  assert.match(source, /noir-city noir-city-front/);
+  assert.match(source, /noir-film-grain/);
+  assert.match(styles, /Weather: animated noir windows/);
+  assert.match(styles, /\.room-study \.noir-room-prop/);
+  assert.match(styles, /@keyframes noir-rain/);
   assert.match(source, /geocoding-api\.open-meteo\.com/);
   assert.match(source, /7-DAY FORECAST/);
   assert.match(source, /Switch to degrees/);
