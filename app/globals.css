@@ -2295,3 +2295,34 @@ body:has(.home-shell){overflow:hidden}
 @media (prefers-reduced-motion:reduce){.noir-room *{animation:none!important}.noir-window-wrap,.noir-furniture{transition:none!important}}
 .noir-city>i>b{animation:noir-windows 7s calc(var(--building-index) * -.7s) steps(1) infinite}
 .window-wide .noir-window-grid>i:first-child{box-shadow:73px 0 #0a0b0e}.window-triptych .noir-window-grid>i:first-child{box-shadow:72px 0 #0a0b0e}
+
+/* The room architecture is rendered from six original, high-resolution
+   production plates. Weather remains a live layer on the far side of the
+   glass, so a city can rain, snow, fog or flash without flattening the art. */
+.noir-room::before{content:"";position:absolute;z-index:1;inset:0;background-position:center;background-repeat:no-repeat;background-size:cover;filter:brightness(.82) saturate(.9) contrast(1.04);transform:scale(1.015);transition:filter 1.2s cubic-bezier(.2,.75,.25,1),transform 1.2s cubic-bezier(.2,.75,.25,1)}
+.room-study::before{background-image:url("/media/weather/noir-study-v1.jpg")}
+.room-hotel::before{background-image:url("/media/weather/noir-hotel-v1.jpg")}
+.room-studio::before{background-image:url("/media/weather/noir-studio-v1.jpg")}
+.room-observatory::before{background-image:url("/media/weather/noir-observatory-v1.jpg")}
+.room-cafe::before{background-image:url("/media/weather/noir-cafe-v1.jpg")}
+.room-penthouse::before{background-image:url("/media/weather/noir-penthouse-v1.jpg")}
+.weather-day .noir-room::before{filter:brightness(.91) saturate(.91) contrast(1.02)}
+.weather-night .noir-room::before{filter:brightness(.7) saturate(.82) contrast(1.08)}
+.weather-cloudy .noir-room::before{filter:brightness(.73) saturate(.72) contrast(1.07)}
+.weather-rainy .noir-room::before{filter:brightness(.62) saturate(.68) contrast(1.12) hue-rotate(3deg)}
+.weather-snowy .noir-room::before{filter:brightness(.83) saturate(.58) contrast(1.02)}
+.weather-foggy .noir-room::before{filter:brightness(.76) saturate(.55) contrast(.94)}
+.weather-stormy .noir-room::before{filter:brightness(.5) saturate(.62) contrast(1.17) hue-rotate(5deg)}
+.noir-room>.noir-wall,.noir-room .noir-curtain,.noir-room .noir-city,.noir-room .noir-window-grid,.noir-room>.noir-sconce,.noir-room>.noir-furniture,.noir-room .noir-sun,.noir-room .noir-moon,.noir-room .noir-stars{opacity:0}
+.noir-room .noir-window-wrap{z-index:5;transform:translateX(-50%) rotateX(calc(var(--weather-rx) * .11)) rotateY(calc(var(--weather-ry) * .11)) translateZ(8px)}
+.noir-room .noir-window{border:0;background:transparent;box-shadow:none}
+.noir-room .noir-sky{background:transparent!important}
+.noir-room .noir-clouds{mix-blend-mode:multiply;opacity:.64}
+.noir-room .noir-glass-reflection{opacity:.56;mix-blend-mode:screen}
+.room-study{--window-w:27%;--window-h:260px;--window-top:21px}
+.room-hotel{--window-w:49%;--window-h:240px;--window-top:22px}
+.room-studio{--window-w:65%;--window-h:221px;--window-top:38px}
+.room-observatory{--window-w:58%;--window-h:246px;--window-top:22px}
+.room-cafe{--window-w:54%;--window-h:217px;--window-top:43px}
+.room-penthouse{--window-w:69%;--window-h:230px;--window-top:29px}
+@media (prefers-reduced-motion:reduce){.noir-room::before{transition:none}}

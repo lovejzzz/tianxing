@@ -103,7 +103,17 @@ test("keeps the iPhone interactive and time-aware", async () => {
   assert.match(source, /noir-film-grain/);
   assert.match(styles, /Weather: animated noir windows/);
   assert.match(styles, /\.room-study \.noir-room-prop/);
+  assert.match(styles, /noir-study-v1\.jpg/);
+  assert.match(styles, /noir-penthouse-v1\.jpg/);
   assert.match(styles, /@keyframes noir-rain/);
+  await Promise.all([
+    "study",
+    "hotel",
+    "studio",
+    "observatory",
+    "cafe",
+    "penthouse",
+  ].map((room) => access(new URL(`../public/media/weather/noir-${room}-v1.jpg`, import.meta.url))));
   assert.match(source, /geocoding-api\.open-meteo\.com/);
   assert.match(source, /7-DAY FORECAST/);
   assert.match(source, /Switch to degrees/);
