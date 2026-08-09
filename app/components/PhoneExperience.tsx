@@ -75,7 +75,7 @@ const dockApps: HomeApp[] = [
 const PHOTO_STORAGE_KEY = "tian-iphone-camera-roll";
 const PHOTO_HIDDEN_KEY = "tian-iphone-hidden-photos";
 const MESSAGE_DRAFT_KEY = "tian-iphone-message-draft";
-const MESSAGE_THREAD_KEY = "tian-iphone-message-thread";
+const MESSAGE_GIFT_KEY = "tian-iphone-message-gift";
 const MESSAGE_ENDPOINT = "https://script.google.com/macros/s/AKfycbyXBqJ3mfDqYPFESbxJTi6TXbwpQIh_59aGxw-lP_lxn7EyTrFS2wSR0spqosGWDM1EbQ/exec";
 const SAFARI_STAMPS_KEY = "tian-wild-web-stamps";
 const WEATHER_LOCATION_KEY = "tian-iphone-weather-location";
@@ -181,11 +181,14 @@ type Origin = {
   scaleY: number;
   bodyScaleY: number;
 };
-type MessageBubble = {
-  id: string;
-  text: string;
-  time: string;
-  state: "sending" | "sent" | "error";
+type MessageCapsuleGift = {
+  kind: "photo" | "music" | "note" | "dragon" | "project";
+  eyebrow: string;
+  title: string;
+  detail: string;
+  image?: string;
+  href?: string;
+  action?: string;
 };
 type NotePoint = { x: number; y: number };
 type NoteStroke = { color: string; width: number; erase: boolean; points: NotePoint[] };
@@ -723,16 +726,62 @@ function MessagesApp() {
     if (typeof window === "undefined") return "";
     try { return window.localStorage.getItem(MESSAGE_DRAFT_KEY) ?? ""; } catch { return ""; }
   });
-  const [thread, setThread] = useState<MessageBubble[]>(() => {
-    if (typeof window === "undefined") return [];
-    try {
-      const saved = window.sessionStorage.getItem(MESSAGE_THREAD_KEY);
-      return saved ? JSON.parse(saved) as MessageBubble[] : [];
-    } catch { return []; }
+  const [phase, setPhase] = useState<"compose" | "folded" | "sending" | "gift" | "error">(() => {
+    if (typeof window === "undefined") return "compose";
+    try { return window.sessionStorage.getItem(MESSAGE_GIFT_KEY) ? "gift" : "compose"; } catch { return "compose"; }
   });
-  const [status, setStatus] = useState<"idle" | "sending" | "sent" | "error">("idle");
-  const threadRef = useRef<HTMLDivElement>(null);
+  const [pendingMessage, setPendingMessage] = useState("");
+  const [gift, setGift] = useState<MessageCapsuleGift | null>(() => {
+    if (typeof window === "undefined") return null;
+    try {
+      const saved = window.sessionStorage.getItem(MESSAGE_GIFT_KEY);
+      return saved ? JSON.parse(saved) as MessageCapsuleGift : null;
+    } catch { return null; }
+  });
+  const [turnProgress, setTurnProgress] = useState(0);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
+  const dialRef = useRef<HTMLButtonElement>(null);
+  const dialPointer = useRef<{ id: number; angle: number; total: number; moved: boolean } | null>(null);
+  const deliveryStarted = useRef(false);
+
+  const gifts = useMemo<MessageCapsuleGift[]>(() => [
+    {
+      kind: "photo",
+      eyebrow: "A FRAME FROM TIAN",
+      title: "Something I noticed",
+      detail: "A photograph from my camera roll, returned without explanation.",
+      image: portfolioPhotos[7]?.src ?? portfolioPhotos[0].src,
+    },
+    {
+      kind: "music",
+      eyebrow: "A RECORD FOR LATER",
+      title: "The Jazz I Love",
+      detail: "Put this on when the room is quiet enough to hear the space between notes.",
+      href: "https://open.spotify.com/playlist/6hYj1RoYJ85hj8c1kaDFJ2",
+      action: "Listen on Spotify",
+    },
+    {
+      kind: "note",
+      eyebrow: "A NOTE FROM MY POCKET",
+      title: "Happiness comes from solving problems.",
+      detail: "— Mark Manson",
+    },
+    {
+      kind: "dragon",
+      eyebrow: "A SMALL STOWAWAY",
+      title: "Mossling found you",
+      detail: "It sleeps beneath old roots and wakes when rain touches stone.",
+    },
+    {
+      kind: "project",
+      eyebrow: "A SECRET DOOR",
+      title: "Bebop Puzzle",
+      detail: "Jazz theory, turned into something you can move with your hands.",
+      image: "/media/projects/bebop-live.png",
+      href: "https://beboppuzzle.com",
+      action: "Open the door",
+    },
+  ], []);
 
   useEffect(() => {
     try {
@@ -745,47 +794,40 @@ function MessagesApp() {
     }
   }, [message]);
 
-  useEffect(() => {
-    try { window.sessionStorage.setItem(MESSAGE_THREAD_KEY, JSON.stringify(thread)); } catch { /* Session history remains in memory. */ }
-    threadRef.current?.scrollTo({ top: threadRef.current.scrollHeight, behavior: "smooth" });
-  }, [thread]);
-
   const resizeComposer = (element: HTMLTextAreaElement) => {
     element.style.height = "34px";
     element.style.height = `${Math.min(element.scrollHeight, 104)}px`;
   };
 
-  const retry = (bubble: MessageBubble) => {
-    playSound("tock");
-    setThread((current) => current.filter((item) => item.id !== bubble.id));
-    setMessage(bubble.text);
-    setStatus("idle");
-    window.requestAnimationFrame(() => {
-      if (!textareaRef.current) return;
-      textareaRef.current.focus();
-      resizeComposer(textareaRef.current);
-    });
-  };
+  const chooseGift = useCallback((text: string) => {
+    const seed = dragonHash(`${text}:${new Date().toISOString().slice(0, 13)}`);
+    const selected = { ...gifts[seed % gifts.length] };
+    if (selected.kind === "photo") {
+      const photo = portfolioPhotos[Math.floor(seed / gifts.length) % portfolioPhotos.length];
+      selected.image = photo.src;
+      selected.title = `Photograph ${Math.floor(seed / gifts.length) % portfolioPhotos.length + 1}`;
+    }
+    if (selected.kind === "dragon") {
+      const kind = DRAGON_KINDS[Math.floor(seed / 11) % DRAGON_KINDS.length];
+      selected.title = `${kind.name} found you`;
+      selected.detail = kind.lore;
+    }
+    return selected;
+  }, [gifts]);
 
-  const submit = async (event: FormEvent<HTMLFormElement>) => {
-    event.preventDefault();
-    const cleanMessage = message.trim();
-    if (!cleanMessage || status === "sending") return;
-    const id = crypto.randomUUID();
-    const bubble: MessageBubble = {
-      id,
-      text: cleanMessage,
-      time: new Date().toLocaleTimeString([], { hour: "numeric", minute: "2-digit" }),
-      state: "sending",
-    };
-    setThread((current) => [...current, bubble]);
-    setMessage("");
-    setStatus("sending");
+  const deliverCapsule = useCallback(async () => {
+    if (!pendingMessage || deliveryStarted.current) return;
+    deliveryStarted.current = true;
+    const nextGift = chooseGift(pendingMessage);
+    setTurnProgress(1);
+    setPhase("sending");
     playSound("send");
     const form = new URLSearchParams();
-    form.set("message", cleanMessage);
+    form.set("message", pendingMessage);
     form.set("website", "");
     form.set("site_key", "tian-heart-2026");
+    form.set("capsule", `${nextGift.eyebrow}: ${nextGift.title}`);
+    form.set("sent_at", new Date().toISOString());
     const controller = new AbortController();
     const timeout = window.setTimeout(() => controller.abort(), 12_000);
     try {
@@ -798,68 +840,167 @@ function MessagesApp() {
         headers: { "Content-Type": "application/x-www-form-urlencoded;charset=UTF-8" },
         body: form.toString(),
       });
-      setThread((current) => current.map((item) => item.id === id ? { ...item, state: "sent" } : item));
-      setStatus("sent");
-      // This is delivery confirmation, not a new incoming message; a quiet
-      // tactile pop avoids falsely suggesting that Tian has already replied.
-      playSound("pop");
-      textareaRef.current?.focus();
-      window.setTimeout(() => setStatus("idle"), 2400);
+      setGift(nextGift);
+      setPhase("gift");
+      setPendingMessage("");
+      try { window.sessionStorage.setItem(MESSAGE_GIFT_KEY, JSON.stringify(nextGift)); } catch { /* The gift can remain in memory. */ }
+      playSound("sparkle");
     } catch {
-      setThread((current) => current.map((item) => item.id === id ? { ...item, state: "error" } : item));
-      setStatus("error");
+      setPhase("error");
       playSound("alert");
     } finally {
       window.clearTimeout(timeout);
+      deliveryStarted.current = false;
+    }
+  }, [chooseGift, pendingMessage]);
+
+  const foldMessage = (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    const cleanMessage = message.trim();
+    if (!cleanMessage || phase !== "compose") return;
+    setPendingMessage(cleanMessage);
+    setMessage("");
+    setTurnProgress(0);
+    setPhase("folded");
+    playSound("stamp");
+  };
+
+  const dialAngle = (event: ReactPointerEvent<HTMLButtonElement>) => {
+    const rect = event.currentTarget.getBoundingClientRect();
+    return Math.atan2(event.clientY - (rect.top + rect.height / 2), event.clientX - (rect.left + rect.width / 2)) * 180 / Math.PI;
+  };
+
+  const beginTurn = (event: ReactPointerEvent<HTMLButtonElement>) => {
+    if (phase !== "folded") return;
+    event.currentTarget.setPointerCapture(event.pointerId);
+    dialPointer.current = { id: event.pointerId, angle: dialAngle(event), total: turnProgress * 250, moved: false };
+    playSound("tock");
+  };
+
+  const turnDial = (event: ReactPointerEvent<HTMLButtonElement>) => {
+    const pointer = dialPointer.current;
+    if (!pointer || pointer.id !== event.pointerId || phase !== "folded") return;
+    const angle = dialAngle(event);
+    const delta = ((angle - pointer.angle + 540) % 360) - 180;
+    pointer.angle = angle;
+    if (Math.abs(delta) > 1.2) pointer.moved = true;
+    pointer.total = Math.max(0, Math.min(250, pointer.total + delta));
+    const progress = pointer.total / 250;
+    setTurnProgress(progress);
+    if (progress >= .985) {
+      dialPointer.current = null;
+      void deliverCapsule();
     }
   };
+
+  const endTurn = (event: ReactPointerEvent<HTMLButtonElement>) => {
+    const pointer = dialPointer.current;
+    if (!pointer || pointer.id !== event.pointerId) return;
+    if (event.currentTarget.hasPointerCapture(event.pointerId)) event.currentTarget.releasePointerCapture(event.pointerId);
+    const wasTap = !pointer.moved;
+    dialPointer.current = null;
+    if (wasTap && phase === "folded") {
+      setTurnProgress(1);
+      window.setTimeout(() => void deliverCapsule(), 230);
+    }
+  };
+
+  const resetMachine = () => {
+    playSound("tock");
+    setPhase("compose");
+    setGift(null);
+    setPendingMessage("");
+    setTurnProgress(0);
+    try { window.sessionStorage.removeItem(MESSAGE_GIFT_KEY); } catch { /* Optional. */ }
+    window.requestAnimationFrame(() => textareaRef.current?.focus());
+  };
+
+  const isMachineActive = phase !== "compose";
   return (
-    <form className="message-compose" onSubmit={submit}>
-      <div className="message-thread" ref={threadRef} aria-label="Conversation with Tian">
-        <div className="message-intro">
-          <img src="/media/about/tian-xing-iphone4.jpg" alt="" aria-hidden="true" />
-          <strong>Tian Xing</strong>
-          <span>Your message goes straight to my email.</span>
+    <form className={`message-capsule-app capsule-phase-${phase}`} onSubmit={foldMessage}>
+      <div className="capsule-machine" aria-label="Anonymous message capsule machine">
+        <div className="capsule-machine-brand" aria-hidden="true"><i>✦</i><span>HEART EXCHANGE</span><i>✦</i></div>
+        <div className="capsule-window">
+          <div className="capsule-window-glow" aria-hidden="true" />
+          {!gift && (
+            <div className={`message-capsule ${isMachineActive ? "is-loaded" : "is-waiting"}`} aria-hidden="true">
+              <i className="capsule-half capsule-top" />
+              <i className="capsule-paper"><b>•••</b></i>
+              <i className="capsule-half capsule-bottom" />
+            </div>
+          )}
+          {gift && (
+            <article className={`capsule-gift gift-${gift.kind}`} aria-live="polite">
+              <span>{gift.eyebrow}</span>
+              {gift.kind === "photo" && gift.image && <img src={gift.image} alt="A randomly returned photograph from Tian" />}
+              {gift.kind === "music" && <div className="gift-record" aria-hidden="true"><i /><b>♪</b></div>}
+              {gift.kind === "note" && <div className="gift-note-mark" aria-hidden="true">“</div>}
+              {gift.kind === "dragon" && <div className="gift-dragon"><DragonSprite card /></div>}
+              {gift.kind === "project" && gift.image && <img src={gift.image} alt="Bebop Puzzle" />}
+              <strong>{gift.title}</strong>
+              <p>{gift.detail}</p>
+              {gift.href && <a href={gift.href} target="_blank" rel="noreferrer" onClick={() => playSound("open")}>{gift.action} <b>↗</b></a>}
+            </article>
+          )}
+          <div className="capsule-glass-sheen" aria-hidden="true" />
         </div>
-        <p className="message-received">Hi—I’m Tian. Say something.</p>
-        {thread.map((bubble) => (
-          <div className={`message-outgoing message-${bubble.state}`} key={bubble.id}>
-            <p>{bubble.text}</p>
-            <span>
-              {bubble.time} · {bubble.state === "sending" ? "Sending…" : bubble.state === "sent" ? "Sent" : "Not sent"}
-            </span>
-            {bubble.state === "error" && <button type="button" onClick={() => retry(bubble)}>Try Again</button>}
+        <div className="capsule-machine-deck">
+          <div className="capsule-readout" role="status" aria-live="polite">
+            {phase === "compose" && <><strong>LEAVE SOMETHING HERE</strong><span>It doesn’t need an answer.</span></>}
+            {phase === "folded" && <><strong>YOUR NOTE IS FOLDED</strong><span>Turn the brass dial to send it.</span></>}
+            {phase === "sending" && <><strong>TRAVELLING TO TIAN</strong><span>No name attached. Nothing owed.</span></>}
+            {phase === "gift" && <><strong>MESSAGE RECEIVED</strong><span>The machine left something for you.</span></>}
+            {phase === "error" && <><strong>THE SIGNAL GOT LOST</strong><span>Your note is still safe inside.</span></>}
           </div>
-        ))}
-      </div>
-      <div className="message-composer">
-        <textarea
-          ref={textareaRef}
-          value={message}
-          onChange={(event) => {
-            setMessage(event.target.value);
-            resizeComposer(event.currentTarget);
-            if (status === "error") setStatus("idle");
-          }}
-          onKeyDown={(event) => {
-            playKeyboardTick(event);
-            if (event.key === "Enter" && !event.shiftKey && !event.nativeEvent.isComposing) {
+          <button
+            ref={dialRef}
+            type="button"
+            className="capsule-dial"
+            style={{ "--dial-turn": `${turnProgress * 250}deg` } as CSSProperties}
+            onPointerDown={beginTurn}
+            onPointerMove={turnDial}
+            onPointerUp={endTurn}
+            onPointerCancel={endTurn}
+            onKeyDown={(event) => {
+              if (phase !== "folded" || (event.key !== "Enter" && event.key !== " ")) return;
               event.preventDefault();
-              event.currentTarget.form?.requestSubmit();
-            }
-          }}
-          required
-          maxLength={1200}
-          rows={1}
-          enterKeyHint="send"
-          placeholder="Message"
-          aria-label="Message Tian"
-        />
-        <button type="submit" disabled={!message.trim() || status === "sending"} aria-label="Send message">Send</button>
+              setTurnProgress(1);
+              window.setTimeout(() => void deliverCapsule(), 230);
+            }}
+            disabled={phase !== "folded"}
+            aria-label={phase === "folded" ? "Turn clockwise to send message" : "Message capsule dial"}
+          >
+            <i /><b>TURN</b>
+          </button>
+          <div className="capsule-chute" aria-hidden="true"><i /></div>
+        </div>
       </div>
-      <div className={`message-status status-${status}`} role="status" aria-live="polite">
-        {status === "sending" ? "Sending…" : status === "sent" ? "Message sent." : status === "error" ? "No connection. Your message is safe above." : "No account needed · private to Tian"}
-      </div>
+      {phase === "compose" && (
+        <div className="capsule-composer">
+          <textarea
+            ref={textareaRef}
+            value={message}
+            onChange={(event) => { setMessage(event.target.value); resizeComposer(event.currentTarget); }}
+            onKeyDown={(event) => {
+              playKeyboardTick(event);
+              if (event.key === "Enter" && !event.shiftKey && !event.nativeEvent.isComposing) {
+                event.preventDefault();
+                event.currentTarget.form?.requestSubmit();
+              }
+            }}
+            required
+            maxLength={1200}
+            rows={1}
+            enterKeyHint="send"
+            placeholder="Leave a thought…"
+            aria-label="Anonymous message for Tian"
+          />
+          <button type="submit" disabled={!message.trim()} aria-label="Fold message into a capsule"><i aria-hidden="true">⌁</i><span>Fold</span></button>
+          <small>Anonymous · private to Tian · no reply expected</small>
+        </div>
+      )}
+      {phase === "error" && <button className="capsule-secondary-action" type="button" onClick={() => void deliverCapsule()}>Try the dial again</button>}
+      {phase === "gift" && <button className="capsule-secondary-action" type="button" onClick={resetMachine}>Leave another thought</button>}
     </form>
   );
 }
