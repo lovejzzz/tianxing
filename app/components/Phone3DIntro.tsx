@@ -175,9 +175,9 @@ function createStudioEnvironment(): { studio: THREE.Scene; dispose: () => void }
     owned.push(glow);
   }
 
-  // Metals live entirely off the environment, so the dome carries a mid-gray
-  // base: the band reads as graduated steel everywhere, never a silhouette.
-  const dome = new THREE.Mesh(new THREE.SphereGeometry(30, 24, 16), new THREE.MeshBasicMaterial({ color: 0x3d434a, side: THREE.BackSide }));
+  // A dark neutral studio gives the stainless wall room for midtones. Bright
+  // panels still describe its curvature without washing the entire band gray.
+  const dome = new THREE.Mesh(new THREE.SphereGeometry(30, 24, 16), new THREE.MeshBasicMaterial({ color: 0x252a30, side: THREE.BackSide }));
   studio.add(dome);
   owned.push(dome.geometry, dome.material);
 
@@ -190,12 +190,11 @@ function createStudioEnvironment(): { studio: THREE.Scene; dispose: () => void }
     studio.add(panel);
     owned.push(panel.geometry, material);
   };
-  softbox(16, 20, 0xffffff, 1.7, [-8, 4, 7]);      // key: huge soft panel, upper left
-  softbox(10, 14, 0xf4f7fa, 0.6, [3, 0.5, 10]);    // gentle off-axis frontal fill for the rim at rest
-  softbox(2.5, 16, 0xcfe4ff, 4, [7, 1, -5.5]);     // rim: cool narrow strip behind right
-  softbox(0.72, 19, 0xf8fbff, 3.4, [-4.6, 1.5, 8]); // precision strip: a slim traveling line on the steel bevel
-  softbox(18, 3, 0xffffff, 2.4, [0, 9, 2]);        // top: long strip for the chamfer streak
-  softbox(12, 3, 0xffe9da, 1.2, [0, -9, 3]);       // low warm bounce
+  softbox(16, 20, 0xffffff, 1.08, [-8, 4, 7]);    // broad key, bright enough to shape but not flatten
+  softbox(10, 14, 0xf4f7fa, 0.3, [3, 0.5, 10]);  // restrained frontal fill
+  softbox(2.5, 16, 0xcfe4ff, 2.15, [7, 1, -5.5]); // cool rim with retained highlight detail
+  softbox(18, 3, 0xffffff, 1.25, [0, 9, 2]);      // soft top chamfer streak
+  softbox(12, 3, 0xffe9da, 0.58, [0, -9, 3]);     // low warm bounce
 
   return {
     studio,
@@ -279,7 +278,7 @@ export function Phone3DIntro({ productRef }: { productRef: RefObject<HTMLDivElem
     renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
     renderer.outputColorSpace = THREE.SRGBColorSpace;
     renderer.toneMapping = THREE.ACESFilmicToneMapping;
-    renderer.toneMappingExposure = 1.01;
+    renderer.toneMappingExposure = 0.9;
     renderer.setClearColor(0x000000, 0);
     renderer.domElement.setAttribute("aria-hidden", "true");
     host.appendChild(renderer.domElement);
@@ -307,28 +306,20 @@ export function Phone3DIntro({ productRef }: { productRef: RefObject<HTMLDivElem
     // alloy. Bare steel has no clear lacquer layer: the broad wall is a satin,
     // anisotropic finish while the hairline bevels carry the sharper glints.
     const steel = new THREE.MeshPhysicalMaterial({
-      color: 0xaeb3b7,
+      color: 0xa5aaae,
       metalness: 1,
-      roughness: 0.27,
-      anisotropy: 0.68,
+      roughness: 0.31,
+      anisotropy: 0.58,
       anisotropyRotation: Math.PI / 2,
-      envMapIntensity: 0.92,
-    });
-    const polishedSteel = new THREE.MeshPhysicalMaterial({
-      color: 0xc0c4c7,
-      metalness: 1,
-      roughness: 0.13,
-      anisotropy: 0.22,
-      anisotropyRotation: Math.PI / 2,
-      envMapIntensity: 1.04,
+      envMapIntensity: 0.76,
     });
     const steelButton = new THREE.MeshPhysicalMaterial({
-      color: 0xb5b9bc,
+      color: 0xa9adb0,
       metalness: 1,
-      roughness: 0.24,
-      anisotropy: 0.5,
+      roughness: 0.32,
+      anisotropy: 0.38,
       anisotropyRotation: Math.PI / 2,
-      envMapIntensity: 0.94,
+      envMapIntensity: 0.74,
     });
     // The iPhone 4 rear is not a luminous black panel. It is a chemically
     // strengthened cover glass over an opaque black print/substrate. Keep the
@@ -410,29 +401,6 @@ export function Phone3DIntro({ productRef }: { productRef: RefObject<HTMLDivElem
     rawBandGeometry.dispose();
     bandGeometry.translate(0, 0, -(BAND_DEPTH - 0.084) / 2);
     phone.add(new THREE.Mesh(bandGeometry, steel));
-
-    // Two separate micro-bevel rails prevent the satin wall from turning into
-    // chrome. They catch only a narrow studio streak at the glass interfaces,
-    // which is what gives machined stainless steel its precise, premium edge.
-    const chamferShape = traceRoundedRect(new THREE.Shape(), PHONE_WIDTH - 0.018, PHONE_HEIGHT - 0.018, 0.51);
-    chamferShape.holes.push(traceRoundedRect(new THREE.Path(), PHONE_WIDTH - 0.098, PHONE_HEIGHT - 0.098, 0.47));
-    const chamferGeometry = new THREE.ExtrudeGeometry(chamferShape, {
-      depth: 0.012,
-      bevelEnabled: true,
-      bevelThickness: 0.006,
-      bevelSize: 0.006,
-      bevelSegments: 4,
-      curveSegments: 72,
-    });
-    const frontChamfer = new THREE.Mesh(chamferGeometry, polishedSteel);
-    frontChamfer.position.z = BAND_DEPTH / 2 - 0.024;
-    frontChamfer.renderOrder = 3;
-    phone.add(frontChamfer);
-    const rearChamfer = new THREE.Mesh(chamferGeometry.clone(), polishedSteel);
-    rearChamfer.rotation.y = Math.PI;
-    rearChamfer.position.z = -(BAND_DEPTH / 2 - 0.024);
-    rearChamfer.renderOrder = 3;
-    phone.add(rearChamfer);
 
     // Antenna break lines, GSM layout: one up top, two low on the sides.
     const breakTop = new THREE.Mesh(new RoundedBoxGeometry(0.04, 0.13, 0.55, 2, 0.012), breakPlastic);
@@ -715,14 +683,14 @@ export function Phone3DIntro({ productRef }: { productRef: RefObject<HTMLDivElem
 
     // --- Studio lighting ----------------------------------------------------
     // The environment does the heavy lifting; direct lights only shape form.
-    scene.add(new THREE.HemisphereLight(0xd6e6f2, 0x0a0c0e, 0.35));
-    const keyLight = new THREE.DirectionalLight(0xffffff, 1.6);
+    scene.add(new THREE.HemisphereLight(0xd6e6f2, 0x0a0c0e, 0.2));
+    const keyLight = new THREE.DirectionalLight(0xffffff, 1.02);
     keyLight.position.set(-4.5, 6, 7.5);
     scene.add(keyLight);
-    const rimLight = new THREE.DirectionalLight(0xbcd8ff, 1.8);
+    const rimLight = new THREE.DirectionalLight(0xbcd8ff, 1.05);
     rimLight.position.set(-5.5, 1.5, -6);
     scene.add(rimLight);
-    const warmFill = new THREE.PointLight(0xffe4d4, 5, 18, 2);
+    const warmFill = new THREE.PointLight(0xffe4d4, 2.7, 18, 2);
     warmFill.position.set(4, -4.5, 4.5);
     scene.add(warmFill);
 
@@ -786,8 +754,8 @@ export function Phone3DIntro({ productRef }: { productRef: RefObject<HTMLDivElem
       keyLight.position.x = THREE.MathUtils.lerp(-6.4, -4.2, eased);
       // Let the hero frame settle into true black glass. The key is strongest
       // across the turn, then slips off-axis instead of flattening the face.
-      keyLight.intensity = THREE.MathUtils.lerp(1.6, 0.68, eased);
-      warmFill.intensity = THREE.MathUtils.lerp(5, 2.2, eased);
+      keyLight.intensity = THREE.MathUtils.lerp(1.02, 0.5, eased);
+      warmFill.intensity = THREE.MathUtils.lerp(2.7, 1.25, eased);
       currentPose = poseAt(progress);
       applyPose(currentPose);
       renderer.render(scene, camera);
