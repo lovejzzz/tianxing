@@ -168,6 +168,12 @@ test("keeps the iPhone interactive and time-aware", async () => {
   assert.match(phone3dSource, /faceShape\.holes/);
   assert.match(phone3dSource, /SCREEN_COMPOSITE_Z = GLASS_Z \+ 0\.004/);
   assert.match(phone3dSource, /new THREE\.MeshBasicMaterial\(\{ color: 0x010203 \}\)/);
+  assert.match(phone3dSource, /const backSubstrate = new THREE\.MeshBasicMaterial/);
+  assert.match(phone3dSource, /const backCoverGlass = new THREE\.MeshPhysicalMaterial/);
+  assert.match(phone3dSource, /ior: 1\.52/);
+  assert.match(phone3dSource, /FUJI_CASE_ART/);
+  assert.match(phone3dSource, /const frostedCaseMaterial = new THREE\.MeshPhysicalMaterial/);
+  assert.match(phone3dSource, /cameraCutout\.absellipse/);
   assert.match(phone3dSource, /product\.style\.transform/);
   assert.match(phone3dSource, /introRequestedForDocument/);
   assert.match(phone3dSource, /delete document\.documentElement\.dataset\.phoneIntro/);

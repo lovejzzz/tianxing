@@ -24,6 +24,7 @@ const GLASS_Z = BAND_DEPTH / 2 - 0.01; // both glass plates sit just inside the 
 // The small offset avoids z-fighting without turning the display into a second,
 // visibly displaced plane during the three-quarter view.
 const SCREEN_COMPOSITE_Z = GLASS_Z + 0.004;
+const FUJI_CASE_ART = "https://file.nbfox.com/wp-content/uploads/2020/03/19/20200319083057-5e732dc1a4b9c.jpg";
 
 function smoothstep5(value: number) {
   return value * value * value * (value * (value * 6 - 15) + 10);
@@ -239,6 +240,7 @@ export function Phone3DIntro({ productRef }: { productRef: RefObject<HTMLDivElem
     if (!host || !product || !stage) return;
 
     const params = new URLSearchParams(window.location.search);
+    const showFujiCase = params.get("case") !== "bare";
     const inspectionValue = params.get("introFrame");
     const requestedInspection = process.env.NODE_ENV === "production" || inspectionValue === null ? null : Number(inspectionValue);
     const inspectionMs = requestedInspection !== null && Number.isFinite(requestedInspection)
@@ -285,6 +287,7 @@ export function Phone3DIntro({ productRef }: { productRef: RefObject<HTMLDivElem
     scene.add(phone);
 
     const ownedTextures: THREE.Texture[] = [];
+    let modelActive = true;
 
     // Brushed steel: anisotropy stretches the streak highlights along the band,
     // a whisper of clearcoat keeps the chamfers crisp over the brushing.
@@ -305,13 +308,22 @@ export function Phone3DIntro({ productRef }: { productRef: RefObject<HTMLDivElem
       clearcoatRoughness: 0.22,
       envMapIntensity: 0.86,
     });
-    const backGlass = new THREE.MeshPhysicalMaterial({
-      color: 0x000102,
+    // The iPhone 4 rear is not a luminous black panel. It is a chemically
+    // strengthened cover glass over an opaque black print/substrate. Keep the
+    // body colour in an unlit backing layer, then let this very thin dielectric
+    // coat carry only the moving studio reflection.
+    const backSubstrate = new THREE.MeshBasicMaterial({ color: 0x010203 });
+    const backCoverGlass = new THREE.MeshPhysicalMaterial({
+      color: 0x010203,
       metalness: 0,
-      roughness: 0.18,
-      clearcoat: 0.42,
-      clearcoatRoughness: 0.11,
-      envMapIntensity: 0.18,
+      roughness: 0.1,
+      ior: 1.52,
+      reflectivity: 0.5,
+      specularIntensity: 0.82,
+      specularColor: new THREE.Color(0xdce5ec),
+      clearcoat: 1,
+      clearcoatRoughness: 0.07,
+      envMapIntensity: 0.64,
     });
     // The front bezel stays optically black in both the static Next build and
     // the live Vite build. Highlights belong to the clear screen layer and the
@@ -411,9 +423,101 @@ export function Phone3DIntro({ productRef }: { productRef: RefObject<HTMLDivElem
     phone.add(rearGroup);
 
     const backShape = traceRoundedRect(new THREE.Shape(), GLASS_WIDTH, GLASS_HEIGHT, GLASS_RADIUS);
-    const backGlassGeometry = new THREE.ExtrudeGeometry(backShape, { depth: 0.05, bevelEnabled: false, curveSegments: 52 });
-    backGlassGeometry.translate(0, 0, GLASS_Z - 0.05);
-    rearGroup.add(new THREE.Mesh(backGlassGeometry, [backGlass, glassEdge]));
+    const backGlassGeometry = new THREE.ExtrudeGeometry(backShape, {
+      depth: 0.045,
+      bevelEnabled: true,
+      bevelThickness: 0.008,
+      bevelSize: 0.008,
+      bevelSegments: 4,
+      curveSegments: 64,
+    });
+    backGlassGeometry.translate(0, 0, GLASS_Z - 0.045);
+    rearGroup.add(new THREE.Mesh(backGlassGeometry, [backSubstrate, glassEdge]));
+
+    // A separate surface sheet is deliberate: the black beneath it never
+    // brightens with the lamps, while the cover glass catches a restrained
+    // Fresnel-like highlight at grazing angles. That optical separation is
+    // what makes the rear read as coated glass rather than a second display.
+    const backCoverGeometry = new THREE.ShapeGeometry(backShape, 64);
+    const backCover = new THREE.Mesh(backCoverGeometry, backCoverGlass);
+    backCover.position.z = GLASS_Z + 0.002;
+    backCover.renderOrder = 2;
+    rearGroup.add(backCover);
+
+    // A slim, frosted snap case printed with the user's Red Fuji reference.
+    // It lives with the rear assembly, so its apparent thickness collapses to
+    // a hairline at profile and is fully hidden once the phone faces front.
+    const caseWidth = GLASS_WIDTH + 0.13;
+    const caseHeight = GLASS_HEIGHT + 0.13;
+    const caseShape = traceRoundedRect(new THREE.Shape(), caseWidth, caseHeight, GLASS_RADIUS + 0.055);
+    const cameraCutout = new THREE.Path();
+    cameraCutout.absellipse(-1.225, 2.95, 0.355, 0.225, 0, Math.PI * 2, true, 0);
+    caseShape.holes.push(cameraCutout);
+
+    const caseTexture = new THREE.TextureLoader().load(FUJI_CASE_ART, () => {
+      if (modelActive) renderer.render(scene, camera);
+    });
+    caseTexture.colorSpace = THREE.SRGBColorSpace;
+    caseTexture.anisotropy = Math.min(renderer.capabilities.getMaxAnisotropy(), 8);
+    // A tall crop keeps the red mountain and blue sky legible on the handset.
+    // ShapeGeometry UVs use model units, so this also performs normalization.
+    const cropWidth = 0.37;
+    const cropStart = 0.57;
+    caseTexture.repeat.set(cropWidth / caseWidth, 1 / caseHeight);
+    caseTexture.offset.set(cropStart + cropWidth / 2, 0.5);
+    ownedTextures.push(caseTexture);
+
+    const caseArtMaterial = new THREE.MeshPhysicalMaterial({
+      map: caseTexture,
+      color: 0xf1f4f5,
+      metalness: 0,
+      roughness: 0.58,
+      clearcoat: 0.12,
+      clearcoatRoughness: 0.72,
+      envMapIntensity: 0.2,
+    });
+    const frostedCaseMaterial = new THREE.MeshPhysicalMaterial({
+      color: 0xd9e2e6,
+      metalness: 0,
+      roughness: 0.5,
+      transmission: 0.1,
+      thickness: 0.08,
+      ior: 1.46,
+      transparent: true,
+      opacity: 0.72,
+      clearcoat: 0.18,
+      clearcoatRoughness: 0.5,
+      envMapIntensity: 0.32,
+    });
+    const casePanelGeometry = new THREE.ExtrudeGeometry(caseShape, {
+      depth: 0.027,
+      bevelEnabled: true,
+      bevelThickness: 0.015,
+      bevelSize: 0.018,
+      bevelSegments: 5,
+      curveSegments: 64,
+    });
+    casePanelGeometry.translate(0, 0, GLASS_Z + 0.016);
+    const casePanel = new THREE.Mesh(casePanelGeometry, [caseArtMaterial, frostedCaseMaterial]);
+    casePanel.renderOrder = 5;
+    casePanel.visible = showFujiCase;
+    rearGroup.add(casePanel);
+
+    const caseRimShape = traceRoundedRect(new THREE.Shape(), caseWidth + 0.085, caseHeight + 0.085, GLASS_RADIUS + 0.095);
+    caseRimShape.holes.push(traceRoundedRect(new THREE.Path(), caseWidth - 0.035, caseHeight - 0.035, GLASS_RADIUS + 0.035));
+    const caseRimGeometry = new THREE.ExtrudeGeometry(caseRimShape, {
+      depth: 0.075,
+      bevelEnabled: true,
+      bevelThickness: 0.018,
+      bevelSize: 0.018,
+      bevelSegments: 6,
+      curveSegments: 64,
+    });
+    caseRimGeometry.translate(0, 0, GLASS_Z - 0.006);
+    const caseRim = new THREE.Mesh(caseRimGeometry, frostedCaseMaterial);
+    caseRim.renderOrder = 6;
+    caseRim.visible = showFujiCase;
+    rearGroup.add(caseRim);
 
     // Camera at the top-left of the back, LED flash beside it.
     const cameraBase = new THREE.Mesh(new THREE.CylinderGeometry(0.175, 0.175, 0.014, 48), matteBlack);
@@ -608,6 +712,7 @@ export function Phone3DIntro({ productRef }: { productRef: RefObject<HTMLDivElem
     frame = window.requestAnimationFrame(render);
 
     return () => {
+      modelActive = false;
       window.cancelAnimationFrame(frame);
       observer.disconnect();
       product.style.removeProperty("transform");
