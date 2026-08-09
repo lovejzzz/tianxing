@@ -193,6 +193,7 @@ function createStudioEnvironment(): { studio: THREE.Scene; dispose: () => void }
   softbox(16, 20, 0xffffff, 1.7, [-8, 4, 7]);      // key: huge soft panel, upper left
   softbox(10, 14, 0xf4f7fa, 0.6, [3, 0.5, 10]);    // gentle off-axis frontal fill for the rim at rest
   softbox(2.5, 16, 0xcfe4ff, 4, [7, 1, -5.5]);     // rim: cool narrow strip behind right
+  softbox(0.72, 19, 0xf8fbff, 3.4, [-4.6, 1.5, 8]); // precision strip: a slim traveling line on the steel bevel
   softbox(18, 3, 0xffffff, 2.4, [0, 9, 2]);        // top: long strip for the chamfer streak
   softbox(12, 3, 0xffe9da, 1.2, [0, -9, 3]);       // low warm bounce
 
@@ -302,24 +303,32 @@ export function Phone3DIntro({ productRef }: { productRef: RefObject<HTMLDivElem
     let caseTextureReady = !showFujiCase;
     let startIntro: (() => void) | null = null;
 
-    // Brushed steel: anisotropy stretches the streak highlights along the band,
-    // a whisper of clearcoat keeps the chamfers crisp over the brushing.
+    // Apple described the iPhone 4 band as a highly finished custom stainless
+    // alloy. Bare steel has no clear lacquer layer: the broad wall is a satin,
+    // anisotropic finish while the hairline bevels carry the sharper glints.
     const steel = new THREE.MeshPhysicalMaterial({
-      color: 0x9da3a8,
+      color: 0xaeb3b7,
       metalness: 1,
-      roughness: 0.3,
-      anisotropy: 0.34,
-      clearcoat: 0.32,
-      clearcoatRoughness: 0.24,
-      envMapIntensity: 0.84,
+      roughness: 0.27,
+      anisotropy: 0.68,
+      anisotropyRotation: Math.PI / 2,
+      envMapIntensity: 0.92,
+    });
+    const polishedSteel = new THREE.MeshPhysicalMaterial({
+      color: 0xc0c4c7,
+      metalness: 1,
+      roughness: 0.13,
+      anisotropy: 0.22,
+      anisotropyRotation: Math.PI / 2,
+      envMapIntensity: 1.04,
     });
     const steelButton = new THREE.MeshPhysicalMaterial({
-      color: 0xa8adb1,
+      color: 0xb5b9bc,
       metalness: 1,
-      roughness: 0.3,
-      clearcoat: 0.28,
-      clearcoatRoughness: 0.22,
-      envMapIntensity: 0.86,
+      roughness: 0.24,
+      anisotropy: 0.5,
+      anisotropyRotation: Math.PI / 2,
+      envMapIntensity: 0.94,
     });
     // The iPhone 4 rear is not a luminous black panel. It is a chemically
     // strengthened cover glass over an opaque black print/substrate. Keep the
@@ -401,6 +410,29 @@ export function Phone3DIntro({ productRef }: { productRef: RefObject<HTMLDivElem
     rawBandGeometry.dispose();
     bandGeometry.translate(0, 0, -(BAND_DEPTH - 0.084) / 2);
     phone.add(new THREE.Mesh(bandGeometry, steel));
+
+    // Two separate micro-bevel rails prevent the satin wall from turning into
+    // chrome. They catch only a narrow studio streak at the glass interfaces,
+    // which is what gives machined stainless steel its precise, premium edge.
+    const chamferShape = traceRoundedRect(new THREE.Shape(), PHONE_WIDTH - 0.018, PHONE_HEIGHT - 0.018, 0.51);
+    chamferShape.holes.push(traceRoundedRect(new THREE.Path(), PHONE_WIDTH - 0.098, PHONE_HEIGHT - 0.098, 0.47));
+    const chamferGeometry = new THREE.ExtrudeGeometry(chamferShape, {
+      depth: 0.012,
+      bevelEnabled: true,
+      bevelThickness: 0.006,
+      bevelSize: 0.006,
+      bevelSegments: 4,
+      curveSegments: 72,
+    });
+    const frontChamfer = new THREE.Mesh(chamferGeometry, polishedSteel);
+    frontChamfer.position.z = BAND_DEPTH / 2 - 0.024;
+    frontChamfer.renderOrder = 3;
+    phone.add(frontChamfer);
+    const rearChamfer = new THREE.Mesh(chamferGeometry.clone(), polishedSteel);
+    rearChamfer.rotation.y = Math.PI;
+    rearChamfer.position.z = -(BAND_DEPTH / 2 - 0.024);
+    rearChamfer.renderOrder = 3;
+    phone.add(rearChamfer);
 
     // Antenna break lines, GSM layout: one up top, two low on the sides.
     const breakTop = new THREE.Mesh(new RoundedBoxGeometry(0.04, 0.13, 0.55, 2, 0.012), breakPlastic);
