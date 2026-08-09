@@ -17,6 +17,7 @@ import { useSyncExternalStore } from "react";
 
 export type PhoneSound =
   | "tap"        // a finger landing on an icon
+  | "home"       // the physical Home key travelling into the glass
   | "key"        // keyboard tick
   | "tock"       // segmented control, tab, list selection
   | "pop"        // light confirmation
@@ -103,22 +104,32 @@ function ensureContext() {
     return null;
   }
 
-  // A 2010 earpiece has no low end and a presence bump around 3 kHz. Running
-  // every cue through the same voicing is what makes them sound like one device
-  // rather than a folder of unrelated beeps.
+  // A 2010 handset speaker has little low end and a presence bump around 3 kHz.
+  // Running every cue through the same voicing is what makes them sound like
+  // one device rather than a folder of unrelated beeps. A soft compressor is
+  // essential here: quick app transitions and reward cues can overlap, and
+  // summing their oscillators directly made the small speaker turn brittle.
   const body = context.createBiquadFilter();
   body.type = "highpass";
-  body.frequency.value = 150;
+  body.frequency.value = 140;
   body.Q.value = .7;
   const presence = context.createBiquadFilter();
   presence.type = "peaking";
   presence.frequency.value = 2900;
-  presence.gain.value = 3.6;
+  presence.gain.value = 2.2;
   presence.Q.value = .9;
+  const limiter = context.createDynamicsCompressor();
+  limiter.threshold.value = -19;
+  limiter.knee.value = 12;
+  limiter.ratio.value = 5;
+  limiter.attack.value = .003;
+  limiter.release.value = .13;
 
   master = context.createGain();
-  master.gain.value = .9;
-  master.connect(body).connect(presence).connect(context.destination);
+  master.gain.value = .72;
+  master.connect(body).connect(presence).connect(limiter).connect(context.destination);
+
+  if (context.state !== "running") void context.resume();
 
   noiseBuffer = context.createBuffer(1, Math.floor(context.sampleRate * NOISE_SECONDS), context.sampleRate);
   const channel = noiseBuffer.getChannelData(0);
@@ -200,9 +211,16 @@ const cues: Record<PhoneSound, () => void> = {
     hiss({ from: 2500, to: 1300, dur: .024, level: .05, q: 1.2 });
     tone({ from: 940, to: 520, dur: .032, level: .026 });
   },
+  home: () => {
+    // Two surfaces, nearly together: the glass cap yielding, then the rubber
+    // dome under it. Short and low enough to feel physical rather than musical.
+    hiss({ from: 1800, to: 820, dur: .018, level: .036, q: 1.1 });
+    tone({ from: 230, to: 132, dur: .052, level: .046, shape: "triangle", attack: .002 });
+    tone({ from: 460, to: 245, at: .012, dur: .035, level: .018, shape: "sine", attack: .002 });
+  },
   key: () => {
-    hiss({ from: 3500, to: 2200, dur: .016, level: .055, q: 2.4 });
-    tone({ from: 1700, to: 1180, dur: .022, level: .018, shape: "triangle" });
+    hiss({ from: 3500, to: 2200, dur: .016, level: .038, q: 2.2 });
+    tone({ from: 1700, to: 1180, dur: .022, level: .014, shape: "triangle" });
   },
   tock: () => {
     tone({ from: 540, to: 300, dur: .05, level: .05, shape: "triangle" });
@@ -235,9 +253,9 @@ const cues: Record<PhoneSound, () => void> = {
     bell(1760, .24, .3, .028);
   },
   received: () => {
-    bell(1318, 0, .5, .05);
-    bell(880, .1, .5, .044);
-    bell(1760, .2, .72, .05);
+    bell(1318, 0, .5, .038);
+    bell(880, .1, .5, .032);
+    bell(1760, .2, .72, .038);
   },
   shutter: () => {
     hiss({ from: 2200, dur: .012, level: .09, type: "highpass", q: .7 });
@@ -312,6 +330,31 @@ const cues: Record<PhoneSound, () => void> = {
   },
 };
 
+// Each gesture family gets enough room to articulate before another copy can
+// stack on top of it. Short tactile cues stay responsive; long travel and
+// notification cues cannot turn into a wall of sound under impatient tapping.
+const cueCooldownMs: Partial<Record<PhoneSound, number>> = {
+  home: 90,
+  key: 24,
+  tick: 120,
+  open: 150,
+  close: 150,
+  swipe: 90,
+  whoosh: 650,
+  send: 320,
+  received: 650,
+  shutter: 260,
+  beep: 180,
+  trash: 240,
+  restore: 240,
+  alert: 420,
+  sparkle: 720,
+  stamp: 280,
+  charge: 180,
+  chime: 1200,
+  ringer: 180,
+};
+
 /**
  * Play a cue. Silent while the ringer switch is off, and rate-limited per cue so
  * a held key or a fast drag layers a texture instead of a wall of clicks.
@@ -320,7 +363,7 @@ export function playSound(name: PhoneSound) {
   if (typeof window === "undefined" || isSilenced()) return;
   const now = performance.now();
   const previous = lastPlayed.get(name) ?? 0;
-  if (now - previous < 18) return;
+  if (now - previous < (cueCooldownMs[name] ?? 28)) return;
   lastPlayed.set(name, now);
   try {
     cues[name]();
@@ -333,6 +376,9 @@ export function playSound(name: PhoneSound) {
 /** Flip the ringer switch, announcing the change when it lands on "on". */
 export function toggleRinger() {
   const next = !isSilenced();
+  // The steel switch is mechanical, so it should click in both directions.
+  // Play before muting and after unmuting so the action always confirms itself.
+  if (next) playSound("ringer");
   setSilenced(next);
   if (!next) playSound("ringer");
   return next;

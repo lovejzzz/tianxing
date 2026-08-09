@@ -217,6 +217,8 @@ export function PhoneExperience() {
   const [closing, setClosing] = useState(false);
   const [origin, setOrigin] = useState<Origin>({ x: 50, y: 58, left: 134, top: 260, width: 64, height: 64, scaleX: .16, scaleY: .09, bodyScaleY: .1 });
   const [launchFromIcon, setLaunchFromIcon] = useState(false);
+  const [homePressed, setHomePressed] = useState(false);
+  const homePressedRef = useRef(false);
   const [motionInspectionMs, setMotionInspectionMs] = useState<number | null>(null);
   const [arrivalInspectionMs, setArrivalInspectionMs] = useState<number | null>(null);
   const [time, setTime] = useState("9:41 AM");
@@ -405,6 +407,14 @@ export function PhoneExperience() {
     }, mode === "folder" && (launchFromIcon || shouldReturnToFunIcon) ? 760 : 390);
   };
 
+  const setPhysicalHomePressed = (pressed: boolean) => {
+    if (homePressedRef.current === pressed) return;
+    homePressedRef.current = pressed;
+    if (pressed) playSound("home");
+    setHomePressed(pressed);
+    window.dispatchEvent(new CustomEvent("tian:home-button", { detail: { pressed } }));
+  };
+
   return (
     <section
       ref={deviceStageRef}
@@ -495,7 +505,22 @@ export function PhoneExperience() {
             )}
           </div>
 
-          <button className="home-button" onClick={goHome} aria-label="Go to iPhone Home screen">
+          <button
+            className={`home-button ${homePressed ? "is-pressed" : ""}`}
+            onPointerDown={() => setPhysicalHomePressed(true)}
+            onPointerUp={() => setPhysicalHomePressed(false)}
+            onPointerCancel={() => setPhysicalHomePressed(false)}
+            onPointerLeave={() => setPhysicalHomePressed(false)}
+            onBlur={() => setPhysicalHomePressed(false)}
+            onKeyDown={(event) => {
+              if (event.key === "Enter" || event.key === " ") setPhysicalHomePressed(true);
+            }}
+            onKeyUp={(event) => {
+              if (event.key === "Enter" || event.key === " ") setPhysicalHomePressed(false);
+            }}
+            onClick={goHome}
+            aria-label="Go to iPhone Home screen"
+          >
             <span />
           </button>
         </div>
@@ -775,7 +800,9 @@ function MessagesApp() {
       });
       setThread((current) => current.map((item) => item.id === id ? { ...item, state: "sent" } : item));
       setStatus("sent");
-      playSound("received");
+      // This is delivery confirmation, not a new incoming message; a quiet
+      // tactile pop avoids falsely suggesting that Tian has already replied.
+      playSound("pop");
       textareaRef.current?.focus();
       window.setTimeout(() => setStatus("idle"), 2400);
     } catch {
@@ -1267,7 +1294,7 @@ function CameraApp({ captures, onCapture, onDeleteCapture }: {
         <div className="booth-curtain booth-curtain-left" aria-hidden="true" /><div className="booth-curtain booth-curtain-right" aria-hidden="true" />
         {countdown !== null && <strong className="booth-countdown">{countdown}</strong>}
         {status === "starting" && <p>Starting camera…</p>}
-        {status === "blocked" && <div className="camera-permission"><strong>Photo Booth needs a camera</strong><span>Allow camera access, then make a portrait with a 2010-era effect.</span><button onClick={() => startCamera(facing)}>Try Again</button></div>}
+        {status === "blocked" && <div className="camera-permission"><strong>Photo Booth needs a camera</strong><span>Allow camera access, then make a portrait with a 2010-era effect.</span><button onClick={() => { playSound("tock"); void startCamera(facing); }}>Try Again</button></div>}
         {flash && <i className="camera-flash" />}
       </div>
       <div className="booth-effects" aria-label="Photo Booth effects">
@@ -1437,6 +1464,7 @@ function WeatherApp() {
   const searchLocations = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     if (query.trim().length < 2) return;
+    playSound("tap");
     setSearching(true);
     setError("");
     try {
@@ -1455,16 +1483,21 @@ function WeatherApp() {
         latitude: item.latitude,
         longitude: item.longitude,
       })));
-      if (!data.results?.length) setError("No places found. Try a nearby city.");
+      if (!data.results?.length) {
+        setError("No places found. Try a nearby city.");
+        playSound("alert");
+      }
     } catch {
       setError("City search is unavailable right now.");
+      playSound("alert");
     } finally {
       setSearching(false);
     }
   };
 
   const useCurrentLocation = () => {
-    if (!navigator.geolocation) { setError("Location is not available on this device."); return; }
+    playSound("tap");
+    if (!navigator.geolocation) { setError("Location is not available on this device."); playSound("alert"); return; }
     setLocating(true);
     setError("");
     navigator.geolocation.getCurrentPosition(
@@ -1472,8 +1505,9 @@ function WeatherApp() {
         setPlace({ name: "My Location", latitude: position.coords.latitude, longitude: position.coords.longitude });
         setPickerOpen(false);
         setLocating(false);
+        playSound("pop");
       },
-      () => { setError("Location permission was not granted."); setLocating(false); },
+      () => { setError("Location permission was not granted."); setLocating(false); playSound("alert"); },
       { timeout: 10_000, maximumAge: 300_000 },
     );
   };
@@ -1940,9 +1974,9 @@ function ClockApp({ time }: { time: string }) {
   const adjustTimerFromKeyboard = (event: ReactKeyboardEvent<HTMLDivElement>) => {
     if (running) return;
     const changes: Record<string, number> = { ArrowUp: 30, ArrowRight: 30, ArrowDown: -30, ArrowLeft: -30, PageUp: 300, PageDown: -300 };
-    if (event.key === "Home") { event.preventDefault(); applyTimerSeconds(30); return; }
-    if (event.key === "End") { event.preventDefault(); applyTimerSeconds(3600); return; }
-    if (changes[event.key]) { event.preventDefault(); applyTimerSeconds(seconds + changes[event.key]); }
+    if (event.key === "Home") { event.preventDefault(); applyTimerSeconds(30, true); return; }
+    if (event.key === "End") { event.preventDefault(); applyTimerSeconds(3600, true); return; }
+    if (changes[event.key]) { event.preventDefault(); applyTimerSeconds(seconds + changes[event.key], true); }
   };
   return (
     <div className="clock-app">
@@ -2234,7 +2268,7 @@ function NotesApp() {
       {view === "list" ? (
         <div className="notes-list-view">
           <header><strong>Notes</strong><button onClick={createNote} aria-label="Create a new note">＋</button></header>
-          <div className="notes-search"><span>⌕</span><input value={search} onChange={(event) => setSearch(event.target.value)} placeholder="Search notes" aria-label="Search notes" /></div>
+          <div className="notes-search"><span>⌕</span><input value={search} onChange={(event) => setSearch(event.target.value)} onKeyDown={playKeyboardTick} placeholder="Search notes" aria-label="Search notes" /></div>
           <div className="notes-list" role="list">
             {filteredNotes.map((note) => (
               <div className="notes-list-row" role="listitem" key={note.id}>

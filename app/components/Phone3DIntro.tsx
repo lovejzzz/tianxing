@@ -452,17 +452,30 @@ export function Phone3DIntro({ productRef }: { productRef: RefObject<HTMLDivElem
     frontPupil.position.set(-0.58, 3.07, GLASS_Z + 0.008);
     phone.add(frontPupil);
 
-    // Home button: seam ring, glossy cap, and the rounded-square glyph.
+    // Home button: seam ring, glossy cap, and the rounded-square glyph. Keep
+    // the three pieces in one group so the live click target can give the 3D
+    // hardware a tiny, physical travel instead of only animating an invisible
+    // DOM button behind the WebGL phone.
+    const homeButtonGroup = new THREE.Group();
+    phone.add(homeButtonGroup);
     const homeSeam = new THREE.Mesh(new THREE.TorusGeometry(0.223, 0.007, 12, 48), matteBlack);
     homeSeam.position.set(0, -3.06, GLASS_Z + 0.001);
-    phone.add(homeSeam);
-    const homeCap = new THREE.Mesh(new THREE.CylinderGeometry(0.218, 0.218, 0.018, 48), frontGlass);
+    homeButtonGroup.add(homeSeam);
+    const homeCapMaterial = new THREE.MeshPhysicalMaterial({
+      color: 0x020303,
+      metalness: 0.04,
+      roughness: 0.2,
+      clearcoat: 0.92,
+      clearcoatRoughness: 0.1,
+      envMapIntensity: 0.34,
+    });
+    const homeCap = new THREE.Mesh(new THREE.CylinderGeometry(0.218, 0.218, 0.018, 48), homeCapMaterial);
     homeCap.rotation.x = Math.PI / 2;
     homeCap.position.set(0, -3.06, GLASS_Z + 0.002);
-    phone.add(homeCap);
+    homeButtonGroup.add(homeCap);
     const homeGlyph = new THREE.Mesh(roundedFrameGeometry(0.165, 0.165, 0.05, 0.017, 0.008), glyphMetal);
     homeGlyph.position.set(0, -3.06, GLASS_Z + 0.012);
-    phone.add(homeGlyph);
+    homeButtonGroup.add(homeGlyph);
 
     // --- Back glass ---------------------------------------------------------
     // Culled whenever the front faces the viewer so the aperture stays a real
@@ -741,6 +754,11 @@ export function Phone3DIntro({ productRef }: { productRef: RefObject<HTMLDivElem
     observer.observe(host);
 
     let frame = 0;
+    let homeButtonFrame = 0;
+    let homeButtonDepth = 0;
+    let homeButtonTarget = 0;
+    let homeButtonStartedAt = 0;
+    let homeButtonStartedFrom = 0;
     let startedAt = 0;
     let introStarted = false;
     const render = (now: number) => {
@@ -769,6 +787,39 @@ export function Phone3DIntro({ productRef }: { productRef: RefObject<HTMLDivElem
         document.documentElement.classList.add("phone-3d-complete");
       }
     };
+
+    const renderHomeButton = (now: number) => {
+      const pressing = homeButtonTarget > homeButtonStartedFrom;
+      const duration = pressing ? 82 : 145;
+      const progress = Math.min(1, (now - homeButtonStartedAt) / duration);
+      const eased = pressing
+        ? 1 - Math.pow(1 - progress, 3)
+        : 1 - Math.pow(1 - progress, 4);
+      homeButtonDepth = THREE.MathUtils.lerp(homeButtonStartedFrom, homeButtonTarget, eased);
+      homeButtonGroup.position.z = -0.013 * homeButtonDepth;
+      const pressedScale = 1 - 0.018 * homeButtonDepth;
+      homeButtonGroup.scale.set(pressedScale, pressedScale, 1);
+      // Finger pressure interrupts the clean studio reflection before it
+      // returns on release. This is what makes sub-pixel Z travel readable in
+      // a straight-on view without turning the key into a UI-style button.
+      homeCapMaterial.roughness = THREE.MathUtils.lerp(0.2, 0.43, homeButtonDepth);
+      homeCapMaterial.clearcoatRoughness = THREE.MathUtils.lerp(0.1, 0.32, homeButtonDepth);
+      homeCapMaterial.envMapIntensity = THREE.MathUtils.lerp(0.34, 0.19, homeButtonDepth);
+      glyphMetal.roughness = THREE.MathUtils.lerp(0.35, 0.48, homeButtonDepth);
+      glyphMetal.color.setScalar(THREE.MathUtils.lerp(0.455, 0.33, homeButtonDepth));
+      renderer.render(scene, camera);
+      if (progress < 1) homeButtonFrame = window.requestAnimationFrame(renderHomeButton);
+    };
+
+    const onHomeButton = (event: Event) => {
+      const pressed = Boolean((event as CustomEvent<{ pressed?: boolean }>).detail?.pressed);
+      window.cancelAnimationFrame(homeButtonFrame);
+      homeButtonStartedFrom = homeButtonDepth;
+      homeButtonTarget = pressed ? 1 : 0;
+      homeButtonStartedAt = performance.now();
+      homeButtonFrame = window.requestAnimationFrame(renderHomeButton);
+    };
+    window.addEventListener("tian:home-button", onHomeButton);
     startIntro = () => {
       if (!modelActive || introStarted || !caseTextureReady) return;
       introStarted = true;
@@ -786,6 +837,8 @@ export function Phone3DIntro({ productRef }: { productRef: RefObject<HTMLDivElem
     return () => {
       modelActive = false;
       window.cancelAnimationFrame(frame);
+      window.cancelAnimationFrame(homeButtonFrame);
+      window.removeEventListener("tian:home-button", onHomeButton);
       observer.disconnect();
       product.style.removeProperty("transform");
       product.style.removeProperty("visibility");

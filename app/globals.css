@@ -396,12 +396,30 @@ body:has(.home-shell){overflow:hidden}
   left: calc(50% - 29px);
   bottom: 12px;
   border: 1px solid #030303;
-  transition: transform 120ms ease, filter 120ms ease;
+  background:linear-gradient(145deg,#090a0b 12%,#191a1c 58%,#050506);
+  box-shadow:inset 0 1px 2px rgba(255,255,255,.15),inset 0 -2px 4px rgba(0,0,0,.72),0 1px 1px rgba(255,255,255,.12),0 2px 3px rgba(0,0,0,.8);
+  transform:translateY(0) scale(1);
+  transition:transform 145ms cubic-bezier(.16,.76,.24,1),filter 145ms ease,box-shadow 145ms ease,background 145ms ease;
 }
-.home-button:hover { filter: brightness(1.35); }
-.home-button:active { transform: scale(.9); }
+.home-button:hover { filter:brightness(1.08); }
+.home-button:active,
+.home-button.is-pressed {
+  transform:translateY(1.25px) scale(.982);
+  filter:brightness(.88);
+  background:linear-gradient(145deg,#040405,#111214 62%,#030304);
+  box-shadow:inset 0 2px 5px rgba(0,0,0,.92),inset 0 -1px 1px rgba(255,255,255,.045),0 0 0 1px rgba(0,0,0,.72);
+  transition-duration:82ms;
+}
 .home-button:focus-visible { outline: 2px solid #81c8f1; outline-offset: 4px; }
-.home-button span { width: 20px; height: 20px; left: 17px; top: 17px; border-color: #929292; }
+.home-button span { width:20px; height:20px; left:17px; top:17px; border-color:#929292; transition:transform 145ms cubic-bezier(.16,.76,.24,1),border-color 145ms ease,box-shadow 145ms ease; }
+.home-button:active span,
+.home-button.is-pressed span { transform:translateY(.55px) scale(.985); border-color:#74777a; box-shadow:0 .5px #000; transition-duration:82ms; }
+
+/* The WebGL model supplies the visible desktop hardware. Its transparent DOM
+   hit target still receives the press class; the custom event above moves the
+   actual 3D cap while these rules remain the CSS/mobile fallback. */
+.phone-3d-ready .phone-product .home-button:active,
+.phone-3d-ready .phone-product .home-button.is-pressed { opacity:0; }
 
 .iphone-desktop {
   position: relative;
