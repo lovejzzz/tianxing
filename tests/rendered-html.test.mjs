@@ -67,6 +67,7 @@ test("keeps the iPhone interactive and time-aware", async () => {
   assert.match(source, /xingpicture@gmail\.com/);
   assert.match(source, /xing_tian_lifeitself/);
   assert.match(source, /Happiness comes from\\nsolving problems\.\\n\\n— Mark Manson/);
+  assert.match(styles, /\.notes-app\.notes-studio::before\{display:none\}/);
   assert.doesNotMatch(source, /\| "maps"|MapsApp/);
   assert.equal((photoManifest.match(/media\/photos\/all\//g) ?? []).length, 28);
   const photoPaths = [...photoManifest.matchAll(/"src": "(\/media\/photos\/all\/[^"]+)"/g)].map((match) => match[1]);
