@@ -265,7 +265,7 @@ body:has(.home-shell){overflow:hidden}
   border-color:transparent;
   box-shadow:none;
 }
-.phone-3d-ready .phone-product .home-button:focus-visible { opacity:.72; }
+.phone-3d-ready .phone-product .home-button:focus-visible { opacity:0; outline:2px solid rgba(129,200,241,.7); outline-offset:4px; }
 .phone-3d-ready .device-stage::after { animation:phone-shadow-handoff 3600ms linear both; }
 .device { position:absolute; inset:0; z-index:1; width:432px; height:776px; border-radius:58px; background:linear-gradient(90deg,#15181b 0%,#72777c 2%,#eef0f1 4.5%,#73787d 7%,#171a1d 10%,#171a1d 90%,#777c81 93%,#f1f2f2 95.5%,#686d72 98%,#131619 100%); box-shadow:inset 0 0 0 1px rgba(255,255,255,.4),inset 0 0 0 3px rgba(10,11,12,.82),inset 0 0 13px rgba(255,255,255,.2); transform:translateZ(0); transform-style:preserve-3d; backface-visibility:visible; }
 .device::before { content:""; position:absolute; inset:5px; border-radius:53px; background:#070809; box-shadow:inset 0 0 0 1px rgba(255,255,255,.08),inset 0 0 14px #000; }

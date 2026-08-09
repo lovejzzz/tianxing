@@ -345,7 +345,12 @@ export function Phone3DIntro({ productRef }: { productRef: RefObject<HTMLDivElem
     const matteBlack = new THREE.MeshStandardMaterial({ color: 0x040506, metalness: 0.1, roughness: 0.42 });
     const glassEdge = new THREE.MeshStandardMaterial({ color: 0x05070a, metalness: 0.1, roughness: 0.6 });
     const breakPlastic = new THREE.MeshStandardMaterial({ color: 0x141619, metalness: 0.05, roughness: 0.52 });
-    const glyphMetal = new THREE.MeshStandardMaterial({ color: 0x74787c, metalness: 0.6, roughness: 0.35 });
+    const homeGlyphMaterial = new THREE.MeshStandardMaterial({
+      color: 0x3b3e41,
+      metalness: 0.18,
+      roughness: 0.68,
+      envMapIntensity: 0.1,
+    });
     const lensGlass = new THREE.MeshPhysicalMaterial({ color: 0x0a1420, metalness: 0.2, roughness: 0.06, clearcoat: 1 });
     // The rear camera is a recessed optical assembly, not a polished plastic
     // button. Separate the deep well, satin anodized bezel and coated glass so
@@ -462,18 +467,18 @@ export function Phone3DIntro({ productRef }: { productRef: RefObject<HTMLDivElem
     homeSeam.position.set(0, -3.06, GLASS_Z + 0.001);
     homeButtonGroup.add(homeSeam);
     const homeCapMaterial = new THREE.MeshPhysicalMaterial({
-      color: 0x020303,
-      metalness: 0.04,
-      roughness: 0.2,
-      clearcoat: 0.92,
-      clearcoatRoughness: 0.1,
-      envMapIntensity: 0.34,
+      color: 0x010202,
+      metalness: 0.02,
+      roughness: 0.4,
+      clearcoat: 0.28,
+      clearcoatRoughness: 0.46,
+      envMapIntensity: 0.1,
     });
     const homeCap = new THREE.Mesh(new THREE.CylinderGeometry(0.218, 0.218, 0.018, 48), homeCapMaterial);
     homeCap.rotation.x = Math.PI / 2;
     homeCap.position.set(0, -3.06, GLASS_Z + 0.002);
     homeButtonGroup.add(homeCap);
-    const homeGlyph = new THREE.Mesh(roundedFrameGeometry(0.165, 0.165, 0.05, 0.017, 0.008), glyphMetal);
+    const homeGlyph = new THREE.Mesh(roundedFrameGeometry(0.165, 0.165, 0.05, 0.017, 0.008), homeGlyphMaterial);
     homeGlyph.position.set(0, -3.06, GLASS_Z + 0.012);
     homeButtonGroup.add(homeGlyph);
 
@@ -804,11 +809,14 @@ export function Phone3DIntro({ productRef }: { productRef: RefObject<HTMLDivElem
       // Finger pressure interrupts the clean studio reflection before it
       // returns on release. This is what makes sub-pixel Z travel readable in
       // a straight-on view without turning the key into a UI-style button.
-      homeCapMaterial.roughness = THREE.MathUtils.lerp(0.2, 0.29, homeButtonDepth);
-      homeCapMaterial.clearcoatRoughness = THREE.MathUtils.lerp(0.1, 0.18, homeButtonDepth);
-      homeCapMaterial.envMapIntensity = THREE.MathUtils.lerp(0.34, 0.27, homeButtonDepth);
-      glyphMetal.roughness = THREE.MathUtils.lerp(0.35, 0.41, homeButtonDepth);
-      glyphMetal.color.setScalar(THREE.MathUtils.lerp(0.455, 0.4, homeButtonDepth));
+      // Keep release just as dark as rest. Only roughness changes subtly under
+      // pressure; reflectivity never rises, so the button cannot appear to
+      // illuminate after the finger leaves it.
+      homeCapMaterial.roughness = THREE.MathUtils.lerp(0.4, 0.47, homeButtonDepth);
+      homeCapMaterial.clearcoatRoughness = THREE.MathUtils.lerp(0.46, 0.54, homeButtonDepth);
+      homeCapMaterial.envMapIntensity = THREE.MathUtils.lerp(0.1, 0.07, homeButtonDepth);
+      homeGlyphMaterial.roughness = THREE.MathUtils.lerp(0.68, 0.74, homeButtonDepth);
+      homeGlyphMaterial.color.setScalar(THREE.MathUtils.lerp(0.235, 0.2, homeButtonDepth));
       renderer.render(scene, camera);
       if (progress < 1) homeButtonFrame = window.requestAnimationFrame(renderHomeButton);
     };
