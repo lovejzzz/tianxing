@@ -1019,7 +1019,7 @@ function MessagesApp() {
             <strong>Tian Xing</strong>
             <span>Your message goes straight to my email.</span>
           </div>
-          <p className="message-received">Hi—I’m Tian. Say something.</p>
+          <p className="message-received">Hi, I’m Tian. Nice to meet you.</p>
           {thread.map((bubble) => bubble.direction === "incoming" ? (
             <p className="message-received message-received-new" key={bubble.id}>{bubble.text}</p>
           ) : (

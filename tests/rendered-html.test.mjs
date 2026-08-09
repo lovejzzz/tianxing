@@ -85,7 +85,7 @@ test("keeps the iPhone interactive and time-aware", async () => {
   assert.match(source, /script\.google\.com\/macros\/s\/AKfycby/);
   assert.match(source, /MESSAGE_DRAFT_KEY/);
   assert.match(source, /MESSAGE_THREAD_KEY/);
-  assert.match(source, /Hi—I’m Tian\. Say something\./);
+  assert.match(source, /Hi, I’m Tian\. Nice to meet you\./);
   assert.match(source, /placeholder="Message"/);
   assert.match(source, /Message sent\./);
   assert.match(source, /Try Again/);
