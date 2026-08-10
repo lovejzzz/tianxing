@@ -109,6 +109,12 @@ test("keeps the iPhone interactive and time-aware", async () => {
   assert.match(weatherEngineSource, /roomAssetForProfile/);
   assert.match(weatherEngineSource, /skylinePresetForPlace/);
   assert.match(weatherEngineSource, /drawSkylinePlate/);
+  assert.match(weatherEngineSource, /measureAlphaBounds/);
+  assert.match(weatherEngineSource, /skylineBoundsCache/);
+  assert.match(weatherEngineSource, /512 \/ Math\.max\(width, height\)/);
+  assert.match(weatherEngineSource, /pixels\[\(y \* sampleWidth \+ x\) \* 4 \+ 3\]/);
+  assert.match(weatherEngineSource, /source\.x, source\.y, source\.width, source\.height/);
+  assert.match(weatherEngineSource, /drawWorldSurface/);
   assert.match(weatherEngineSource, /drawAtmosphereBands/);
   assert.doesNotMatch(weatherEngineSource, /function drawCloud/);
   assert.match(weatherEngineSource, /smoothstep\(0, 1, clamp\(flashRaw\)\)/);

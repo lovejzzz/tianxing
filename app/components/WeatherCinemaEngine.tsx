@@ -22,6 +22,7 @@ type WeatherCinemaEngineProps = {
 };
 
 type Point = { x: number; y: number };
+type AlphaBounds = { x: number; y: number; width: number; height: number };
 type WindowShape = "wide" | "triptych" | "arched" | "tall";
 type RoomKind = "study" | "hotel" | "studio" | "cafe" | "observatory" | "penthouse";
 type SkylineKind = "metropolis" | "heritage" | "waterfront";
@@ -59,6 +60,7 @@ type SceneLighting = {
 type Particle = { x: number; y: number; z: number; speed: number; phase: number };
 
 const TAU = Math.PI * 2;
+const skylineBoundsCache = new Map<string, AlphaBounds>();
 
 function hashString(value: string) {
   let hash = 2166136261;
@@ -168,6 +170,60 @@ function skylinePresetForPlace(place: CinemaWeatherPlace): SkylinePreset {
 
 function skylineAssetForPreset(preset: SkylinePreset) {
   return `/media/weather/engine/skyline/${preset.kind}-v2.webp`;
+}
+
+function measureAlphaBounds(image: HTMLImageElement): AlphaBounds {
+  const width = image.naturalWidth;
+  const height = image.naturalHeight;
+  const fallback = { x: 0, y: 0, width, height };
+  if (!width || !height) return fallback;
+
+  const cacheKey = image.currentSrc || image.src;
+  const cached = skylineBoundsCache.get(cacheKey);
+  if (cached) return cached;
+
+  const buffer = document.createElement("canvas");
+  // Silhouette analysis does not need full-resolution pixels. Sampling the
+  // longest side at 512px keeps a city change comfortably below a frame on
+  // mobile while remaining sub-pixel accurate at the rendered phone size.
+  const sampleScale = Math.min(1, 512 / Math.max(width, height));
+  const sampleWidth = Math.max(1, Math.round(width * sampleScale));
+  const sampleHeight = Math.max(1, Math.round(height * sampleScale));
+  buffer.width = sampleWidth;
+  buffer.height = sampleHeight;
+  const context = buffer.getContext("2d", { willReadFrequently: true });
+  if (!context) return fallback;
+
+  try {
+    context.drawImage(image, 0, 0, sampleWidth, sampleHeight);
+    const pixels = context.getImageData(0, 0, sampleWidth, sampleHeight).data;
+    let left = sampleWidth;
+    let top = sampleHeight;
+    let right = -1;
+    let bottom = -1;
+    // A small threshold ignores the soft transparent fringe generated around
+    // the cutout while retaining antennae and other fine skyline details.
+    for (let y = 0; y < sampleHeight; y += 1) {
+      for (let x = 0; x < sampleWidth; x += 1) {
+        if (pixels[(y * sampleWidth + x) * 4 + 3] <= 18) continue;
+        left = Math.min(left, x);
+        top = Math.min(top, y);
+        right = Math.max(right, x);
+        bottom = Math.max(bottom, y);
+      }
+    }
+    if (right < left || bottom < top) return fallback;
+    const measured = {
+      x: Math.max(0, Math.floor(left / sampleScale)),
+      y: Math.max(0, Math.floor(top / sampleScale)),
+      width: Math.min(width, Math.ceil((right - left + 1) / sampleScale)),
+      height: Math.min(height, Math.ceil((bottom - top + 1) / sampleScale)),
+    };
+    skylineBoundsCache.set(cacheKey, measured);
+    return measured;
+  } catch {
+    return fallback;
+  }
 }
 
 function weatherKind(code: number) {
@@ -303,6 +359,7 @@ function drawAtmosphereBands(context: CanvasRenderingContext2D, box: { x: number
 function drawSkylinePlate(
   context: CanvasRenderingContext2D,
   image: HTMLImageElement,
+  source: AlphaBounds,
   box: { x: number; y: number; w: number; h: number },
   horizon: number,
   focus: number,
@@ -310,20 +367,95 @@ function drawSkylinePlate(
   lighting: SceneLighting,
 ) {
   const plateWidth = box.w * 1.78;
-  const plateHeight = plateWidth / (image.naturalWidth / image.naturalHeight);
+  const plateHeight = plateWidth / (source.width / source.height);
   const plateX = box.x + (box.w - plateWidth) * clamp(focus) + tiltX;
   const plateY = horizon - plateHeight;
 
   context.save();
   context.globalAlpha = .22;
   context.filter = `blur(1.4px) brightness(${lighting.worldExposure * .72}) saturate(.58)`;
-  context.drawImage(image, plateX - tiltX * .55, plateY - 17, plateWidth, plateHeight);
+  context.drawImage(
+    image,
+    source.x, source.y, source.width, source.height,
+    plateX - tiltX * .55, plateY - 17, plateWidth, plateHeight,
+  );
   context.restore();
 
   context.save();
   context.globalAlpha = .9;
   context.filter = `brightness(${lighting.worldExposure}) saturate(${.66 + lighting.worldExposure * .18}) contrast(1.08)`;
-  context.drawImage(image, plateX, plateY, plateWidth, plateHeight);
+  context.drawImage(
+    image,
+    source.x, source.y, source.width, source.height,
+    plateX, plateY, plateWidth, plateHeight,
+  );
+  context.restore();
+}
+
+function drawWorldSurface(
+  context: CanvasRenderingContext2D,
+  box: { x: number; y: number; w: number; h: number },
+  horizon: number,
+  preset: SkylinePreset,
+  lighting: SceneLighting,
+  elapsed: number,
+  seed: number,
+) {
+  const bottom = box.y + box.h + 24;
+  const depth = Math.max(1, bottom - horizon);
+  context.save();
+
+  if (preset.kind === "waterfront") {
+    const water = context.createLinearGradient(0, horizon, 0, bottom);
+    water.addColorStop(0, `rgba(${lighting.bounceColor},${.26 + lighting.flash * .22})`);
+    water.addColorStop(.22, "rgba(18,28,40,.92)");
+    water.addColorStop(1, "rgba(3,7,12,.98)");
+    context.fillStyle = water;
+    context.fillRect(box.x - 24, horizon, box.w + 48, depth);
+
+    const random = mulberry32(seed ^ 0x4a91);
+    context.lineCap = "round";
+    for (let index = 0; index < 22; index += 1) {
+      const progress = (index + .7) / 22;
+      const y = horizon + progress * depth;
+      const drift = Math.sin(elapsed * .00038 + index * 1.7) * (2 + progress * 4);
+      const x = box.x + random() * box.w + drift;
+      const length = 5 + random() * (11 + progress * 25);
+      context.globalAlpha = .05 + (1 - progress) * .1;
+      context.strokeStyle = index % 4 === 0
+        ? `rgba(226,171,82,${.25 + lighting.flash * .28})`
+        : `rgba(${lighting.sourceColor},${.2 + lighting.flash * .2})`;
+      context.lineWidth = .5 + progress * .8;
+      context.beginPath();
+      context.moveTo(x - length * .5, y);
+      context.lineTo(x + length * .5, y);
+      context.stroke();
+    }
+  } else {
+    const ground = context.createLinearGradient(0, horizon - 2, 0, bottom);
+    ground.addColorStop(0, preset.kind === "heritage" ? "rgba(15,16,22,.96)" : "rgba(13,18,25,.96)");
+    ground.addColorStop(.48, "rgba(8,10,15,.98)");
+    ground.addColorStop(1, "rgba(3,4,7,1)");
+    context.fillStyle = ground;
+    context.fillRect(box.x - 24, horizon - 1, box.w + 48, depth + 1);
+
+    // A low foreground roof line gives the city a physical continuation below
+    // the skyline instead of allowing the sky gradient to read as a flat block.
+    const random = mulberry32(seed ^ 0x7823);
+    context.fillStyle = "rgba(2,3,6,.82)";
+    let x = box.x - 18;
+    while (x < box.x + box.w + 18) {
+      const width = 18 + random() * 34;
+      const rise = 7 + random() * 17;
+      context.fillRect(x, horizon + 4 - rise * .12, width, rise);
+      if (random() > .48) {
+        context.fillStyle = `rgba(224,166,76,${.055 + lighting.flash * .08})`;
+        context.fillRect(x + width * .28, horizon + 8, 1.2, 1.6);
+        context.fillStyle = "rgba(2,3,6,.82)";
+      }
+      x += width + 2 + random() * 5;
+    }
+  }
   context.restore();
 }
 
@@ -710,6 +842,7 @@ export function WeatherCinemaEngine({ code, isDay, place, updatedAt, wind = 4, p
     let disposed = false;
     let started = false;
     let aperturePrepared = false;
+    let skylineBounds: AlphaBounds | null = null;
     const rand = mulberry32(profile.seed ^ 0x9e3779b9);
     const particles = Array.from({ length: kind === "storm" ? 120 : 82 }, () => ({ x: rand(), y: rand(), z: .2 + rand() * .8, speed: .00008 + rand() * .00016, phase: rand() * TAU }));
     const roomImage = new Image();
@@ -800,22 +933,20 @@ export function WeatherCinemaEngine({ code, isDay, place, updatedAt, wind = 4, p
       const horizon = windowBox.y + windowBox.h * .86;
       drawAtmosphereBands(context, windowBox, kind, presentationTime, wind);
 
+      // The world continues below the buildings. Keeping this as a distinct
+      // depth layer lets water, rooftops and lightning share the same exposure
+      // curve as the skyline instead of leaving an unmotivated patch of sky.
+      drawWorldSurface(context, windowBox, horizon + 6, skylinePreset, lighting, presentationTime, profile.seed);
+
       const skylineReady = skylineImage.complete && skylineImage.naturalWidth > 0;
       if (!skylinePreset.landmarkInPlate) {
         drawLandmark(context, profile.landmark, windowBox.x + windowBox.w * (.48 + ((profile.seed % 17) - 8) * .006) + liveTilt.x * .82, horizon + 5, .68, isDay ? .11 : .48);
       }
       if (skylineReady) {
-        drawSkylinePlate(context, skylineImage, windowBox, horizon + 6, skylinePreset.focus, liveTilt.x * 1.35, lighting);
+        skylineBounds ??= measureAlphaBounds(skylineImage);
+        drawSkylinePlate(context, skylineImage, skylineBounds, windowBox, horizon + 6, skylinePreset.focus, liveTilt.x * 1.35, lighting);
       }
 
-      if (profile.landmark === "bridge" || profile.landmark === "opera" || profile.landmark === "marina") {
-        const water = context.createLinearGradient(0, horizon, 0, windowBox.y + windowBox.h);
-        water.addColorStop(0, "rgba(25,32,43,.75)"); water.addColorStop(1, "rgba(5,8,13,.94)");
-        context.fillStyle = water; context.fillRect(windowBox.x - 10, horizon + 5, windowBox.w + 20, windowBox.h);
-        context.strokeStyle = `rgba(221,169,78,${isDay ? .08 : .24})`;
-        const waterRand = mulberry32(profile.seed + 71);
-        for (let index = 0; index < 8; index += 1) { const wy = horizon + 11 + index * 8; context.beginPath(); context.moveTo(windowBox.x + waterRand() * 60, wy); context.lineTo(windowBox.x + windowBox.w - waterRand() * 45, wy); context.stroke(); }
-      }
       drawWeather(context, windowBox.x - 12, windowBox.y - 9, windowBox.w + 24, windowBox.h + 18, kind, particles, presentationTime, wind, flash);
       context.restore();
 
