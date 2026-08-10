@@ -60,6 +60,18 @@ type SceneLighting = {
 };
 
 type Particle = { x: number; y: number; z: number; speed: number; phase: number };
+type RainParticle = Particle & { length: number; brightness: number; sway: number; width: number };
+type GlassDroplet = {
+  x: number;
+  y: number;
+  radius: number;
+  rate: number;
+  phase: number;
+  hold: number;
+  meander: number;
+  trail: number;
+  weight: number;
+};
 
 const TAU = Math.PI * 2;
 const skylineBoundsCache = new Map<string, AlphaBounds>();
@@ -89,6 +101,17 @@ function clamp(value: number, min = 0, max = 1) {
 function smoothstep(edge0: number, edge1: number, value: number) {
   const x = clamp((value - edge0) / (edge1 - edge0));
   return x * x * (3 - 2 * x);
+}
+
+function fract(value: number) {
+  return value - Math.floor(value);
+}
+
+function stickSlip(value: number, hold: number) {
+  const cycle = Math.floor(value);
+  const local = fract(value);
+  const slide = local <= hold ? 0 : smoothstep(hold, 1, local);
+  return cycle + slide;
 }
 
 function cityLandmark(place: CinemaWeatherPlace): LandmarkKind {
@@ -801,39 +824,93 @@ function drawUnifiedGrade(context: CanvasRenderingContext2D, width: number, heig
   context.restore();
 }
 
-function drawWeather(context: CanvasRenderingContext2D, xOffset: number, yOffset: number, width: number, height: number, kind: string, particles: Particle[], elapsed: number, wind: number, lighting: SceneLighting) {
+function drawRainField(
+  context: CanvasRenderingContext2D,
+  width: number,
+  height: number,
+  kind: string,
+  particles: RainParticle[],
+  elapsed: number,
+  wind: number,
+  lighting: SceneLighting,
+) {
+  const intensity = kind === "storm" ? 1 : .82;
+  const exposure = clamp(.42 + lighting.worldExposure * .36 + lighting.flash * .82, .36, 1);
+  const gust = .9 + Math.sin(elapsed * .00031) * .055 + Math.sin(elapsed * .00079 + 1.4) * .035;
+  const slant = clamp(wind * .022, -.36, .36);
+
+  // Most distant rain is read as participating atmosphere, not as a wall of
+  // white lines. Soft, independently moving shafts give the skyline depth.
+  context.save();
+  context.globalCompositeOperation = "source-over";
+  context.filter = "blur(5px)";
+  for (let index = 0; index < 7; index += 1) {
+    const lane = fract(index * .618 + elapsed * (.0000015 + index * .00000012));
+    const laneX = (lane * 1.22 - .11) * width;
+    const shaft = context.createLinearGradient(laneX - width * .12, 0, laneX + width * .12, height);
+    shaft.addColorStop(0, `rgba(${lighting.sourceColor},0)`);
+    shaft.addColorStop(.38, `rgba(${lighting.sourceColor},${(.021 + index % 3 * .005) * intensity * exposure})`);
+    shaft.addColorStop(.72, `rgba(${lighting.sourceColor},${.04 * intensity * exposure})`);
+    shaft.addColorStop(1, `rgba(${lighting.sourceColor},0)`);
+    context.fillStyle = shaft;
+    context.fillRect(laneX - width * .11, -18, width * .22, height + 36);
+  }
+  context.restore();
+
+  // A photographed streak has a soft head and tail because exposure integrates
+  // a moving, oscillating drop. Each depth band therefore gets its own length,
+  // focus, opacity and shutter smear instead of sharing one graphic line style.
+  for (let layer = 0; layer < 4; layer += 1) {
+    const minDepth = layer / 4;
+    const maxDepth = (layer + 1) / 4;
+    context.save();
+    context.lineCap = "round";
+    context.filter = layer === 0 ? "blur(1.4px)" : layer === 1 ? "blur(.72px)" : layer === 2 ? "blur(.25px)" : "blur(.12px)";
+    particles.forEach((particle) => {
+      if (particle.z < minDepth || particle.z >= maxDepth) return;
+      const depth = .12 + particle.z * .88;
+      const travel = elapsed * particle.speed * intensity * (.48 + depth * .7) * gust;
+      const y = fract(particle.y + travel) * (height + 26) - 13;
+      const drift = elapsed * wind * .0000065 * depth;
+      const sway = Math.sin(elapsed * .00052 + particle.phase) * particle.sway * (1 - depth) * 2.2;
+      const x = fract(particle.x + drift) * (width + 22) - 11 + sway;
+      const length = particle.length * (.48 + depth * 1.08) * (kind === "storm" ? 1.08 : .86);
+      const dx = slant * length + Math.sin(particle.phase + elapsed * .00034) * .24;
+      const alpha = (.082 + depth * .46) * particle.brightness * intensity * exposure;
+      const lineWidth = particle.width * (.42 + depth * .74);
+      const streak = context.createLinearGradient(x, y, x + dx, y + length);
+      streak.addColorStop(0, `rgba(${lighting.sourceColor},0)`);
+      streak.addColorStop(.18, `rgba(${lighting.sourceColor},${alpha * .38})`);
+      streak.addColorStop(.47, `rgba(${lighting.sourceColor},${alpha})`);
+      streak.addColorStop(.82, `rgba(${lighting.sourceColor},${alpha * .52})`);
+      streak.addColorStop(1, `rgba(${lighting.sourceColor},0)`);
+
+      // A restrained dark lobe makes drops remain legible against a bright sky;
+      // the offset bright lobe catches room, sky and lightning illumination.
+      context.globalCompositeOperation = "source-over";
+      context.strokeStyle = `rgba(3,6,10,${alpha * .22})`;
+      context.lineWidth = lineWidth * 1.22;
+      context.beginPath();
+      context.moveTo(x - .24, y);
+      context.quadraticCurveTo(x + dx * .38, y + length * .48, x + dx - .18, y + length);
+      context.stroke();
+      context.globalCompositeOperation = "screen";
+      context.strokeStyle = streak;
+      context.lineWidth = lineWidth;
+      context.beginPath();
+      context.moveTo(x + .18, y);
+      context.quadraticCurveTo(x + dx * .42, y + length * .49, x + dx + .16, y + length);
+      context.stroke();
+    });
+    context.restore();
+  }
+}
+
+function drawWeather(context: CanvasRenderingContext2D, xOffset: number, yOffset: number, width: number, height: number, kind: string, particles: RainParticle[], elapsed: number, wind: number, lighting: SceneLighting) {
   context.save();
   context.translate(xOffset, yOffset);
   if (kind === "rain" || kind === "storm") {
-    const stormLift = kind === "storm" ? 1.18 : .82;
-    const illuminated = clamp(.28 + lighting.worldExposure * .32 + lighting.flash * .7, .22, 1);
-    const gust = .78 + Math.sin(elapsed * .00042) * .12 + Math.sin(elapsed * .0011 + 1.7) * .06;
-    context.globalCompositeOperation = "screen";
-    for (let layer = 0; layer < 3; layer += 1) {
-      const minDepth = layer / 3;
-      const maxDepth = (layer + 1) / 3;
-      context.save();
-      context.filter = layer === 0 ? "blur(.65px)" : layer === 1 ? "blur(.28px)" : "none";
-      context.lineCap = "round";
-      particles.forEach((particle) => {
-        if (particle.z < minDepth || particle.z >= maxDepth) return;
-        const depth = .18 + particle.z * .82;
-        const fall = elapsed * particle.speed * stormLift * (.42 + depth * .46) * gust;
-        const drift = elapsed * wind * .000018 * depth;
-        const y = ((particle.y + fall) % 1.09) * height - 7;
-        const x = ((particle.x + drift) % 1.08) * width - 4;
-        const length = 2.4 + depth * 6.8;
-        const angle = wind * .018 * depth;
-        const alpha = (.065 + depth * .28) * illuminated;
-        context.strokeStyle = `rgba(${lighting.sourceColor},${alpha})`;
-        context.lineWidth = .5 + depth * .7;
-        context.beginPath();
-        context.moveTo(x, y);
-        context.lineTo(x + angle + length * .14, y + length);
-        context.stroke();
-      });
-      context.restore();
-    }
+    drawRainField(context, width, height, kind, particles, elapsed, wind, lighting);
   } else if (kind === "snow") {
     particles.forEach((particle) => {
       const y = ((particle.y + elapsed * particle.speed * .18) % 1.08) * height - 4;
@@ -862,10 +939,11 @@ function drawWindowRain(
   context: CanvasRenderingContext2D,
   rainContext: CanvasRenderingContext2D,
   aperture: HTMLCanvasElement,
+  scene: HTMLCanvasElement,
   width: number,
   height: number,
   kind: string,
-  particles: Particle[],
+  droplets: GlassDroplet[],
   elapsed: number,
   wind: number,
   lighting: SceneLighting,
@@ -873,66 +951,129 @@ function drawWindowRain(
   if (kind !== "rain" && kind !== "storm") return;
   rainContext.save();
   rainContext.clearRect(0, 0, width, height);
-  const lightResponse = clamp(.32 + lighting.worldExposure * .3 + lighting.flash * .9, .25, 1);
-  const trickleRate = kind === "storm" ? .000018 : .000011;
+  const lightResponse = clamp(.46 + lighting.worldExposure * .38 + lighting.flash * .94, .38, 1);
+  const trickleRate = kind === "storm" ? 1.2 : .84;
+  const windLean = clamp(wind * .018, -.3, .3);
 
-  particles.forEach((particle, index) => {
-    if (index % 4 !== 0) return;
-    const x = particle.x * width + Math.sin(particle.phase) * 4;
-    const pause = .36 + particle.z * .64;
-    const phase = (elapsed * trickleRate * pause + particle.y) % 1.18;
-    const y = phase * height - 9;
-    const radius = .55 + particle.z * 1.25;
-    const trail = 2.5 + particle.z * 10;
-    const lean = wind * .012 * particle.z;
+  droplets.forEach((drop, index) => {
+    const raw = elapsed * drop.rate * trickleRate + drop.phase;
+    const stepped = stickSlip(raw, drop.hold);
+    const path = drop.y + stepped * (.11 + drop.weight * .08);
+    const y = fract(path) * (height + 18) - 9;
+    const wander = Math.sin(stepped * 2.7 + drop.phase * TAU) * drop.meander
+      + Math.sin(stepped * 5.1 + drop.x * 9) * drop.meander * .34;
+    const x = drop.x * width + wander + windLean * drop.weight * 4;
+    const radius = drop.radius * (.82 + Math.sin(drop.phase * 8.3) * .08);
+    const verticalRadius = radius * (1.12 + drop.weight * .42);
+    const local = fract(raw);
+    const sliding = local > drop.hold;
+    const slideEnergy = sliding ? smoothstep(drop.hold, Math.min(.98, drop.hold + .22), local) : 0;
+    const trailLength = drop.trail * (.32 + slideEnergy * .68);
 
     rainContext.save();
     rainContext.lineCap = "round";
-    rainContext.strokeStyle = `rgba(3,7,12,${.07 + particle.z * .1})`;
-    rainContext.lineWidth = radius * 1.15;
-    rainContext.beginPath();
-    rainContext.moveTo(x - lean * .25, y - trail);
-    rainContext.quadraticCurveTo(x + lean * .15, y - trail * .48, x + lean, y);
-    rainContext.stroke();
+    if (trailLength > 1.1) {
+      const trailGradient = rainContext.createLinearGradient(x, y - trailLength, x, y);
+      trailGradient.addColorStop(0, "rgba(4,8,12,0)");
+      trailGradient.addColorStop(.6, `rgba(4,8,12,${.045 + drop.weight * .035})`);
+      trailGradient.addColorStop(1, `rgba(4,8,12,${.085 + drop.weight * .055})`);
+      rainContext.strokeStyle = trailGradient;
+      rainContext.lineWidth = Math.max(.45, radius * .7);
+      rainContext.beginPath();
+      rainContext.moveTo(x - wander * .12, y - trailLength);
+      rainContext.bezierCurveTo(
+        x + drop.meander * .45,
+        y - trailLength * .68,
+        x - drop.meander * .3,
+        y - trailLength * .22,
+        x,
+        y,
+      );
+      rainContext.stroke();
+      rainContext.globalCompositeOperation = "screen";
+      rainContext.strokeStyle = `rgba(${lighting.sourceColor},${(.055 + slideEnergy * .07) * lightResponse})`;
+      rainContext.lineWidth = Math.max(.22, radius * .2);
+      rainContext.beginPath();
+      rainContext.moveTo(x + .45, y - trailLength * .92);
+      rainContext.bezierCurveTo(
+        x + drop.meander * .45 + .35,
+        y - trailLength * .66,
+        x - drop.meander * .3 + .5,
+        y - trailLength * .2,
+        x + .38,
+        y,
+      );
+      rainContext.stroke();
+      rainContext.globalCompositeOperation = "source-over";
+    }
 
-    rainContext.globalCompositeOperation = "screen";
-    rainContext.strokeStyle = `rgba(${lighting.sourceColor},${(.075 + particle.z * .22) * lightResponse})`;
-    rainContext.lineWidth = Math.max(.35, radius * .42);
+    // Refract a slightly displaced, magnified patch of the actual skyline.
+    // The droplet is therefore never a pasted white dot: it contains the same
+    // city, exposure and lightning as the view behind it.
     rainContext.beginPath();
-    rainContext.moveTo(x - lean * .25 + .5, y - trail);
-    rainContext.quadraticCurveTo(x + lean * .15 + .4, y - trail * .48, x + lean + .35, y);
-    rainContext.stroke();
-    const bead = rainContext.createRadialGradient(x - radius * .3, y - radius * .42, .1, x, y, radius * 1.5);
-    bead.addColorStop(0, `rgba(${lighting.sourceColor},${(.28 + lighting.flash * .34) * lightResponse})`);
-    bead.addColorStop(.38, `rgba(${lighting.sourceColor},${.055 * lightResponse})`);
-    bead.addColorStop(1, "rgba(1,5,10,.1)");
-    rainContext.fillStyle = bead;
-    rainContext.beginPath();
-    rainContext.ellipse(x + lean, y, radius, radius * 1.35, -.08, 0, TAU);
-    rainContext.fill();
+    rainContext.ellipse(x, y, radius, verticalRadius, windLean * .08, 0, TAU);
+    rainContext.clip();
+    const sampleRadius = Math.max(1.2, radius * 1.8);
+    rainContext.globalAlpha = .78;
+    rainContext.drawImage(
+      scene,
+      clamp(x - sampleRadius + wander * .18, 0, width - sampleRadius * 2),
+      clamp(y - sampleRadius - radius * .4, 0, height - sampleRadius * 2),
+      sampleRadius * 2,
+      sampleRadius * 2,
+      x - radius * 1.08,
+      y - verticalRadius * 1.05,
+      radius * 2.16,
+      verticalRadius * 2.1,
+    );
+    rainContext.globalAlpha = 1;
+    const body = rainContext.createLinearGradient(x - radius, y, x + radius, y + verticalRadius);
+    body.addColorStop(0, `rgba(2,5,9,${.18 + drop.weight * .04})`);
+    body.addColorStop(.46, "rgba(8,14,20,.015)");
+    body.addColorStop(.78, `rgba(${lighting.sourceColor},${.065 * lightResponse})`);
+    body.addColorStop(1, `rgba(${lighting.sourceColor},${.2 * lightResponse})`);
+    rainContext.fillStyle = body;
+    rainContext.fillRect(x - radius, y - verticalRadius, radius * 2, verticalRadius * 2);
     rainContext.restore();
+
+    rainContext.save();
+    rainContext.strokeStyle = `rgba(1,4,8,${.24 + drop.weight * .13})`;
+    rainContext.lineWidth = Math.max(.3, radius * .28);
+    rainContext.beginPath();
+    rainContext.ellipse(x, y, radius * .98, verticalRadius * .98, windLean * .08, 0, TAU);
+    rainContext.stroke();
+    rainContext.globalCompositeOperation = "screen";
+    rainContext.strokeStyle = `rgba(${lighting.sourceColor},${(.31 + drop.weight * .2 + lighting.flash * .26) * lightResponse})`;
+    rainContext.lineWidth = Math.max(.28, radius * .24);
+    rainContext.beginPath();
+    rainContext.ellipse(x - radius * .08, y - verticalRadius * .04, radius * .82, verticalRadius * .84, windLean * .08, Math.PI * 1.08, Math.PI * 1.76);
+    rainContext.stroke();
+    rainContext.restore();
+
+    if (index % 5 === 0) {
+      rainContext.fillStyle = `rgba(${lighting.sourceColor},${(.035 + drop.weight * .035) * lightResponse})`;
+      rainContext.beginPath();
+      rainContext.arc(x + radius * 1.7, y - verticalRadius * 1.2, Math.max(.22, radius * .18), 0, TAU);
+      rainContext.fill();
+    }
   });
 
-  // Fine stationary beads keep the glass alive without turning it into a
-  // uniformly moving particle layer.
-  particles.forEach((particle, index) => {
-    if (index % 9 !== 2) return;
-    const x = particle.x * width;
-    const y = particle.y * height;
-    const radius = .35 + particle.z * .6;
-    rainContext.fillStyle = `rgba(${lighting.sourceColor},${(.04 + particle.z * .085) * lightResponse})`;
-    rainContext.beginPath();
-    rainContext.arc(x, y, radius, 0, TAU);
-    rainContext.fill();
-  });
+  // Edge condensation is deliberately subtle and static. It gives the moving
+  // beads a wet surface to belong to without clouding the city view.
+  const moisture = rainContext.createRadialGradient(width * .5, height * .45, width * .16, width * .5, height * .45, width * .68);
+  moisture.addColorStop(0, "rgba(185,205,218,0)");
+  moisture.addColorStop(.72, `rgba(${lighting.sourceColor},${.009 * lightResponse})`);
+  moisture.addColorStop(1, `rgba(${lighting.sourceColor},${.026 * lightResponse})`);
+  rainContext.fillStyle = moisture;
+  rainContext.fillRect(0, 0, width, height);
 
   rainContext.globalCompositeOperation = "destination-in";
   rainContext.drawImage(aperture, 0, 0);
   rainContext.restore();
 
   context.save();
-  context.globalCompositeOperation = "screen";
-  context.globalAlpha = .9;
+  context.globalCompositeOperation = "source-over";
+  context.globalAlpha = .94;
   context.drawImage(rainContext.canvas, 0, 0);
   context.restore();
 }
@@ -971,8 +1112,10 @@ export function WeatherCinemaEngine({ code, isDay, place, updatedAt, wind = 4, p
     const lightContext = lightCanvas.getContext("2d");
     const glassCanvas = document.createElement("canvas");
     const glassContext = glassCanvas.getContext("2d");
-    if (!apertureContext || !roomContext || !lightContext || !glassContext) return;
-    [apertureCanvas, roomCanvas, lightCanvas, glassCanvas].forEach((buffer) => {
+    const sceneCanvas = document.createElement("canvas");
+    const sceneContext = sceneCanvas.getContext("2d");
+    if (!apertureContext || !roomContext || !lightContext || !glassContext || !sceneContext) return;
+    [apertureCanvas, roomCanvas, lightCanvas, glassCanvas, sceneCanvas].forEach((buffer) => {
       buffer.width = 320;
       buffer.height = 430;
     });
@@ -986,7 +1129,34 @@ export function WeatherCinemaEngine({ code, isDay, place, updatedAt, wind = 4, p
     let aperturePrepared = false;
     let skylineBounds: AlphaBounds | null = null;
     const rand = mulberry32(profile.seed ^ 0x9e3779b9);
-    const particles = Array.from({ length: kind === "storm" ? 132 : 92 }, () => ({ x: rand(), y: rand(), z: .2 + rand() * .8, speed: .000035 + rand() * .000085, phase: rand() * TAU }));
+    const particles: RainParticle[] = Array.from({ length: kind === "storm" ? 188 : 138 }, () => {
+      const z = Math.pow(rand(), .78);
+      return {
+        x: rand(),
+        y: rand(),
+        z,
+        speed: .000042 + rand() * .000092,
+        phase: rand() * TAU,
+        length: 3.2 + rand() * 7.8 + z * 4.6,
+        brightness: .44 + rand() * .66,
+        sway: .22 + rand() * .74,
+        width: .42 + rand() * .56,
+      };
+    });
+    const droplets: GlassDroplet[] = Array.from({ length: kind === "storm" ? 76 : 58 }, () => {
+      const weight = Math.pow(rand(), 1.08);
+      return {
+        x: .055 + rand() * .89,
+        y: rand(),
+        radius: .62 + weight * 3.45,
+        rate: .000038 + weight * .000074 + rand() * .000018,
+        phase: rand() * 8,
+        hold: .56 + rand() * .34,
+        meander: .35 + rand() * 2.5,
+        trail: 2 + weight * 24,
+        weight,
+      };
+    });
     const roomImage = new Image();
     roomImage.decoding = "async";
     roomImage.src = roomAssetForProfile(profile);
@@ -1093,6 +1263,12 @@ export function WeatherCinemaEngine({ code, isDay, place, updatedAt, wind = 4, p
       drawWeather(context, windowBox.x - 12, windowBox.y - 9, windowBox.w + 24, windowBox.h + 18, kind, particles, presentationTime, wind, lighting);
       context.restore();
 
+      // Freeze the exact exterior plate before the room and glass are laid on
+      // top. Wet-glass droplets sample this plate for local refraction, so the
+      // city never disconnects from the water optically.
+      sceneContext.clearRect(0, 0, baseW, baseH);
+      sceneContext.drawImage(canvas, 0, 0, canvas.width, canvas.height, 0, 0, baseW, baseH);
+
       if (!artReady) drawWindowFrame(context, profile, windowBox, flash);
 
       if (artReady) {
@@ -1100,7 +1276,7 @@ export function WeatherCinemaEngine({ code, isDay, place, updatedAt, wind = 4, p
         if (aperturePrepared) {
           drawInteriorLightField(context, lightContext, apertureCanvas, roomImage, baseW, baseH, profile, lighting);
           drawGlassResponse(context, glassContext, apertureCanvas, baseW, baseH, lighting, presentationTime);
-          drawWindowRain(context, glassContext, apertureCanvas, baseW, baseH, kind, particles, presentationTime, wind, lighting);
+          drawWindowRain(context, glassContext, apertureCanvas, sceneCanvas, baseW, baseH, kind, droplets, presentationTime, wind, lighting);
         }
       }
 
@@ -1141,5 +1317,5 @@ export function WeatherCinemaEngine({ code, isDay, place, updatedAt, wind = 4, p
     };
   }, [code, inspectionMs, isDay, kind, place, precipitation, profile, skylinePreset, updatedAt, wind]);
 
-  return <canvas ref={canvasRef} className="weather-cinema-canvas" aria-hidden="true" />;
+  return <canvas ref={canvasRef} className="weather-cinema-canvas" data-weather-kind={kind} aria-hidden="true" />;
 }
