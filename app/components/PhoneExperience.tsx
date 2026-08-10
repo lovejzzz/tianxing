@@ -10,6 +10,7 @@ import { portfolioPhotos } from "../photoManifest";
 import { playSound, toggleRinger, useRinger } from "../sound";
 import { AppIcon } from "./AppIcon";
 import { Phone3DIntro } from "./Phone3DIntro";
+import { WeatherCinemaEngine } from "./WeatherCinemaEngine";
 
 type NativeApp =
   | "messages"
@@ -267,7 +268,12 @@ export function PhoneExperience() {
     const params = new URLSearchParams(window.location.search);
     const funValue = params.get("funFrame");
     const arrivalValue = params.get("arrivalFrame");
+    const weatherValue = params.get("weatherTest");
     const timer = window.setTimeout(() => {
+      if (weatherValue !== null) {
+        setMode("native");
+        setActiveApp("weather");
+      }
       if (funValue !== null) {
         const requestedFrame = Number(funValue);
         if (Number.isFinite(requestedFrame)) setMotionInspectionMs(Math.max(0, Math.min(1100, requestedFrame)));
@@ -1358,37 +1364,6 @@ type WeatherData = {
 
 const defaultWeatherPlace: WeatherPlace = { name: "New York", country: "United States", admin: "New York", latitude: 40.7128, longitude: -74.006 };
 
-type WeatherRoomProfile = {
-  room: "study" | "hotel" | "studio" | "observatory" | "cafe" | "penthouse";
-  window: "tall" | "arched" | "wide" | "triptych";
-  accent: string;
-  lamp: string;
-  skyline: number[];
-  shift: number;
-};
-
-const weatherRoomProfiles: WeatherRoomProfile[] = [
-  { room: "study", window: "tall", accent: "#8f2637", lamp: "#ffc967", skyline: [42, 68, 55, 92, 63, 78, 48, 86, 57], shift: -3 },
-  { room: "hotel", window: "arched", accent: "#5b2037", lamp: "#f2ac57", skyline: [36, 52, 73, 49, 82, 58, 69, 43, 61], shift: 5 },
-  { room: "studio", window: "wide", accent: "#193d52", lamp: "#ffd18a", skyline: [49, 74, 44, 63, 87, 54, 71, 39, 79], shift: 1 },
-  { room: "observatory", window: "triptych", accent: "#4b2e55", lamp: "#d7b8ff", skyline: [32, 46, 65, 83, 51, 72, 91, 59, 38], shift: -6 },
-  { room: "cafe", window: "wide", accent: "#6f3423", lamp: "#ffbb68", skyline: [39, 57, 46, 70, 52, 76, 61, 48, 67], shift: 4 },
-  { room: "penthouse", window: "arched", accent: "#223f38", lamp: "#f5cf78", skyline: [51, 89, 62, 75, 47, 94, 68, 56, 81], shift: -1 },
-];
-
-function weatherCityProfile(place: WeatherPlace) {
-  const label = `${place.name} ${place.admin ?? ""} ${place.country ?? ""}`.toLowerCase();
-  const namedProfile = label.includes("new york") ? 0
-    : label.includes("paris") || label.includes("london") ? 1
-      : label.includes("tokyo") || label.includes("seoul") || label.includes("shanghai") ? 2
-        : label.includes("san francisco") || label.includes("seattle") ? 3
-          : label.includes("rome") || label.includes("madrid") || label.includes("lisbon") ? 4
-            : -1;
-  const seed = dragonHash(`${label}:${place.latitude.toFixed(2)}:${place.longitude.toFixed(2)}`);
-  const profile = weatherRoomProfiles[namedProfile >= 0 ? namedProfile : seed % weatherRoomProfiles.length];
-  return { ...profile, seed };
-}
-
 function WeatherApp() {
   const [place, setPlace] = useState<WeatherPlace>(() => {
     if (typeof window === "undefined") return defaultWeatherPlace;
@@ -1413,9 +1388,40 @@ function WeatherApp() {
   const [searching, setSearching] = useState(false);
   const [locating, setLocating] = useState(false);
   const [tilt, setTilt] = useState({ x: 0, y: 0 });
+  const [cinemaPreview, setCinemaPreview] = useState<{ code: number; isDay: boolean; updatedAt?: string; inspectionMs?: number | null; place?: WeatherPlace } | null>(null);
   const weatherRef = useRef(weather);
 
   useEffect(() => { weatherRef.current = weather; }, [weather]);
+  useEffect(() => {
+    if (process.env.NODE_ENV === "production") return;
+    const params = new URLSearchParams(window.location.search);
+    const requested = params.get("weatherTest");
+    if (!requested) return;
+    const testCodes: Record<string, number> = { clear: 0, cloud: 3, fog: 45, rain: 63, snow: 73, storm: 95 };
+    const numericCode = Number(requested);
+    const code = Number.isFinite(numericCode) ? numericCode : testCodes[requested.toLowerCase()];
+    if (!Number.isFinite(code)) return;
+    const hour = Math.max(0, Math.min(23, Number(params.get("weatherHour") ?? 22)));
+    const frameValue = params.get("weatherFrame");
+    const inspectionMs = frameValue === null ? null : Math.max(0, Number(frameValue) || 0);
+    const testPlaces: Record<string, WeatherPlace> = {
+      "new-york": defaultWeatherPlace,
+      shanghai: { name: "Shanghai", country: "China", latitude: 31.2304, longitude: 121.4737 },
+      paris: { name: "Paris", country: "France", latitude: 48.8566, longitude: 2.3522 },
+      london: { name: "London", country: "United Kingdom", latitude: 51.5072, longitude: -.1276 },
+      seattle: { name: "Seattle", country: "United States", latitude: 47.6062, longitude: -122.3321 },
+      dubai: { name: "Dubai", country: "United Arab Emirates", latitude: 25.2048, longitude: 55.2708 },
+      sydney: { name: "Sydney", country: "Australia", latitude: -33.8688, longitude: 151.2093 },
+      rome: { name: "Rome", country: "Italy", latitude: 41.9028, longitude: 12.4964 },
+      singapore: { name: "Singapore", country: "Singapore", latitude: 1.3521, longitude: 103.8198 },
+      istanbul: { name: "Istanbul", country: "Türkiye", latitude: 41.0082, longitude: 28.9784 },
+    };
+    const previewPlace = testPlaces[(params.get("weatherCity") ?? "").toLowerCase()];
+    const timer = window.setTimeout(() => {
+      setCinemaPreview({ code, isDay: hour >= 6 && hour < 19, updatedAt: `2026-08-09T${String(hour).padStart(2, "0")}:00`, inspectionMs, place: previewPlace });
+    }, 0);
+    return () => window.clearTimeout(timer);
+  }, []);
 
   const loadWeather = useCallback(async (nextPlace: WeatherPlace) => {
     setError("");
@@ -1554,7 +1560,18 @@ function WeatherApp() {
       onPointerLeave={() => setTilt({ x: 0, y: 0 })}
       aria-busy={loading}
     >
-      <WeatherScene code={weather?.code ?? 0} isDay={weather?.isDay ?? true} place={weather?.place ?? place} />
+      <div className="weather-scene weather-engine-stage" aria-hidden="true">
+        <WeatherCinemaEngine
+          code={cinemaPreview?.code ?? weather?.code ?? 0}
+          isDay={cinemaPreview?.isDay ?? weather?.isDay ?? true}
+          place={cinemaPreview?.place ?? weather?.place ?? place}
+          updatedAt={cinemaPreview?.updatedAt ?? weather?.updatedAt}
+          wind={weather?.wind}
+          precipitation={weather?.precipitation}
+          tilt={tilt}
+          inspectionMs={cinemaPreview?.inspectionMs}
+        />
+      </div>
       <button className="weather-city-chip" onClick={() => { playSound("open"); setPickerOpen(true); }} aria-label="Choose weather location">
         <span><strong>{weather?.place.name ?? place.name}</strong><small>{weather ? `${weatherLabel(weather.code)} · Open-Meteo` : "Finding the sky…"}</small></span>
         <b>{loading && !weather ? "…" : `${Math.round(weather?.temperature ?? 0)}°`}</b><i>⌄</i>
@@ -1576,56 +1593,6 @@ function WeatherApp() {
   );
 }
 
-function WeatherScene({ code, isDay, place }: { code: number; isDay: boolean; place: WeatherPlace }) {
-  const profile = weatherCityProfile(place);
-  const precipitation = code >= 51;
-  const snow = (code >= 71 && code <= 77) || code === 85 || code === 86;
-  const cloudy = code >= 1;
-  const thunder = code >= 95;
-  const fog = code === 45 || code === 48;
-  const cityStyle = {
-    "--noir-accent": profile.accent,
-    "--noir-lamp": profile.lamp,
-    "--city-shift": `${profile.shift}px`,
-    "--city-seed": profile.seed % 11,
-  } as CSSProperties;
-  return (
-    <div className={`weather-scene noir-room room-${profile.room} window-${profile.window}`} style={cityStyle} aria-hidden="true">
-      <div className="noir-wall"><i /><i /></div>
-      <div className="noir-window-wrap">
-        <i className="noir-curtain noir-curtain-left" />
-        <i className="noir-curtain noir-curtain-right" />
-        <div className="noir-window">
-          <div className="noir-sky">
-            <i className={isDay ? "noir-sun" : "noir-moon"} />
-            {!isDay && <div className="noir-stars">{Array.from({ length: 15 }, (_, index) => <i key={index} style={{ "--star": index } as CSSProperties} />)}</div>}
-            {cloudy && <div className="noir-clouds"><i /><i /><i /></div>}
-            <div className="noir-city noir-city-back">
-              {profile.skyline.map((height, index) => <i key={index} style={{ "--building-height": `${height}%`, "--building-index": index } as CSSProperties}><span /><b /></i>)}
-            </div>
-            <div className="noir-city noir-city-front">
-              {[...profile.skyline].reverse().map((height, index) => <i key={index} style={{ "--building-height": `${Math.min(98, height + 9)}%`, "--building-index": index } as CSSProperties}><span /><b /></i>)}
-            </div>
-            {precipitation && <div className={snow ? "noir-snow" : "noir-rain"}>{Array.from({ length: 34 }, (_, index) => <i key={index} style={{ "--drop": index } as CSSProperties} />)}</div>}
-            {fog && <div className="noir-fog"><i /><i /></div>}
-            {thunder && <><i className="noir-lightning" /><i className="noir-storm-flash" /></>}
-          </div>
-          <div className="noir-window-grid"><i /><i /><i /></div>
-          <i className="noir-glass-reflection" />
-        </div>
-      </div>
-      <div className="noir-sconce"><i /><b /></div>
-      <div className="noir-furniture">
-        <i className="noir-desk" />
-        <i className="noir-chair" />
-        <i className="noir-room-prop" />
-      </div>
-      <i className="noir-shadow-pass" />
-      <i className="noir-film-grain" />
-    </div>
-  );
-}
-
 function weatherLabel(code: number) {
   if (code === 0) return "Clear";
   if (code <= 3) return "Partly Cloudy";
@@ -1637,17 +1604,6 @@ function weatherLabel(code: number) {
   return "Thunderstorms";
 }
 
-function weatherSymbol(code: number, isDay = true) {
-  if (code === 0) return isDay ? "☀" : "☾";
-  if (code <= 3) return isDay ? "☁" : "☁";
-  if (code <= 48) return "≋";
-  if (code <= 67) return "☂";
-  if (code <= 77) return "✻";
-  if (code <= 82) return "☂";
-  if (code === 85 || code === 86) return "✻";
-  return "ϟ";
-}
-
 function weatherTheme(code: number, isDay: boolean) {
   const time = isDay ? "weather-day" : "weather-night";
   if (code >= 95) return `${time} weather-stormy`;
@@ -1656,42 +1612,6 @@ function weatherTheme(code: number, isDay: boolean) {
   if (code === 45 || code === 48) return `${time} weather-foggy`;
   if (code >= 2) return `${time} weather-cloudy`;
   return `${time} weather-clear`;
-}
-
-function weatherNarrative(code: number, isDay: boolean) {
-  if (code === 0) return isDay ? "Clear skies for the next few hours." : "A clear, quiet night ahead.";
-  if (code <= 3) return "Clouds drifting through, with calm conditions.";
-  if (code <= 48) return "Low visibility—take it easy out there.";
-  if ((code >= 71 && code <= 77) || code === 85 || code === 86) return "Snow is shaping the hours ahead.";
-  if (code <= 67 || code <= 82) return "Keep an umbrella close.";
-  return "Storm cells are nearby. Stay aware.";
-}
-
-function formatWeatherHour(value: string) {
-  const hour = Number(value.slice(11, 13));
-  if (hour === 0) return "12 AM";
-  if (hour === 12) return "12 PM";
-  return `${hour % 12} ${hour < 12 ? "AM" : "PM"}`;
-}
-
-function formatWeatherTime(value: string) {
-  if (!value || !value.includes("T")) return "—";
-  return formatWeatherHour(value);
-}
-
-function windCompass(degrees: number) {
-  return ["N", "NE", "E", "SE", "S", "SW", "W", "NW"][Math.round(degrees / 45) % 8];
-}
-
-function formatVisibility(value: number, unit: WeatherUnit) {
-  return unit === "fahrenheit" ? `${Math.round(value / 528) / 10} mi` : `${Math.round(value / 100) / 10} km`;
-}
-
-function uvLabel(value: number) {
-  if (value < 3) return "Low";
-  if (value < 6) return "Moderate";
-  if (value < 8) return "High";
-  return "Very high";
 }
 
 function DragonSprite({ reaction = null, card = false, pattern }: { reaction?: DragonReaction; card?: boolean; pattern?: DragonPatternId }) {

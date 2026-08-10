@@ -52,6 +52,7 @@ test("embeds playable projects and full-resolution screenshots", async () => {
 
 test("keeps the iPhone interactive and time-aware", async () => {
   const source = await readFile(new URL("../app/components/PhoneExperience.tsx", import.meta.url), "utf8");
+  const weatherEngineSource = await readFile(new URL("../app/components/WeatherCinemaEngine.tsx", import.meta.url), "utf8");
   const phone3dSource = await readFile(new URL("../app/components/Phone3DIntro.tsx", import.meta.url), "utf8");
   const styles = await readFile(new URL("../app/globals.css", import.meta.url), "utf8");
   const photoManifest = await readFile(new URL("../app/photoManifest.ts", import.meta.url), "utf8");
@@ -95,25 +96,21 @@ test("keeps the iPhone interactive and time-aware", async () => {
   assert.doesNotMatch(source, /Delivered ✓/);
   assert.match(source, /Photo Booth effects/);
   assert.match(source, /photo-viewer/);
-  assert.match(source, /WeatherScene/);
-  assert.match(source, /weatherCityProfile/);
-  assert.match(source, /room-\$\{profile\.room\}/);
-  assert.match(source, /noir-window/);
-  assert.match(source, /noir-city noir-city-front/);
-  assert.match(source, /noir-film-grain/);
-  assert.match(styles, /Weather: animated noir windows/);
-  assert.match(styles, /\.room-study \.noir-room-prop/);
-  assert.match(styles, /noir-study-v1\.jpg/);
-  assert.match(styles, /noir-penthouse-v1\.jpg/);
-  assert.match(styles, /@keyframes noir-rain/);
+  assert.match(source, /WeatherCinemaEngine/);
+  assert.match(weatherEngineSource, /cityLandmark/);
+  assert.match(weatherEngineSource, /drawInteriorLightResponse/);
+  assert.match(weatherEngineSource, /drawWeather/);
+  assert.match(weatherEngineSource, /requestAnimationFrame/);
+  assert.match(weatherEngineSource, /roomAssetForProfile/);
+  assert.match(weatherEngineSource, /smoothstep\(0, 1, clamp\(flashRaw\)\)/);
+  assert.match(weatherEngineSource, /tiltRef/);
+  assert.match(styles, /weather-cinema-canvas/);
+  assert.match(styles, /weather-engine-stage/);
   await Promise.all([
-    "study",
-    "hotel",
     "studio",
+    "hotel",
     "observatory",
-    "cafe",
-    "penthouse",
-  ].map((room) => access(new URL(`../public/media/weather/noir-${room}-v1.jpg`, import.meta.url))));
+  ].map((room) => access(new URL(`../public/media/weather/engine/room-${room}-v1.webp`, import.meta.url))));
   assert.match(source, /geocoding-api\.open-meteo\.com/);
   assert.match(source, /weather-city-chip/);
   assert.match(source, /Finding the sky…/);
