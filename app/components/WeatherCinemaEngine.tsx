@@ -41,6 +41,21 @@ type SkylinePreset = {
   landmarkInPlate: boolean;
 };
 
+type SceneLighting = {
+  skyTop: string;
+  skyMiddle: string;
+  skyBottom: string;
+  sourceColor: string;
+  bounceColor: string;
+  worldExposure: number;
+  roomExposure: number;
+  beamStrength: number;
+  shadowStrength: number;
+  hazeStrength: number;
+  direction: number;
+  flash: number;
+};
+
 type Particle = { x: number; y: number; z: number; speed: number; phase: number };
 
 const TAU = Math.PI * 2;
@@ -170,6 +185,63 @@ function localHour(updatedAt: string | undefined, isDay: boolean) {
   return isDay ? 14 : 22;
 }
 
+function sceneLighting(kind: string, isDay: boolean, hour: number, ambient: number, flash: number): SceneLighting {
+  const goldenHour = isDay && (hour < 8.2 || hour > 16.7);
+  const storm = kind === "storm" || kind === "rain";
+  const overcast = storm || kind === "cloud" || kind === "fog" || kind === "snow";
+  const direction = clamp((hour - 6) / 12, 0, 1) * 2 - 1;
+  const lightningLift = flash * .72;
+  const worldExposure = clamp((isDay ? .72 + ambient * .32 : .42) + lightningLift, .34, 1.35);
+  const roomExposure = clamp((isDay ? .72 + ambient * .2 : .55) + flash * .18, .48, 1.02);
+
+  if (flash > .035) {
+    return {
+      skyTop: "#7888a5", skyMiddle: "#46556f", skyBottom: "#293245",
+      sourceColor: "186,207,255", bounceColor: "117,147,211",
+      worldExposure, roomExposure, beamStrength: .24 + flash * .72,
+      shadowStrength: .2 + flash * .3, hazeStrength: .1 + flash * .18,
+      direction, flash,
+    };
+  }
+  if (!isDay) {
+    return {
+      skyTop: storm ? "#080b14" : "#060a16", skyMiddle: storm ? "#121826" : "#15182a", skyBottom: "#211b27",
+      sourceColor: storm ? "102,126,158" : "111,135,177", bounceColor: "42,54,82",
+      worldExposure, roomExposure, beamStrength: storm ? .055 : .075,
+      shadowStrength: .1, hazeStrength: overcast ? .18 : .07,
+      direction, flash,
+    };
+  }
+  if (kind === "fog" || kind === "snow") {
+    return {
+      skyTop: "#9a9895", skyMiddle: "#6f747b", skyBottom: "#454a52",
+      sourceColor: "203,205,199", bounceColor: "145,151,156",
+      worldExposure, roomExposure, beamStrength: .18,
+      shadowStrength: .08, hazeStrength: kind === "fog" ? .4 : .25,
+      direction, flash,
+    };
+  }
+  if (storm) {
+    return {
+      skyTop: "#202a38", skyMiddle: "#303746", skyBottom: "#242633",
+      sourceColor: "139,157,176", bounceColor: "77,89,107",
+      worldExposure, roomExposure, beamStrength: .105,
+      shadowStrength: .1, hazeStrength: .24,
+      direction, flash,
+    };
+  }
+  return {
+    skyTop: goldenHour ? "#b46146" : "#58758b",
+    skyMiddle: goldenHour ? "#74434c" : "#38546b",
+    skyBottom: goldenHour ? "#29283a" : "#222c3b",
+    sourceColor: goldenHour ? "235,153,74" : "181,203,213",
+    bounceColor: goldenHour ? "166,79,48" : "87,120,139",
+    worldExposure, roomExposure, beamStrength: goldenHour ? .34 : .25,
+    shadowStrength: goldenHour ? .25 : .17, hazeStrength: .06,
+    direction, flash,
+  };
+}
+
 function pathPolygon(context: CanvasRenderingContext2D, points: Point[]) {
   context.beginPath();
   points.forEach((point, index) => index === 0 ? context.moveTo(point.x, point.y) : context.lineTo(point.x, point.y));
@@ -235,8 +307,7 @@ function drawSkylinePlate(
   horizon: number,
   focus: number,
   tiltX: number,
-  ambient: number,
-  flash: number,
+  lighting: SceneLighting,
 ) {
   const plateWidth = box.w * 1.78;
   const plateHeight = plateWidth / (image.naturalWidth / image.naturalHeight);
@@ -245,13 +316,13 @@ function drawSkylinePlate(
 
   context.save();
   context.globalAlpha = .22;
-  context.filter = `blur(1.4px) brightness(${.48 + ambient * .22 + flash * .24}) saturate(.62)`;
+  context.filter = `blur(1.4px) brightness(${lighting.worldExposure * .72}) saturate(.58)`;
   context.drawImage(image, plateX - tiltX * .55, plateY - 17, plateWidth, plateHeight);
   context.restore();
 
   context.save();
   context.globalAlpha = .9;
-  context.filter = `brightness(${.55 + ambient * .34 + flash * .28}) saturate(${.68 + ambient * .26}) contrast(1.08)`;
+  context.filter = `brightness(${lighting.worldExposure}) saturate(${.66 + lighting.worldExposure * .18}) contrast(1.08)`;
   context.drawImage(image, plateX, plateY, plateWidth, plateHeight);
   context.restore();
 }
@@ -401,7 +472,7 @@ function drawWindowFrame(context: CanvasRenderingContext2D, profile: SceneProfil
   context.restore();
 }
 
-function drawRoomOverlay(context: CanvasRenderingContext2D, image: HTMLImageElement, width: number, height: number, profile: SceneProfile, ambient: number, flash: number) {
+function roomCoverGeometry(image: HTMLImageElement, width: number, height: number) {
   const sourceRatio = image.naturalWidth / image.naturalHeight;
   const targetRatio = width / height;
   let drawWidth = width;
@@ -417,51 +488,134 @@ function drawRoomOverlay(context: CanvasRenderingContext2D, image: HTMLImageElem
     drawHeight = width / sourceRatio;
     drawY = (height - drawHeight) * .5;
   }
+  return { drawX, drawY, drawWidth, drawHeight };
+}
+
+function drawRoomImage(context: CanvasRenderingContext2D, image: HTMLImageElement, width: number, height: number, profile: SceneProfile, filter = "none") {
+  const geometry = roomCoverGeometry(image, width, height);
+  let drawX = geometry.drawX;
+  const { drawY, drawWidth, drawHeight } = geometry;
   context.save();
   if ((profile.seed >>> 12) % 2 === 1) {
     context.translate(width, 0);
     context.scale(-1, 1);
     drawX = width - drawX - drawWidth;
   }
-  context.filter = `brightness(${.68 + ambient * .37 + flash * .2}) saturate(${.76 + ambient * .18}) contrast(1.06)`;
+  context.filter = filter;
   context.drawImage(image, drawX, drawY, drawWidth, drawHeight);
   context.restore();
 }
 
-function drawInteriorLightResponse(context: CanvasRenderingContext2D, width: number, height: number, flash: number, ambient: number, hour: number, profile: SceneProfile) {
-  const light = clamp(ambient * .36 + flash * .92);
-  if (light <= .015) return;
-  const angle = Math.sin(((hour - 6) / 12) * Math.PI);
-  const originX = width * (.32 + (profile.seed % 31) / 100);
+function drawRoomOverlay(context: CanvasRenderingContext2D, image: HTMLImageElement, width: number, height: number, profile: SceneProfile, lighting: SceneLighting) {
+  drawRoomImage(context, image, width, height, profile, `brightness(${lighting.roomExposure}) saturate(${.72 + lighting.worldExposure * .13}) contrast(1.08)`);
+}
+
+function prepareApertureMask(context: CanvasRenderingContext2D, image: HTMLImageElement, width: number, height: number, profile: SceneProfile) {
   context.save();
-  context.globalCompositeOperation = "screen";
-  const wash = context.createLinearGradient(originX, height * .28, width * (.42 + angle * .25), height);
-  wash.addColorStop(0, `rgba(${flash > .05 ? "178,202,255" : "218,157,81"},${light * .34})`);
-  wash.addColorStop(.54, `rgba(${flash > .05 ? "144,174,235" : "176,99,47"},${light * .14})`);
-  wash.addColorStop(1, "rgba(0,0,0,0)");
-  context.fillStyle = wash;
-  pathPolygon(context, [
-    { x: width * .23, y: height * .21 },
-    { x: width * .75, y: height * .2 },
-    { x: width * (.89 + angle * .1), y: height },
-    { x: width * (.05 + angle * .16), y: height },
-  ]);
-  context.fill();
+  context.clearRect(0, 0, width, height);
+  context.fillStyle = "#fff";
+  context.fillRect(0, 0, width, height);
+  context.globalCompositeOperation = "destination-out";
+  drawRoomImage(context, image, width, height, profile);
   context.restore();
+}
+
+function drawInteriorLightField(
+  context: CanvasRenderingContext2D,
+  lightContext: CanvasRenderingContext2D,
+  aperture: HTMLCanvasElement,
+  roomImage: HTMLImageElement,
+  width: number,
+  height: number,
+  profile: SceneProfile,
+  lighting: SceneLighting,
+) {
+  const travelX = lighting.direction * 52;
+  const travelY = 122;
+  lightContext.save();
+  lightContext.clearRect(0, 0, width, height);
+  lightContext.globalCompositeOperation = "lighter";
+  lightContext.filter = `blur(${lighting.flash > .05 ? 3 : 7}px)`;
+  for (let step = 0; step < 18; step += 1) {
+    const progress = step / 17;
+    lightContext.globalAlpha = (1 - progress) * (.065 + lighting.beamStrength * .12);
+    const scale = 1 + progress * .26;
+    const drawWidth = width * scale;
+    const drawHeight = height * scale;
+    lightContext.drawImage(
+      aperture,
+      travelX * progress - (drawWidth - width) * .5,
+      travelY * progress - (drawHeight - height) * .22,
+      drawWidth,
+      drawHeight,
+    );
+  }
+  lightContext.filter = "none";
+  lightContext.globalCompositeOperation = "source-in";
+  const beam = lightContext.createLinearGradient(width * .5, height * .16, width * (.5 + lighting.direction * .24), height);
+  beam.addColorStop(0, `rgba(${lighting.sourceColor},${.58 + lighting.flash * .28})`);
+  beam.addColorStop(.58, `rgba(${lighting.bounceColor},${.32 + lighting.flash * .2})`);
+  beam.addColorStop(1, `rgba(${lighting.bounceColor},0)`);
+  lightContext.fillStyle = beam;
+  lightContext.fillRect(0, 0, width, height);
+  lightContext.globalCompositeOperation = "screen";
+  const bounce = lightContext.createRadialGradient(
+    width * (.5 - lighting.direction * .08), height * .28, 8,
+    width * (.5 - lighting.direction * .08), height * .34, width * .82,
+  );
+  bounce.addColorStop(0, `rgba(${lighting.sourceColor},${.08 + lighting.beamStrength * .28})`);
+  bounce.addColorStop(.38, `rgba(${lighting.bounceColor},${.035 + lighting.beamStrength * .13})`);
+  bounce.addColorStop(1, `rgba(${lighting.bounceColor},0)`);
+  lightContext.fillStyle = bounce;
+  lightContext.fillRect(0, 0, width, height);
+  lightContext.globalCompositeOperation = "destination-in";
+  drawRoomImage(lightContext, roomImage, width, height, profile);
+  lightContext.restore();
 
   context.save();
+  context.globalCompositeOperation = "screen";
+  context.globalAlpha = .72 + lighting.flash * .22;
+  context.drawImage(lightContext.canvas, 0, 0);
+  context.restore();
+
+  // Unlit surfaces become the shadow field naturally: the projected aperture
+  // only adds light where the room's real opening can see the sky.
+}
+
+function drawGlassResponse(context: CanvasRenderingContext2D, glassContext: CanvasRenderingContext2D, aperture: HTMLCanvasElement, width: number, height: number, lighting: SceneLighting, elapsed: number) {
+  glassContext.save();
+  glassContext.clearRect(0, 0, width, height);
+  glassContext.drawImage(aperture, 0, 0);
+  glassContext.globalCompositeOperation = "source-in";
+  const reflection = glassContext.createLinearGradient(-40 + (elapsed * .004) % (width + 80), 0, width + (elapsed * .004) % (width + 80), height);
+  reflection.addColorStop(0, "rgba(255,255,255,0)");
+  reflection.addColorStop(.42, `rgba(${lighting.sourceColor},${.025 + lighting.hazeStrength * .06})`);
+  reflection.addColorStop(.5, `rgba(${lighting.sourceColor},${.11 + lighting.flash * .16})`);
+  reflection.addColorStop(.54, `rgba(${lighting.sourceColor},0)`);
+  reflection.addColorStop(1, "rgba(255,255,255,0)");
+  glassContext.fillStyle = reflection;
+  glassContext.fillRect(0, 0, width, height);
+  glassContext.restore();
+
+  context.save();
+  context.globalCompositeOperation = "screen";
+  context.globalAlpha = .72;
+  context.drawImage(glassContext.canvas, 0, 0);
+  context.restore();
+}
+
+function drawUnifiedGrade(context: CanvasRenderingContext2D, width: number, height: number, lighting: SceneLighting) {
+  context.save();
+  context.globalCompositeOperation = "soft-light";
+  const grade = context.createLinearGradient(0, 0, width, height);
+  grade.addColorStop(0, `rgba(${lighting.sourceColor},${.06 + lighting.flash * .08})`);
+  grade.addColorStop(.55, "rgba(20,24,33,.08)");
+  grade.addColorStop(1, `rgba(${lighting.bounceColor},.12)`);
+  context.fillStyle = grade;
+  context.fillRect(0, 0, width, height);
   context.globalCompositeOperation = "multiply";
-  context.fillStyle = `rgba(3,4,8,${.08 + light * .23})`;
-  const skew = angle * 52;
-  for (let index = 0; index < 3; index += 1) {
-    pathPolygon(context, [
-      { x: width * (.3 + index * .2), y: height * .2 },
-      { x: width * (.32 + index * .2), y: height * .2 },
-      { x: width * (.35 + index * .2) + skew, y: height },
-      { x: width * (.29 + index * .2) + skew, y: height },
-    ]);
-    context.fill();
-  }
+  context.fillStyle = `rgba(5,7,12,${.035 + lighting.hazeStrength * .08 + lighting.shadowStrength * .05})`;
+  context.fillRect(0, 0, width, height);
   context.restore();
 }
 
@@ -537,6 +691,17 @@ export function WeatherCinemaEngine({ code, isDay, place, updatedAt, wind = 4, p
     if (!canvas) return;
     const context = canvas.getContext("2d", { alpha: false });
     if (!context) return;
+    const apertureCanvas = document.createElement("canvas");
+    const apertureContext = apertureCanvas.getContext("2d");
+    const lightCanvas = document.createElement("canvas");
+    const lightContext = lightCanvas.getContext("2d");
+    const glassCanvas = document.createElement("canvas");
+    const glassContext = glassCanvas.getContext("2d");
+    if (!apertureContext || !lightContext || !glassContext) return;
+    [apertureCanvas, lightCanvas, glassCanvas].forEach((buffer) => {
+      buffer.width = 320;
+      buffer.height = 430;
+    });
     let frame = 0;
     let width = 320;
     let height = 430;
@@ -544,6 +709,7 @@ export function WeatherCinemaEngine({ code, isDay, place, updatedAt, wind = 4, p
     let elapsed = 0;
     let disposed = false;
     let started = false;
+    let aperturePrepared = false;
     const rand = mulberry32(profile.seed ^ 0x9e3779b9);
     const particles = Array.from({ length: kind === "storm" ? 120 : 82 }, () => ({ x: rand(), y: rand(), z: .2 + rand() * .8, speed: .00008 + rand() * .00016, phase: rand() * TAU }));
     const roomImage = new Image();
@@ -587,6 +753,7 @@ export function WeatherCinemaEngine({ code, isDay, place, updatedAt, wind = 4, p
       const flash = smoothstep(0, 1, clamp(flashRaw));
       const cloudDim = kind === "clear" ? 1 : kind === "cloud" ? .76 : kind === "snow" ? .68 : .47;
       const ambient = daylight * cloudDim;
+      const lighting = sceneLighting(kind, isDay, hour, ambient, flash);
       const baseW = 320;
       const baseH = 430;
       const sx = width / baseW;
@@ -604,6 +771,11 @@ export function WeatherCinemaEngine({ code, isDay, place, updatedAt, wind = 4, p
       // never a second, mismatched synthetic window frame underneath it.
       const windowBox = artReady ? { x: -22, y: -14, w: 364, h: 334 } : fallbackWindow;
 
+      if (artReady && !aperturePrepared) {
+        prepareApertureMask(apertureContext, roomImage, baseW, baseH, profile);
+        aperturePrepared = true;
+      }
+
       if (!artReady) drawRoom(context, baseW, baseH, profile, windowBox, ambient, flash, hour);
 
       context.save();
@@ -614,15 +786,9 @@ export function WeatherCinemaEngine({ code, isDay, place, updatedAt, wind = 4, p
       context.translate(liveTilt.x * -1.5, liveTilt.y * -.5);
 
       const sky = context.createLinearGradient(0, windowBox.y, 0, windowBox.y + windowBox.h);
-      if (!isDay) {
-        sky.addColorStop(0, flash ? "#70809b" : "#070b17"); sky.addColorStop(.54, flash ? "#38445b" : "#17192a"); sky.addColorStop(1, "#15131e");
-      } else if (kind === "storm" || kind === "rain") {
-        sky.addColorStop(0, flash ? "#9aacc2" : "#1d2735"); sky.addColorStop(.52, "#303746"); sky.addColorStop(1, "#242633");
-      } else if (kind === "snow" || kind === "fog") {
-        sky.addColorStop(0, "#8e8b8a"); sky.addColorStop(.55, "#626873"); sky.addColorStop(1, "#353b46");
-      } else {
-        sky.addColorStop(0, hour < 8 || hour > 17 ? "#a95c49" : "#526d82"); sky.addColorStop(.55, hour < 8 || hour > 17 ? "#66404d" : "#314b63"); sky.addColorStop(1, "#21283a");
-      }
+      sky.addColorStop(0, lighting.skyTop);
+      sky.addColorStop(.54, lighting.skyMiddle);
+      sky.addColorStop(1, lighting.skyBottom);
       context.fillStyle = sky; context.fillRect(windowBox.x - 20, windowBox.y - 20, windowBox.w + 40, windowBox.h + 40);
 
       if (!isDay) {
@@ -639,7 +805,7 @@ export function WeatherCinemaEngine({ code, isDay, place, updatedAt, wind = 4, p
         drawLandmark(context, profile.landmark, windowBox.x + windowBox.w * (.48 + ((profile.seed % 17) - 8) * .006) + liveTilt.x * .82, horizon + 5, .68, isDay ? .11 : .48);
       }
       if (skylineReady) {
-        drawSkylinePlate(context, skylineImage, windowBox, horizon + 6, skylinePreset.focus, liveTilt.x * 1.35, ambient, flash);
+        drawSkylinePlate(context, skylineImage, windowBox, horizon + 6, skylinePreset.focus, liveTilt.x * 1.35, lighting);
       }
 
       if (profile.landmark === "bridge" || profile.landmark === "opera" || profile.landmark === "marina") {
@@ -656,8 +822,11 @@ export function WeatherCinemaEngine({ code, isDay, place, updatedAt, wind = 4, p
       if (!artReady) drawWindowFrame(context, profile, windowBox, flash);
 
       if (artReady) {
-        drawRoomOverlay(context, roomImage, baseW, baseH, profile, ambient, flash);
-        drawInteriorLightResponse(context, baseW, baseH, flash, ambient, hour, profile);
+        drawRoomOverlay(context, roomImage, baseW, baseH, profile, lighting);
+        if (aperturePrepared) {
+          drawInteriorLightField(context, lightContext, apertureCanvas, roomImage, baseW, baseH, profile, lighting);
+          drawGlassResponse(context, glassContext, apertureCanvas, baseW, baseH, lighting, presentationTime);
+        }
       }
 
       if (!artReady) {
@@ -670,6 +839,7 @@ export function WeatherCinemaEngine({ code, isDay, place, updatedAt, wind = 4, p
         context.restore();
       }
 
+      drawUnifiedGrade(context, baseW, baseH, lighting);
       drawFilmFinish(context, baseW, baseH, presentationTime, profile);
       context.restore();
       void sx; void sy; void precipitation;
