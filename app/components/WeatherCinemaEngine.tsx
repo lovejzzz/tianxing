@@ -50,6 +50,9 @@ type SceneLighting = {
   worldExposure: number;
   roomExposure: number;
   beamStrength: number;
+  ambientStrength: number;
+  directStrength: number;
+  roomShade: number;
   shadowStrength: number;
   hazeStrength: number;
   direction: number;
@@ -247,13 +250,19 @@ function sceneLighting(kind: string, isDay: boolean, hour: number, ambient: numb
   const direction = clamp((hour - 6) / 12, 0, 1) * 2 - 1;
   const lightningLift = flash * .72;
   const worldExposure = clamp((isDay ? .72 + ambient * .32 : .42) + lightningLift, .34, 1.35);
-  const roomExposure = clamp((isDay ? .72 + ambient * .2 : .55) + flash * .18, .48, 1.02);
+  const daylightRoomExposure = kind === "clear" ? .72 + ambient * .58
+    : kind === "cloud" ? .5 + ambient * .24
+      : kind === "fog" || kind === "snow" ? .54 + ambient * .26
+        : kind === "rain" ? .45 + ambient * .22
+          : .42 + ambient * .18;
+  const roomExposure = clamp((isDay ? daylightRoomExposure : .5) + flash * .38, .38, 1.35);
 
   if (flash > .035) {
     return {
       skyTop: "#7888a5", skyMiddle: "#46556f", skyBottom: "#293245",
       sourceColor: "186,207,255", bounceColor: "117,147,211",
       worldExposure, roomExposure, beamStrength: .24 + flash * .72,
+      ambientStrength: .28 + flash * .42, directStrength: .38 + flash * .58, roomShade: .06,
       shadowStrength: .2 + flash * .3, hazeStrength: .1 + flash * .18,
       direction, flash,
     };
@@ -263,6 +272,7 @@ function sceneLighting(kind: string, isDay: boolean, hour: number, ambient: numb
       skyTop: storm ? "#080b14" : "#060a16", skyMiddle: storm ? "#121826" : "#15182a", skyBottom: "#211b27",
       sourceColor: storm ? "102,126,158" : "111,135,177", bounceColor: "42,54,82",
       worldExposure, roomExposure, beamStrength: storm ? .055 : .075,
+      ambientStrength: storm ? .035 : .055, directStrength: .008, roomShade: storm ? .36 : .3,
       shadowStrength: .1, hazeStrength: overcast ? .18 : .07,
       direction, flash,
     };
@@ -272,6 +282,7 @@ function sceneLighting(kind: string, isDay: boolean, hour: number, ambient: numb
       skyTop: "#9a9895", skyMiddle: "#6f747b", skyBottom: "#454a52",
       sourceColor: "203,205,199", bounceColor: "145,151,156",
       worldExposure, roomExposure, beamStrength: .18,
+      ambientStrength: .2, directStrength: .025, roomShade: kind === "fog" ? .14 : .17,
       shadowStrength: .08, hazeStrength: kind === "fog" ? .4 : .25,
       direction, flash,
     };
@@ -280,8 +291,19 @@ function sceneLighting(kind: string, isDay: boolean, hour: number, ambient: numb
     return {
       skyTop: "#202a38", skyMiddle: "#303746", skyBottom: "#242633",
       sourceColor: "139,157,176", bounceColor: "77,89,107",
-      worldExposure, roomExposure, beamStrength: .105,
+      worldExposure, roomExposure, beamStrength: kind === "storm" ? .055 : .07,
+      ambientStrength: kind === "storm" ? .045 : .065, directStrength: .012, roomShade: kind === "storm" ? .38 : .32,
       shadowStrength: .1, hazeStrength: .24,
+      direction, flash,
+    };
+  }
+  if (kind === "cloud") {
+    return {
+      skyTop: "#64717c", skyMiddle: "#46535f", skyBottom: "#313842",
+      sourceColor: "184,192,198", bounceColor: "101,111,121",
+      worldExposure, roomExposure, beamStrength: .085,
+      ambientStrength: .12, directStrength: .025, roomShade: .23,
+      shadowStrength: .07, hazeStrength: .16,
       direction, flash,
     };
   }
@@ -289,9 +311,10 @@ function sceneLighting(kind: string, isDay: boolean, hour: number, ambient: numb
     skyTop: goldenHour ? "#b46146" : "#58758b",
     skyMiddle: goldenHour ? "#74434c" : "#38546b",
     skyBottom: goldenHour ? "#29283a" : "#222c3b",
-    sourceColor: goldenHour ? "235,153,74" : "181,203,213",
-    bounceColor: goldenHour ? "166,79,48" : "87,120,139",
-    worldExposure, roomExposure, beamStrength: goldenHour ? .34 : .25,
+    sourceColor: goldenHour ? "250,172,88" : "244,218,171",
+    bounceColor: goldenHour ? "172,83,47" : "113,137,148",
+    worldExposure, roomExposure, beamStrength: goldenHour ? .46 : .36,
+    ambientStrength: goldenHour ? .38 : .34, directStrength: goldenHour ? .78 : .68, roomShade: .015,
     shadowStrength: goldenHour ? .25 : .17, hazeStrength: .06,
     direction, flash,
   };
@@ -626,8 +649,33 @@ function drawRoomImage(context: CanvasRenderingContext2D, image: HTMLImageElemen
   context.restore();
 }
 
-function drawRoomOverlay(context: CanvasRenderingContext2D, image: HTMLImageElement, width: number, height: number, profile: SceneProfile, lighting: SceneLighting) {
-  drawRoomImage(context, image, width, height, profile, `brightness(${lighting.roomExposure}) saturate(${.72 + lighting.worldExposure * .13}) contrast(1.08)`);
+function drawRoomOverlay(context: CanvasRenderingContext2D, roomContext: CanvasRenderingContext2D, image: HTMLImageElement, width: number, height: number, profile: SceneProfile, lighting: SceneLighting) {
+  roomContext.save();
+  roomContext.clearRect(0, 0, width, height);
+  drawRoomImage(roomContext, image, width, height, profile, `brightness(${lighting.roomExposure}) saturate(${.58 + lighting.worldExposure * .16}) contrast(1.1)`);
+  roomContext.globalCompositeOperation = "source-atop";
+  roomContext.fillStyle = `rgba(4,7,13,${lighting.roomShade})`;
+  roomContext.fillRect(0, 0, width, height);
+  const ambientWash = roomContext.createRadialGradient(
+    width * (.5 - lighting.direction * .08), height * .18, 6,
+    width * (.5 - lighting.direction * .04), height * .36, width * .74,
+  );
+  ambientWash.addColorStop(0, `rgba(${lighting.sourceColor},${lighting.ambientStrength * .34})`);
+  ambientWash.addColorStop(.48, `rgba(${lighting.bounceColor},${lighting.ambientStrength * .16})`);
+  ambientWash.addColorStop(1, `rgba(${lighting.bounceColor},0)`);
+  roomContext.fillStyle = ambientWash;
+  roomContext.fillRect(0, 0, width, height);
+  const directionalWash = roomContext.createLinearGradient(
+    width * (.42 - lighting.direction * .18), height * .04,
+    width * (.58 + lighting.direction * .24), height,
+  );
+  directionalWash.addColorStop(0, `rgba(${lighting.sourceColor},${lighting.directStrength * .28})`);
+  directionalWash.addColorStop(.44, `rgba(${lighting.sourceColor},${lighting.directStrength * .11})`);
+  directionalWash.addColorStop(1, `rgba(${lighting.bounceColor},0)`);
+  roomContext.fillStyle = directionalWash;
+  roomContext.fillRect(0, 0, width, height);
+  roomContext.restore();
+  context.drawImage(roomContext.canvas, 0, 0);
 }
 
 function prepareApertureMask(context: CanvasRenderingContext2D, image: HTMLImageElement, width: number, height: number, profile: SceneProfile) {
@@ -655,10 +703,24 @@ function drawInteriorLightField(
   lightContext.save();
   lightContext.clearRect(0, 0, width, height);
   lightContext.globalCompositeOperation = "lighter";
-  lightContext.filter = `blur(${lighting.flash > .05 ? 3 : 7}px)`;
+  if (lighting.directStrength > .01) {
+    const directScale = 1.08 + lighting.directStrength * .16;
+    const directWidth = width * directScale;
+    const directHeight = height * (1.08 + lighting.directStrength * .25);
+    lightContext.globalAlpha = .08 + lighting.directStrength * .56;
+    lightContext.filter = `blur(${lighting.flash > .05 ? .7 : lighting.directStrength > .2 ? 1.4 : 3.2}px)`;
+    lightContext.drawImage(
+      aperture,
+      travelX * .82 - (directWidth - width) * .5,
+      travelY * .72 - (directHeight - height) * .18,
+      directWidth,
+      directHeight,
+    );
+  }
+  lightContext.filter = `blur(${lighting.flash > .05 ? 2.5 : 7}px)`;
   for (let step = 0; step < 18; step += 1) {
     const progress = step / 17;
-    lightContext.globalAlpha = (1 - progress) * (.065 + lighting.beamStrength * .12);
+    lightContext.globalAlpha = (1 - progress) * (.014 + lighting.beamStrength * .2);
     const scale = 1 + progress * .26;
     const drawWidth = width * scale;
     const drawHeight = height * scale;
@@ -683,8 +745,8 @@ function drawInteriorLightField(
     width * (.5 - lighting.direction * .08), height * .28, 8,
     width * (.5 - lighting.direction * .08), height * .34, width * .82,
   );
-  bounce.addColorStop(0, `rgba(${lighting.sourceColor},${.08 + lighting.beamStrength * .28})`);
-  bounce.addColorStop(.38, `rgba(${lighting.bounceColor},${.035 + lighting.beamStrength * .13})`);
+  bounce.addColorStop(0, `rgba(${lighting.sourceColor},${.035 + lighting.ambientStrength * .34})`);
+  bounce.addColorStop(.38, `rgba(${lighting.bounceColor},${.018 + lighting.ambientStrength * .18})`);
   bounce.addColorStop(1, `rgba(${lighting.bounceColor},0)`);
   lightContext.fillStyle = bounce;
   lightContext.fillRect(0, 0, width, height);
@@ -694,7 +756,7 @@ function drawInteriorLightField(
 
   context.save();
   context.globalCompositeOperation = "screen";
-  context.globalAlpha = .72 + lighting.flash * .22;
+  context.globalAlpha = .58 + lighting.directStrength * .42 + lighting.flash * .18;
   context.drawImage(lightContext.canvas, 0, 0);
   context.restore();
 
@@ -810,12 +872,14 @@ export function WeatherCinemaEngine({ code, isDay, place, updatedAt, wind = 4, p
     if (!context) return;
     const apertureCanvas = document.createElement("canvas");
     const apertureContext = apertureCanvas.getContext("2d");
+    const roomCanvas = document.createElement("canvas");
+    const roomContext = roomCanvas.getContext("2d");
     const lightCanvas = document.createElement("canvas");
     const lightContext = lightCanvas.getContext("2d");
     const glassCanvas = document.createElement("canvas");
     const glassContext = glassCanvas.getContext("2d");
-    if (!apertureContext || !lightContext || !glassContext) return;
-    [apertureCanvas, lightCanvas, glassCanvas].forEach((buffer) => {
+    if (!apertureContext || !roomContext || !lightContext || !glassContext) return;
+    [apertureCanvas, roomCanvas, lightCanvas, glassCanvas].forEach((buffer) => {
       buffer.width = 320;
       buffer.height = 430;
     });
@@ -939,7 +1003,7 @@ export function WeatherCinemaEngine({ code, isDay, place, updatedAt, wind = 4, p
       if (!artReady) drawWindowFrame(context, profile, windowBox, flash);
 
       if (artReady) {
-        drawRoomOverlay(context, roomImage, baseW, baseH, profile, lighting);
+        drawRoomOverlay(context, roomContext, roomImage, baseW, baseH, profile, lighting);
         if (aperturePrepared) {
           drawInteriorLightField(context, lightContext, apertureCanvas, roomImage, baseW, baseH, profile, lighting);
           drawGlassResponse(context, glassContext, apertureCanvas, baseW, baseH, lighting, presentationTime);
