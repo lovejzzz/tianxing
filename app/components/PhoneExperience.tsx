@@ -1387,7 +1387,6 @@ function WeatherApp() {
   const [results, setResults] = useState<WeatherPlace[]>([]);
   const [searching, setSearching] = useState(false);
   const [locating, setLocating] = useState(false);
-  const [tilt, setTilt] = useState({ x: 0, y: 0 });
   const [cinemaPreview, setCinemaPreview] = useState<{ code: number; isDay: boolean; updatedAt?: string; inspectionMs?: number | null; place?: WeatherPlace } | null>(null);
   const weatherRef = useRef(weather);
 
@@ -1555,9 +1554,6 @@ function WeatherApp() {
   return (
     <div
       className={`weather-app weather-cinematic ${theme} ${pickerOpen ? "weather-picker-open" : ""}`}
-      style={{ "--weather-rx": `${tilt.y}deg`, "--weather-ry": `${tilt.x}deg` } as CSSProperties}
-      onPointerMove={(event) => { if (event.pointerType === "touch") return; const bounds = event.currentTarget.getBoundingClientRect(); setTilt({ x: ((event.clientX - bounds.left) / bounds.width - .5) * 7, y: -((event.clientY - bounds.top) / bounds.height - .5) * 5 }); }}
-      onPointerLeave={() => setTilt({ x: 0, y: 0 })}
       aria-busy={loading}
     >
       <div className="weather-scene weather-engine-stage" aria-hidden="true">
@@ -1568,7 +1564,6 @@ function WeatherApp() {
           updatedAt={cinemaPreview?.updatedAt ?? weather?.updatedAt}
           wind={weather?.wind}
           precipitation={weather?.precipitation}
-          tilt={tilt}
           inspectionMs={cinemaPreview?.inspectionMs}
         />
       </div>

@@ -17,7 +17,6 @@ type WeatherCinemaEngineProps = {
   updatedAt?: string;
   wind?: number;
   precipitation?: number;
-  tilt?: { x: number; y: number };
   inspectionMs?: number | null;
 };
 
@@ -363,12 +362,11 @@ function drawSkylinePlate(
   box: { x: number; y: number; w: number; h: number },
   horizon: number,
   focus: number,
-  tiltX: number,
   lighting: SceneLighting,
 ) {
   const plateWidth = box.w * 1.78;
   const plateHeight = plateWidth / (source.width / source.height);
-  const plateX = box.x + (box.w - plateWidth) * clamp(focus) + tiltX;
+  const plateX = box.x + (box.w - plateWidth) * clamp(focus);
   const plateY = horizon - plateHeight;
 
   context.save();
@@ -377,7 +375,7 @@ function drawSkylinePlate(
   context.drawImage(
     image,
     source.x, source.y, source.width, source.height,
-    plateX - tiltX * .55, plateY - 17, plateWidth, plateHeight,
+    plateX - 2, plateY - 17, plateWidth, plateHeight,
   );
   context.restore();
 
@@ -809,14 +807,11 @@ function drawFilmFinish(context: CanvasRenderingContext2D, width: number, height
   context.restore();
 }
 
-export function WeatherCinemaEngine({ code, isDay, place, updatedAt, wind = 4, precipitation = 0, tilt = { x: 0, y: 0 }, inspectionMs = null }: WeatherCinemaEngineProps) {
+export function WeatherCinemaEngine({ code, isDay, place, updatedAt, wind = 4, precipitation = 0, inspectionMs = null }: WeatherCinemaEngineProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
-  const tiltRef = useRef(tilt);
   const profile = useMemo(() => buildProfile(place), [place]);
   const skylinePreset = useMemo(() => skylinePresetForPlace(place), [place]);
   const kind = weatherKind(code);
-
-  useEffect(() => { tiltRef.current = tilt; }, [tilt]);
 
   useEffect(() => {
     const canvas = canvasRef.current;
@@ -915,8 +910,9 @@ export function WeatherCinemaEngine({ code, isDay, place, updatedAt, wind = 4, p
       if (artReady) context.rect(0, 0, baseW, baseH);
       else windowPath(context, profile.window, windowBox.x, windowBox.y, windowBox.w, windowBox.h);
       context.clip();
-      const liveTilt = tiltRef.current;
-      context.translate(liveTilt.x * -1.5, liveTilt.y * -.5);
+
+      // The camera is intentionally locked. Depth comes from fixed layer
+      // composition and weather-driven light, never from pointer movement.
 
       const sky = context.createLinearGradient(0, windowBox.y, 0, windowBox.y + windowBox.h);
       sky.addColorStop(0, lighting.skyTop);
@@ -940,11 +936,11 @@ export function WeatherCinemaEngine({ code, isDay, place, updatedAt, wind = 4, p
 
       const skylineReady = skylineImage.complete && skylineImage.naturalWidth > 0;
       if (!skylinePreset.landmarkInPlate) {
-        drawLandmark(context, profile.landmark, windowBox.x + windowBox.w * (.48 + ((profile.seed % 17) - 8) * .006) + liveTilt.x * .82, horizon + 5, .68, isDay ? .11 : .48);
+        drawLandmark(context, profile.landmark, windowBox.x + windowBox.w * (.48 + ((profile.seed % 17) - 8) * .006), horizon + 5, .68, isDay ? .11 : .48);
       }
       if (skylineReady) {
         skylineBounds ??= measureAlphaBounds(skylineImage);
-        drawSkylinePlate(context, skylineImage, skylineBounds, windowBox, horizon + 6, skylinePreset.focus, liveTilt.x * 1.35, lighting);
+        drawSkylinePlate(context, skylineImage, skylineBounds, windowBox, horizon + 6, skylinePreset.focus, lighting);
       }
 
       drawWeather(context, windowBox.x - 12, windowBox.y - 9, windowBox.w + 24, windowBox.h + 18, kind, particles, presentationTime, wind, flash);

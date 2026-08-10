@@ -118,7 +118,9 @@ test("keeps the iPhone interactive and time-aware", async () => {
   assert.match(weatherEngineSource, /drawAtmosphereBands/);
   assert.doesNotMatch(weatherEngineSource, /function drawCloud/);
   assert.match(weatherEngineSource, /smoothstep\(0, 1, clamp\(flashRaw\)\)/);
-  assert.match(weatherEngineSource, /tiltRef/);
+  assert.doesNotMatch(source, /--weather-rx|--weather-ry/);
+  assert.doesNotMatch(weatherEngineSource, /tiltRef|liveTilt|tiltX/);
+  assert.doesNotMatch(styles, /weather-picker-open>\.weather-engine-stage\{[^}]*transform:/);
   assert.match(styles, /weather-cinema-canvas/);
   assert.match(styles, /weather-engine-stage/);
   await Promise.all([
