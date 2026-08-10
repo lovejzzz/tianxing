@@ -370,16 +370,6 @@ function drawSkylinePlate(
   const plateY = horizon - plateHeight;
 
   context.save();
-  context.globalAlpha = .22;
-  context.filter = `blur(1.4px) brightness(${lighting.worldExposure * .72}) saturate(.58)`;
-  context.drawImage(
-    image,
-    source.x, source.y, source.width, source.height,
-    plateX - 2, plateY - 17, plateWidth, plateHeight,
-  );
-  context.restore();
-
-  context.save();
   context.globalAlpha = .9;
   context.filter = `brightness(${lighting.worldExposure}) saturate(${.66 + lighting.worldExposure * .18}) contrast(1.08)`;
   context.drawImage(

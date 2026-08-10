@@ -109,6 +109,7 @@ test("keeps the iPhone interactive and time-aware", async () => {
   assert.match(weatherEngineSource, /roomAssetForProfile/);
   assert.match(weatherEngineSource, /skylinePresetForPlace/);
   assert.match(weatherEngineSource, /drawSkylinePlate/);
+  assert.doesNotMatch(weatherEngineSource, /plateY - 17/);
   assert.match(weatherEngineSource, /measureAlphaBounds/);
   assert.match(weatherEngineSource, /skylineBoundsCache/);
   assert.match(weatherEngineSource, /512 \/ Math\.max\(width, height\)/);
@@ -123,6 +124,10 @@ test("keeps the iPhone interactive and time-aware", async () => {
   assert.doesNotMatch(styles, /weather-picker-open>\.weather-engine-stage\{[^}]*transform:/);
   assert.match(styles, /weather-cinema-canvas/);
   assert.match(styles, /weather-engine-stage/);
+  assert.match(source, /Featured Cities/);
+  assert.match(source, /Eight cinematic windows/);
+  assert.match(source, /weather-featured-grid/);
+  for (const city of ["New York", "Shanghai", "Paris", "Tokyo", "London", "Sydney", "Dubai", "Singapore"]) assert.match(source, new RegExp(city));
   await Promise.all([
     "studio",
     "hotel",

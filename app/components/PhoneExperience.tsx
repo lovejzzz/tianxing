@@ -1363,6 +1363,16 @@ type WeatherData = {
 };
 
 const defaultWeatherPlace: WeatherPlace = { name: "New York", country: "United States", admin: "New York", latitude: 40.7128, longitude: -74.006 };
+const featuredWeatherPlaces: Array<WeatherPlace & { glow: string }> = [
+  { ...defaultWeatherPlace, glow: "rgba(218,157,73,.3)" },
+  { name: "Shanghai", country: "China", admin: "Shanghai", latitude: 31.2304, longitude: 121.4737, glow: "rgba(74,184,202,.28)" },
+  { name: "Paris", country: "France", admin: "Île-de-France", latitude: 48.8566, longitude: 2.3522, glow: "rgba(204,119,111,.28)" },
+  { name: "Tokyo", country: "Japan", admin: "Tokyo", latitude: 35.6762, longitude: 139.6503, glow: "rgba(186,105,160,.3)" },
+  { name: "London", country: "United Kingdom", admin: "England", latitude: 51.5072, longitude: -.1276, glow: "rgba(121,151,177,.3)" },
+  { name: "Sydney", country: "Australia", admin: "New South Wales", latitude: -33.8688, longitude: 151.2093, glow: "rgba(74,170,178,.28)" },
+  { name: "Dubai", country: "United Arab Emirates", admin: "Dubai", latitude: 25.2048, longitude: 55.2708, glow: "rgba(223,168,75,.3)" },
+  { name: "Singapore", country: "Singapore", latitude: 1.3521, longitude: 103.8198, glow: "rgba(75,164,121,.28)" },
+];
 
 function WeatherApp() {
   const [place, setPlace] = useState<WeatherPlace>(() => {
@@ -1549,6 +1559,15 @@ function WeatherApp() {
     );
   };
 
+  const chooseWeatherPlace = (nextPlace: WeatherPlace) => {
+    playSound("pop");
+    setPlace(nextPlace);
+    setPickerOpen(false);
+    setQuery("");
+    setResults([]);
+    setError("");
+  };
+
   const theme = weatherTheme(weather?.code ?? 0, weather?.isDay ?? true);
 
   return (
@@ -1579,8 +1598,28 @@ function WeatherApp() {
           <form onSubmit={searchLocations}><input value={query} onChange={(event) => setQuery(event.target.value)} onKeyDown={playKeyboardTick} placeholder="City or postal code" aria-label="Search city" autoFocus /><button disabled={searching || query.trim().length < 2}>{searching ? "…" : "Search"}</button></form>
           <button className="weather-current-location" onClick={useCurrentLocation} disabled={locating}><i>◎</i><span><strong>{locating ? "Finding you…" : "My Location"}</strong><small>Use this device’s location</small></span></button>
           <div className="weather-search-results">
-            {results.map((result) => <button key={`${result.latitude}-${result.longitude}`} onClick={() => { playSound("pop"); setPlace(result); setPickerOpen(false); setQuery(""); setResults([]); }}><span><strong>{result.name}</strong><small>{[result.admin, result.country].filter(Boolean).join(", ")}</small></span><i>›</i></button>)}
+            {results.map((result) => <button key={`${result.latitude}-${result.longitude}`} onClick={() => chooseWeatherPlace(result)}><span><strong>{result.name}</strong><small>{[result.admin, result.country].filter(Boolean).join(", ")}</small></span><i>›</i></button>)}
           </div>
+          {results.length === 0 && (
+            <section className="weather-featured-cities" aria-label="Featured city scenes">
+              <header><strong>Featured Cities</strong><small>Eight cinematic windows</small></header>
+              <div className="weather-featured-grid">
+                {featuredWeatherPlaces.map((featured, index) => (
+                  <button
+                    key={featured.name}
+                    className="weather-featured-city"
+                    style={{ "--city-glow": featured.glow } as CSSProperties}
+                    onClick={() => chooseWeatherPlace(featured)}
+                    aria-label={`Show ${featured.name} weather`}
+                  >
+                    <b>{String(index + 1).padStart(2, "0")}</b>
+                    <span><strong>{featured.name}</strong><small>{featured.country}</small></span>
+                    <i aria-hidden="true" />
+                  </button>
+                ))}
+              </div>
+            </section>
+          )}
           {error && <p>{error}</p>}
         </div>
       )}
