@@ -60,17 +60,27 @@ type SceneLighting = {
 };
 
 type Particle = { x: number; y: number; z: number; speed: number; phase: number };
-type RainParticle = Particle & { length: number; brightness: number; sway: number; width: number };
+type RainParticle = Particle & {
+  length: number;
+  brightness: number;
+  sway: number;
+  width: number;
+  life: number;
+  offset: number;
+  turbulence: number;
+};
 type GlassDroplet = {
   x: number;
-  y: number;
   radius: number;
-  rate: number;
   phase: number;
   hold: number;
   meander: number;
   trail: number;
   weight: number;
+  life: number;
+  offset: number;
+  start: number;
+  satellite: number;
 };
 
 const TAU = Math.PI * 2;
@@ -108,10 +118,14 @@ function fract(value: number) {
 }
 
 function stickSlip(value: number, hold: number) {
-  const cycle = Math.floor(value);
-  const local = fract(value);
-  const slide = local <= hold ? 0 : smoothstep(hold, 1, local);
-  return cycle + slide;
+  if (value <= hold) return smoothstep(0, hold, value) * .025;
+  const firstSlideEnd = hold + (1 - hold) * .56;
+  if (value <= firstSlideEnd) {
+    return .025 + smoothstep(hold, firstSlideEnd, value) * .63;
+  }
+  const secondHoldEnd = firstSlideEnd + (1 - firstSlideEnd) * .42;
+  if (value <= secondHoldEnd) return .655;
+  return .655 + smoothstep(secondHoldEnd, 1, value) * .345;
 }
 
 function cityLandmark(place: CinemaWeatherPlace): LandmarkKind {
@@ -834,32 +848,32 @@ function drawRainField(
   wind: number,
   lighting: SceneLighting,
 ) {
-  const intensity = kind === "storm" ? 1 : .82;
-  const exposure = clamp(.42 + lighting.worldExposure * .36 + lighting.flash * .82, .36, 1);
-  const gust = .9 + Math.sin(elapsed * .00031) * .055 + Math.sin(elapsed * .00079 + 1.4) * .035;
+  const intensity = kind === "storm" ? 1 : .9;
+  const exposure = clamp(.66 + lighting.worldExposure * .32 + lighting.flash * .76, .58, 1);
   const slant = clamp(wind * .022, -.36, .36);
 
-  // Most distant rain is read as participating atmosphere, not as a wall of
-  // white lines. Soft, independently moving shafts give the skyline depth.
+  // A distant veil belongs to the atmosphere, but must never become a moving
+  // translucent wall. Each narrow lane breathes on its own clock.
   context.save();
   context.globalCompositeOperation = "source-over";
-  context.filter = "blur(5px)";
-  for (let index = 0; index < 7; index += 1) {
-    const lane = fract(index * .618 + elapsed * (.0000015 + index * .00000012));
-    const laneX = (lane * 1.22 - .11) * width;
-    const shaft = context.createLinearGradient(laneX - width * .12, 0, laneX + width * .12, height);
+  context.filter = "blur(3.2px)";
+  for (let index = 0; index < 5; index += 1) {
+    const laneX = fract(index * .618 + Math.sin(elapsed * (.00007 + index * .000009) + index * 1.31) * .045) * width;
+    const laneAlpha = (.008 + (index % 3) * .003) * intensity * exposure
+      * (.78 + Math.sin(elapsed * (.00019 + index * .000013) + index) * .22);
+    const shaft = context.createLinearGradient(laneX - width * .055, 0, laneX + width * .055, height);
     shaft.addColorStop(0, `rgba(${lighting.sourceColor},0)`);
-    shaft.addColorStop(.38, `rgba(${lighting.sourceColor},${(.021 + index % 3 * .005) * intensity * exposure})`);
-    shaft.addColorStop(.72, `rgba(${lighting.sourceColor},${.04 * intensity * exposure})`);
+    shaft.addColorStop(.38, `rgba(${lighting.sourceColor},${laneAlpha * .72})`);
+    shaft.addColorStop(.72, `rgba(${lighting.sourceColor},${laneAlpha})`);
     shaft.addColorStop(1, `rgba(${lighting.sourceColor},0)`);
     context.fillStyle = shaft;
-    context.fillRect(laneX - width * .11, -18, width * .22, height + 36);
+    context.fillRect(laneX - width * .052, -18, width * .104, height + 36);
   }
   context.restore();
 
-  // A photographed streak has a soft head and tail because exposure integrates
-  // a moving, oscillating drop. Each depth band therefore gets its own length,
-  // focus, opacity and shutter smear instead of sharing one graphic line style.
+  // Every drop owns a complete, deterministic lifetime. It fades while outside
+  // the aperture, crosses once, then dies before its next cycle begins. There
+  // is no modulo seam where a bright streak can teleport from bottom to top.
   for (let layer = 0; layer < 4; layer += 1) {
     const minDepth = layer / 4;
     const maxDepth = (layer + 1) / 4;
@@ -869,15 +883,31 @@ function drawRainField(
     particles.forEach((particle) => {
       if (particle.z < minDepth || particle.z >= maxDepth) return;
       const depth = .12 + particle.z * .88;
-      const travel = elapsed * particle.speed * intensity * (.48 + depth * .7) * gust;
-      const y = fract(particle.y + travel) * (height + 26) - 13;
-      const drift = elapsed * wind * .0000065 * depth;
-      const sway = Math.sin(elapsed * .00052 + particle.phase) * particle.sway * (1 - depth) * 2.2;
-      const x = fract(particle.x + drift) * (width + 22) - 11 + sway;
-      const length = particle.length * (.48 + depth * 1.08) * (kind === "storm" ? 1.08 : .86);
-      const dx = slant * length + Math.sin(particle.phase + elapsed * .00034) * .24;
-      const alpha = (.082 + depth * .46) * particle.brightness * intensity * exposure;
-      const lineWidth = particle.width * (.42 + depth * .74);
+      const timeline = elapsed / particle.life + particle.offset;
+      const cycle = Math.floor(timeline);
+      const progress = fract(timeline);
+      const birth = smoothstep(.015, .085, progress);
+      const death = 1 - smoothstep(.895, .985, progress);
+      const envelope = birth * death;
+      const localGust = Math.sin(elapsed * (.00023 + particle.turbulence * .00019) + particle.phase)
+        * (.045 + particle.turbulence * .04)
+        + Math.sin(elapsed * .00071 + particle.phase * 1.7) * .018;
+      // Wind may bend a drop, but must never pull it back up the frame. Keeping
+      // vertical progress strictly monotonic removes the subtle boiling motion
+      // that made the old rain feel like a layer instead of falling water.
+      const travel = progress;
+      const y = -24 + travel * (height + 48);
+      const cycleDrift = Math.sin((cycle + 1) * 12.9898 + particle.phase * 4.17) * .075;
+      const windDrift = progress * wind * (.15 + depth * .42) + localGust * width * (.012 + depth * .016);
+      const sway = Math.sin(progress * TAU * (1.2 + particle.turbulence) + particle.phase) * particle.sway * (1 - depth) * 2.4;
+      const x = fract(particle.x + cycleDrift) * (width + 28) - 14 + windDrift + sway;
+      const length = particle.length * (.5 + depth * .94) * (kind === "storm" ? 1.1 : .94);
+      const dx = slant * length + Math.sin(particle.phase + progress * TAU) * .22;
+      const alpha = (.12 + depth * .32) * particle.brightness * intensity * exposure * envelope;
+      // The scene is rendered at a compact internal resolution and then fitted
+      // into the phone. A physical minimum keeps distant rain from collapsing
+      // into sub-pixel noise while preserving four distinct depth layers.
+      const lineWidth = Math.max(.38, particle.width * (.54 + depth * .82));
       const streak = context.createLinearGradient(x, y, x + dx, y + length);
       streak.addColorStop(0, `rgba(${lighting.sourceColor},0)`);
       streak.addColorStop(.18, `rgba(${lighting.sourceColor},${alpha * .38})`);
@@ -888,7 +918,7 @@ function drawRainField(
       // A restrained dark lobe makes drops remain legible against a bright sky;
       // the offset bright lobe catches room, sky and lightning illumination.
       context.globalCompositeOperation = "source-over";
-      context.strokeStyle = `rgba(3,6,10,${alpha * .22})`;
+      context.strokeStyle = `rgba(3,6,10,${alpha * .3})`;
       context.lineWidth = lineWidth * 1.22;
       context.beginPath();
       context.moveTo(x - .24, y);
@@ -956,27 +986,35 @@ function drawWindowRain(
   const windLean = clamp(wind * .018, -.3, .3);
 
   droplets.forEach((drop, index) => {
-    const raw = elapsed * drop.rate * trickleRate + drop.phase;
-    const stepped = stickSlip(raw, drop.hold);
-    const path = drop.y + stepped * (.11 + drop.weight * .08);
-    const y = fract(path) * (height + 18) - 9;
-    const wander = Math.sin(stepped * 2.7 + drop.phase * TAU) * drop.meander
-      + Math.sin(stepped * 5.1 + drop.x * 9) * drop.meander * .34;
+    const raw = elapsed / drop.life * trickleRate + drop.offset;
+    const local = fract(raw);
+    const stepped = stickSlip(local, drop.hold);
+    const birth = smoothstep(.015, .075, local);
+    const death = 1 - smoothstep(.91, .99, local);
+    const envelope = birth * death;
+    const startY = drop.start * height;
+    const y = startY + stepped * (height - startY + 26);
+    const wander = Math.sin(stepped * 3.1 + drop.phase * TAU) * drop.meander
+      + Math.sin(stepped * 7.3 + drop.x * 9) * drop.meander * .28;
     const x = drop.x * width + wander + windLean * drop.weight * 4;
     const radius = drop.radius * (.82 + Math.sin(drop.phase * 8.3) * .08);
     const verticalRadius = radius * (1.12 + drop.weight * .42);
-    const local = fract(raw);
-    const sliding = local > drop.hold;
-    const slideEnergy = sliding ? smoothstep(drop.hold, Math.min(.98, drop.hold + .22), local) : 0;
-    const trailLength = drop.trail * (.32 + slideEnergy * .68);
+    const firstSlideEnd = drop.hold + (1 - drop.hold) * .56;
+    const secondHoldEnd = firstSlideEnd + (1 - firstSlideEnd) * .42;
+    const firstSlide = smoothstep(drop.hold, firstSlideEnd, local)
+      * (1 - smoothstep(firstSlideEnd, secondHoldEnd, local));
+    const finalSlide = smoothstep(secondHoldEnd, 1, local);
+    const slideEnergy = clamp(firstSlide + finalSlide);
+    const trailLength = drop.trail * (.12 + slideEnergy * .88) * envelope;
 
     rainContext.save();
+    rainContext.globalAlpha = envelope;
     rainContext.lineCap = "round";
     if (trailLength > 1.1) {
       const trailGradient = rainContext.createLinearGradient(x, y - trailLength, x, y);
       trailGradient.addColorStop(0, "rgba(4,8,12,0)");
-      trailGradient.addColorStop(.6, `rgba(4,8,12,${.045 + drop.weight * .035})`);
-      trailGradient.addColorStop(1, `rgba(4,8,12,${.085 + drop.weight * .055})`);
+      trailGradient.addColorStop(.6, `rgba(4,8,12,${.04 + drop.weight * .03})`);
+      trailGradient.addColorStop(1, `rgba(4,8,12,${.075 + drop.weight * .05})`);
       rainContext.strokeStyle = trailGradient;
       rainContext.lineWidth = Math.max(.45, radius * .7);
       rainContext.beginPath();
@@ -991,7 +1029,7 @@ function drawWindowRain(
       );
       rainContext.stroke();
       rainContext.globalCompositeOperation = "screen";
-      rainContext.strokeStyle = `rgba(${lighting.sourceColor},${(.055 + slideEnergy * .07) * lightResponse})`;
+      rainContext.strokeStyle = `rgba(${lighting.sourceColor},${(.045 + slideEnergy * .08) * lightResponse})`;
       rainContext.lineWidth = Math.max(.22, radius * .2);
       rainContext.beginPath();
       rainContext.moveTo(x + .45, y - trailLength * .92);
@@ -1014,7 +1052,7 @@ function drawWindowRain(
     rainContext.ellipse(x, y, radius, verticalRadius, windLean * .08, 0, TAU);
     rainContext.clip();
     const sampleRadius = Math.max(1.2, radius * 1.8);
-    rainContext.globalAlpha = .78;
+    rainContext.globalAlpha = .86 * envelope;
     rainContext.drawImage(
       scene,
       clamp(x - sampleRadius + wander * .18, 0, width - sampleRadius * 2),
@@ -1028,7 +1066,7 @@ function drawWindowRain(
     );
     rainContext.globalAlpha = 1;
     const body = rainContext.createLinearGradient(x - radius, y, x + radius, y + verticalRadius);
-    body.addColorStop(0, `rgba(2,5,9,${.18 + drop.weight * .04})`);
+    body.addColorStop(0, `rgba(2,5,9,${.14 + drop.weight * .05})`);
     body.addColorStop(.46, "rgba(8,14,20,.015)");
     body.addColorStop(.78, `rgba(${lighting.sourceColor},${.065 * lightResponse})`);
     body.addColorStop(1, `rgba(${lighting.sourceColor},${.2 * lightResponse})`);
@@ -1037,7 +1075,8 @@ function drawWindowRain(
     rainContext.restore();
 
     rainContext.save();
-    rainContext.strokeStyle = `rgba(1,4,8,${.24 + drop.weight * .13})`;
+    rainContext.globalAlpha = envelope;
+    rainContext.strokeStyle = `rgba(1,4,8,${.2 + drop.weight * .12})`;
     rainContext.lineWidth = Math.max(.3, radius * .28);
     rainContext.beginPath();
     rainContext.ellipse(x, y, radius * .98, verticalRadius * .98, windLean * .08, 0, TAU);
@@ -1050,10 +1089,13 @@ function drawWindowRain(
     rainContext.stroke();
     rainContext.restore();
 
-    if (index % 5 === 0) {
-      rainContext.fillStyle = `rgba(${lighting.sourceColor},${(.035 + drop.weight * .035) * lightResponse})`;
+    if (index % 4 === 0) {
+      const satelliteX = x + Math.sin(drop.satellite * TAU) * radius * (1.5 + drop.satellite);
+      const satelliteY = y - verticalRadius * (1.2 + drop.satellite * 1.7);
+      rainContext.globalAlpha = envelope * (.48 + drop.weight * .3);
+      rainContext.fillStyle = `rgba(${lighting.sourceColor},${(.08 + drop.weight * .07) * lightResponse})`;
       rainContext.beginPath();
-      rainContext.arc(x + radius * 1.7, y - verticalRadius * 1.2, Math.max(.22, radius * .18), 0, TAU);
+      rainContext.arc(satelliteX, satelliteY, Math.max(.25, radius * (.14 + drop.satellite * .12)), 0, TAU);
       rainContext.fill();
     }
   });
@@ -1081,10 +1123,14 @@ function drawWindowRain(
 function drawFilmFinish(context: CanvasRenderingContext2D, width: number, height: number, elapsed: number, profile: SceneProfile) {
   context.save();
   context.globalCompositeOperation = "soft-light";
-  context.globalAlpha = .038;
-  const rand = mulberry32(profile.seed + Math.floor(elapsed / 180));
+  // The emulsion texture is attached to the image plane. Earlier versions
+  // regenerated every grain position in discrete 180 ms blocks, making the
+  // skyline boil and visually overpowering the rain. Fixed grain with a slow
+  // exposure breath keeps the hand-painted finish without temporal popping.
+  context.globalAlpha = .018 * (.92 + Math.sin(elapsed * .00043 + profile.seed * .00001) * .08);
+  const rand = mulberry32(profile.seed ^ 0x91e10da5);
   context.fillStyle = "#f5ddb6";
-  for (let index = 0; index < 220; index += 1) context.fillRect(rand() * width, rand() * height, rand() > .9 ? 1.1 : .5, .5);
+  for (let index = 0; index < 180; index += 1) context.fillRect(rand() * width, rand() * height, rand() > .92 ? 1 : .42, .42);
   context.globalAlpha = 1;
   context.globalCompositeOperation = "source-over";
   const vignette = context.createRadialGradient(width * .5, height * .43, width * .12, width * .5, height * .5, width * .72);
@@ -1129,32 +1175,37 @@ export function WeatherCinemaEngine({ code, isDay, place, updatedAt, wind = 4, p
     let aperturePrepared = false;
     let skylineBounds: AlphaBounds | null = null;
     const rand = mulberry32(profile.seed ^ 0x9e3779b9);
-    const particles: RainParticle[] = Array.from({ length: kind === "storm" ? 188 : 138 }, () => {
-      const z = Math.pow(rand(), .78);
+    const particles: RainParticle[] = Array.from({ length: kind === "storm" ? 336 : 292 }, () => {
+      const z = Math.pow(rand(), 1.22);
       return {
         x: rand(),
         y: rand(),
         z,
         speed: .000042 + rand() * .000092,
         phase: rand() * TAU,
-        length: 3.2 + rand() * 7.8 + z * 4.6,
+        length: 4.2 + rand() * 8.8 + z * 5.8,
         brightness: .44 + rand() * .66,
         sway: .22 + rand() * .74,
-        width: .42 + rand() * .56,
+        width: .58 + rand() * .58,
+        life: 1450 + (1 - z) * 2550 + rand() * 720,
+        offset: rand(),
+        turbulence: rand(),
       };
     });
-    const droplets: GlassDroplet[] = Array.from({ length: kind === "storm" ? 76 : 58 }, () => {
+    const droplets: GlassDroplet[] = Array.from({ length: kind === "storm" ? 88 : 68 }, () => {
       const weight = Math.pow(rand(), 1.08);
       return {
         x: .055 + rand() * .89,
-        y: rand(),
         radius: .62 + weight * 3.45,
-        rate: .000038 + weight * .000074 + rand() * .000018,
         phase: rand() * 8,
-        hold: .56 + rand() * .34,
+        hold: .19 + rand() * .38,
         meander: .35 + rand() * 2.5,
         trail: 2 + weight * 24,
         weight,
+        life: 9000 + (1 - weight) * 10500 + rand() * 6500,
+        offset: rand(),
+        start: .035 + rand() * .62,
+        satellite: rand(),
       };
     });
     const roomImage = new Image();
