@@ -273,6 +273,7 @@ test("keeps the iPhone interactive and time-aware", async () => {
   assert.match(styles, /phone-app-layer\.is-opening\.is-from-icon/);
   assert.match(styles, /backface-visibility:hidden/);
   assert.match(styles, /device-stage\.is-immersive\{translate:none/);
+  assert.match(styles, /@media \(max-width:560px\) and \(hover:hover\) and \(pointer:fine\)[\s\S]*?phone-app-layer\.is-fun-app:not\(\.is-from-icon\)[\s\S]*?visibility:visible/);
   assert.match(styles, /prefers-reduced-motion/);
   assert.match(source, /Draw on this note/);
   assert.match(source, /NOTES_STORAGE_KEY/);

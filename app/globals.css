@@ -1542,6 +1542,17 @@ body:has(.home-shell){overflow:hidden}
   .desktop-dock { height:68px; }
 }
 
+/* A desktop window can cross the phone-width breakpoint without remounting
+   PhoneExperience. In that case React is still legitimately showing Fun,
+   while the mobile first-boot rule below expects Home and hides the Fun
+   layer. Keep the current layer visible for a precise mouse/trackpad viewport;
+   coarse-pointer phones retain the immersive boot-to-Home behaviour. */
+@media (max-width:560px) and (hover:hover) and (pointer:fine) {
+  .phone-mode-folder > .phone-app-layer.is-fun-app:not(.is-from-icon) {
+    visibility:visible;
+  }
+}
+
 /* Dragon egg timer: an original pixel-fantasy artifact inside the existing Clock shell. */
 .timer-panel.timer-mechanical.dragon-timer{padding:4px 8px 0;display:grid;grid-template-rows:minmax(0,1fr) 126px 18px;justify-items:center;align-items:center;gap:0;perspective:850px}
 .dragon-chamber{position:relative;width:100%;height:100%;min-height:156px;display:grid;place-items:center;overflow:hidden;isolation:isolate}
