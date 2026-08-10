@@ -801,25 +801,39 @@ function drawUnifiedGrade(context: CanvasRenderingContext2D, width: number, heig
   context.restore();
 }
 
-function drawWeather(context: CanvasRenderingContext2D, xOffset: number, yOffset: number, width: number, height: number, kind: string, particles: Particle[], elapsed: number, wind: number, flash: number) {
+function drawWeather(context: CanvasRenderingContext2D, xOffset: number, yOffset: number, width: number, height: number, kind: string, particles: Particle[], elapsed: number, wind: number, lighting: SceneLighting) {
   context.save();
   context.translate(xOffset, yOffset);
   if (kind === "rain" || kind === "storm") {
-    const intensity = kind === "storm" ? 1 : .68;
-    context.lineWidth = 1;
-    particles.forEach((particle, index) => {
-      const y = ((particle.y + elapsed * particle.speed * intensity) % 1.15) * height - 12;
-      const x = ((particle.x + elapsed * wind * .0009 * particle.z) % 1.12) * width - 8;
-      context.strokeStyle = `rgba(174,201,218,${.18 + particle.z * .58})`;
-      context.beginPath();
-      context.moveTo(x, y);
-      context.lineTo(x + 4 + wind * .05, y + 13 + particle.z * 9);
-      context.stroke();
-      if (index % 8 === 0 && y > height * .85) {
-        context.strokeStyle = `rgba(183,208,220,${.1 + particle.z * .18})`;
-        context.beginPath(); context.ellipse(x, height * .94, 3 + particle.z * 3, 1.2, 0, 0, TAU); context.stroke();
-      }
-    });
+    const stormLift = kind === "storm" ? 1.18 : .82;
+    const illuminated = clamp(.28 + lighting.worldExposure * .32 + lighting.flash * .7, .22, 1);
+    const gust = .78 + Math.sin(elapsed * .00042) * .12 + Math.sin(elapsed * .0011 + 1.7) * .06;
+    context.globalCompositeOperation = "screen";
+    for (let layer = 0; layer < 3; layer += 1) {
+      const minDepth = layer / 3;
+      const maxDepth = (layer + 1) / 3;
+      context.save();
+      context.filter = layer === 0 ? "blur(.65px)" : layer === 1 ? "blur(.28px)" : "none";
+      context.lineCap = "round";
+      particles.forEach((particle) => {
+        if (particle.z < minDepth || particle.z >= maxDepth) return;
+        const depth = .18 + particle.z * .82;
+        const fall = elapsed * particle.speed * stormLift * (.42 + depth * .46) * gust;
+        const drift = elapsed * wind * .000018 * depth;
+        const y = ((particle.y + fall) % 1.09) * height - 7;
+        const x = ((particle.x + drift) % 1.08) * width - 4;
+        const length = 2.4 + depth * 6.8;
+        const angle = wind * .018 * depth;
+        const alpha = (.065 + depth * .28) * illuminated;
+        context.strokeStyle = `rgba(${lighting.sourceColor},${alpha})`;
+        context.lineWidth = .5 + depth * .7;
+        context.beginPath();
+        context.moveTo(x, y);
+        context.lineTo(x + angle + length * .14, y + length);
+        context.stroke();
+      });
+      context.restore();
+    }
   } else if (kind === "snow") {
     particles.forEach((particle) => {
       const y = ((particle.y + elapsed * particle.speed * .18) % 1.08) * height - 4;
@@ -837,10 +851,89 @@ function drawWeather(context: CanvasRenderingContext2D, xOffset: number, yOffset
       context.fillStyle = fog; context.fillRect(0, y - 50, width, 100);
     }
   }
-  if (flash > .01) {
-    context.fillStyle = `rgba(199,216,255,${flash * .32})`;
+  if (lighting.flash > .01) {
+    context.fillStyle = `rgba(199,216,255,${lighting.flash * .32})`;
     context.fillRect(0, 0, width, height);
   }
+  context.restore();
+}
+
+function drawWindowRain(
+  context: CanvasRenderingContext2D,
+  rainContext: CanvasRenderingContext2D,
+  aperture: HTMLCanvasElement,
+  width: number,
+  height: number,
+  kind: string,
+  particles: Particle[],
+  elapsed: number,
+  wind: number,
+  lighting: SceneLighting,
+) {
+  if (kind !== "rain" && kind !== "storm") return;
+  rainContext.save();
+  rainContext.clearRect(0, 0, width, height);
+  const lightResponse = clamp(.32 + lighting.worldExposure * .3 + lighting.flash * .9, .25, 1);
+  const trickleRate = kind === "storm" ? .000018 : .000011;
+
+  particles.forEach((particle, index) => {
+    if (index % 4 !== 0) return;
+    const x = particle.x * width + Math.sin(particle.phase) * 4;
+    const pause = .36 + particle.z * .64;
+    const phase = (elapsed * trickleRate * pause + particle.y) % 1.18;
+    const y = phase * height - 9;
+    const radius = .55 + particle.z * 1.25;
+    const trail = 2.5 + particle.z * 10;
+    const lean = wind * .012 * particle.z;
+
+    rainContext.save();
+    rainContext.lineCap = "round";
+    rainContext.strokeStyle = `rgba(3,7,12,${.07 + particle.z * .1})`;
+    rainContext.lineWidth = radius * 1.15;
+    rainContext.beginPath();
+    rainContext.moveTo(x - lean * .25, y - trail);
+    rainContext.quadraticCurveTo(x + lean * .15, y - trail * .48, x + lean, y);
+    rainContext.stroke();
+
+    rainContext.globalCompositeOperation = "screen";
+    rainContext.strokeStyle = `rgba(${lighting.sourceColor},${(.075 + particle.z * .22) * lightResponse})`;
+    rainContext.lineWidth = Math.max(.35, radius * .42);
+    rainContext.beginPath();
+    rainContext.moveTo(x - lean * .25 + .5, y - trail);
+    rainContext.quadraticCurveTo(x + lean * .15 + .4, y - trail * .48, x + lean + .35, y);
+    rainContext.stroke();
+    const bead = rainContext.createRadialGradient(x - radius * .3, y - radius * .42, .1, x, y, radius * 1.5);
+    bead.addColorStop(0, `rgba(${lighting.sourceColor},${(.28 + lighting.flash * .34) * lightResponse})`);
+    bead.addColorStop(.38, `rgba(${lighting.sourceColor},${.055 * lightResponse})`);
+    bead.addColorStop(1, "rgba(1,5,10,.1)");
+    rainContext.fillStyle = bead;
+    rainContext.beginPath();
+    rainContext.ellipse(x + lean, y, radius, radius * 1.35, -.08, 0, TAU);
+    rainContext.fill();
+    rainContext.restore();
+  });
+
+  // Fine stationary beads keep the glass alive without turning it into a
+  // uniformly moving particle layer.
+  particles.forEach((particle, index) => {
+    if (index % 9 !== 2) return;
+    const x = particle.x * width;
+    const y = particle.y * height;
+    const radius = .35 + particle.z * .6;
+    rainContext.fillStyle = `rgba(${lighting.sourceColor},${(.04 + particle.z * .085) * lightResponse})`;
+    rainContext.beginPath();
+    rainContext.arc(x, y, radius, 0, TAU);
+    rainContext.fill();
+  });
+
+  rainContext.globalCompositeOperation = "destination-in";
+  rainContext.drawImage(aperture, 0, 0);
+  rainContext.restore();
+
+  context.save();
+  context.globalCompositeOperation = "screen";
+  context.globalAlpha = .9;
+  context.drawImage(rainContext.canvas, 0, 0);
   context.restore();
 }
 
@@ -893,7 +986,7 @@ export function WeatherCinemaEngine({ code, isDay, place, updatedAt, wind = 4, p
     let aperturePrepared = false;
     let skylineBounds: AlphaBounds | null = null;
     const rand = mulberry32(profile.seed ^ 0x9e3779b9);
-    const particles = Array.from({ length: kind === "storm" ? 120 : 82 }, () => ({ x: rand(), y: rand(), z: .2 + rand() * .8, speed: .00008 + rand() * .00016, phase: rand() * TAU }));
+    const particles = Array.from({ length: kind === "storm" ? 132 : 92 }, () => ({ x: rand(), y: rand(), z: .2 + rand() * .8, speed: .000035 + rand() * .000085, phase: rand() * TAU }));
     const roomImage = new Image();
     roomImage.decoding = "async";
     roomImage.src = roomAssetForProfile(profile);
@@ -997,7 +1090,7 @@ export function WeatherCinemaEngine({ code, isDay, place, updatedAt, wind = 4, p
         drawSkylinePlate(context, skylineImage, skylineBounds, windowBox, horizon + 6, skylinePreset.focus, lighting);
       }
 
-      drawWeather(context, windowBox.x - 12, windowBox.y - 9, windowBox.w + 24, windowBox.h + 18, kind, particles, presentationTime, wind, flash);
+      drawWeather(context, windowBox.x - 12, windowBox.y - 9, windowBox.w + 24, windowBox.h + 18, kind, particles, presentationTime, wind, lighting);
       context.restore();
 
       if (!artReady) drawWindowFrame(context, profile, windowBox, flash);
@@ -1007,6 +1100,7 @@ export function WeatherCinemaEngine({ code, isDay, place, updatedAt, wind = 4, p
         if (aperturePrepared) {
           drawInteriorLightField(context, lightContext, apertureCanvas, roomImage, baseW, baseH, profile, lighting);
           drawGlassResponse(context, glassContext, apertureCanvas, baseW, baseH, lighting, presentationTime);
+          drawWindowRain(context, glassContext, apertureCanvas, baseW, baseH, kind, particles, presentationTime, wind, lighting);
         }
       }
 

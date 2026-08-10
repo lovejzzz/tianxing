@@ -108,6 +108,9 @@ test("keeps the iPhone interactive and time-aware", async () => {
   assert.match(weatherEngineSource, /roomCanvas/);
   assert.match(weatherEngineSource, /globalCompositeOperation = "source-atop"/);
   assert.match(weatherEngineSource, /drawGlassResponse/);
+  assert.match(weatherEngineSource, /drawWindowRain/);
+  assert.match(weatherEngineSource, /lighting\.sourceColor/);
+  assert.match(weatherEngineSource, /trickleRate/);
   assert.match(weatherEngineSource, /drawUnifiedGrade/);
   assert.doesNotMatch(weatherEngineSource, /drawInteriorLightResponse/);
   assert.match(weatherEngineSource, /drawWeather/);
