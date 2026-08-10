@@ -102,6 +102,10 @@ test("keeps the iPhone interactive and time-aware", async () => {
   assert.match(weatherEngineSource, /drawWeather/);
   assert.match(weatherEngineSource, /requestAnimationFrame/);
   assert.match(weatherEngineSource, /roomAssetForProfile/);
+  assert.match(weatherEngineSource, /skylinePresetForPlace/);
+  assert.match(weatherEngineSource, /drawSkylinePlate/);
+  assert.match(weatherEngineSource, /drawAtmosphereBands/);
+  assert.doesNotMatch(weatherEngineSource, /function drawCloud/);
   assert.match(weatherEngineSource, /smoothstep\(0, 1, clamp\(flashRaw\)\)/);
   assert.match(weatherEngineSource, /tiltRef/);
   assert.match(styles, /weather-cinema-canvas/);
@@ -111,6 +115,11 @@ test("keeps the iPhone interactive and time-aware", async () => {
     "hotel",
     "observatory",
   ].map((room) => access(new URL(`../public/media/weather/engine/room-${room}-v1.webp`, import.meta.url))));
+  await Promise.all([
+    "metropolis",
+    "heritage",
+    "waterfront",
+  ].map((skyline) => access(new URL(`../public/media/weather/engine/skyline/${skyline}-v2.webp`, import.meta.url))));
   assert.match(source, /geocoding-api\.open-meteo\.com/);
   assert.match(source, /weather-city-chip/);
   assert.match(source, /Finding the sky…/);

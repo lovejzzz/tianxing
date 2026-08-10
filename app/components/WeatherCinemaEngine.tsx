@@ -24,6 +24,7 @@ type WeatherCinemaEngineProps = {
 type Point = { x: number; y: number };
 type WindowShape = "wide" | "triptych" | "arched" | "tall";
 type RoomKind = "study" | "hotel" | "studio" | "cafe" | "observatory" | "penthouse";
+type SkylineKind = "metropolis" | "heritage" | "waterfront";
 type LandmarkKind = "empire" | "pearl" | "tokyo" | "eiffel" | "clock" | "bridge" | "needle" | "willis" | "burj" | "opera" | "cn" | "capitol" | "dome" | "petronas" | "marina" | "minaret" | "spire";
 
 type SceneProfile = {
@@ -32,7 +33,12 @@ type SceneProfile = {
   window: WindowShape;
   landmark: LandmarkKind;
   palette: [string, string, string, string];
-  skylineDensity: number;
+};
+
+type SkylinePreset = {
+  kind: SkylineKind;
+  focus: number;
+  landmarkInPlate: boolean;
 };
 
 type Particle = { x: number; y: number; z: number; speed: number; phase: number };
@@ -108,7 +114,6 @@ function buildProfile(place: CinemaWeatherPlace): SceneProfile {
     window: windows[(seed >>> 4) % windows.length],
     landmark: cityLandmark(place),
     palette: palettes[(seed >>> 8) % palettes.length],
-    skylineDensity: 18 + (seed % 9),
   };
 }
 
@@ -116,6 +121,38 @@ function roomAssetForProfile(profile: SceneProfile) {
   if (profile.room === "hotel" || profile.room === "penthouse") return "/media/weather/engine/room-hotel-v1.webp";
   if (profile.room === "observatory") return "/media/weather/engine/room-observatory-v1.webp";
   return "/media/weather/engine/room-studio-v1.webp";
+}
+
+function skylinePresetForPlace(place: CinemaWeatherPlace): SkylinePreset {
+  const label = `${place.name} ${place.admin ?? ""} ${place.country ?? ""}`.toLowerCase();
+  if (/new york|manhattan|brooklyn/.test(label)) return { kind: "metropolis", focus: .08, landmarkInPlate: true };
+  if (/chicago/.test(label)) return { kind: "metropolis", focus: .23, landmarkInPlate: true };
+  if (/shanghai/.test(label)) return { kind: "metropolis", focus: .61, landmarkInPlate: true };
+  if (/toronto/.test(label)) return { kind: "metropolis", focus: .9, landmarkInPlate: true };
+  if (/london/.test(label)) return { kind: "heritage", focus: .28, landmarkInPlate: true };
+  if (/rome|vatican|florence/.test(label)) return { kind: "heritage", focus: .06, landmarkInPlate: true };
+  if (/istanbul|ankara|cairo|casablanca/.test(label)) return { kind: "heritage", focus: .88, landmarkInPlate: true };
+  if (/seattle/.test(label)) return { kind: "waterfront", focus: .15, landmarkInPlate: true };
+  if (/dubai|abu dhabi/.test(label)) return { kind: "waterfront", focus: .57, landmarkInPlate: true };
+  if (/singapore/.test(label)) return { kind: "waterfront", focus: .76, landmarkInPlate: false };
+  if (/paris/.test(label)) return { kind: "heritage", focus: .52, landmarkInPlate: false };
+  if (/san francisco|oakland/.test(label)) return { kind: "waterfront", focus: .31, landmarkInPlate: false };
+  if (/sydney/.test(label)) return { kind: "waterfront", focus: .82, landmarkInPlate: false };
+  if (/washington|district of columbia/.test(label)) return { kind: "heritage", focus: .43, landmarkInPlate: false };
+  if (/tokyo|yokohama/.test(label)) return { kind: "waterfront", focus: .46, landmarkInPlate: false };
+  if (/kuala lumpur/.test(label)) return { kind: "metropolis", focus: .66, landmarkInPlate: false };
+  const coastal = Math.abs(place.longitude) % 2 > 1.15;
+  const historic = Math.abs(place.latitude) > 36 && Math.abs(place.longitude) < 45;
+  const seed = hashString(`${place.name}:${place.latitude}:${place.longitude}`);
+  return {
+    kind: historic ? "heritage" : coastal ? "waterfront" : "metropolis",
+    focus: .12 + ((seed >>> 7) % 72) / 100,
+    landmarkInPlate: false,
+  };
+}
+
+function skylineAssetForPreset(preset: SkylinePreset) {
+  return `/media/weather/engine/skyline/${preset.kind}-v2.webp`;
 }
 
 function weatherKind(code: number) {
@@ -163,37 +200,60 @@ function windowPath(context: CanvasRenderingContext2D, shape: WindowShape, x: nu
   roundedRect(context, x, y, width, height, shape === "wide" ? 5 : 3);
 }
 
-function drawCloud(context: CanvasRenderingContext2D, x: number, y: number, scale: number, color: string) {
-  context.fillStyle = color;
-  context.beginPath();
-  context.ellipse(x, y, 32 * scale, 10 * scale, 0, 0, TAU);
-  context.ellipse(x - 18 * scale, y + 2 * scale, 25 * scale, 8 * scale, 0, 0, TAU);
-  context.ellipse(x + 23 * scale, y + 1 * scale, 28 * scale, 9 * scale, 0, 0, TAU);
-  context.fill();
-}
-
-function drawBuilding(context: CanvasRenderingContext2D, x: number, base: number, width: number, height: number, depth: number, rand: () => number, lit: number) {
-  const top = base - height;
-  context.fillStyle = depth > .65 ? "#07090d" : depth > .35 ? "#0d1118" : "#171a22";
-  context.fillRect(x, top, width, height);
-  context.fillStyle = `rgba(191,143,69,${.06 + depth * .13})`;
-  context.fillRect(x, top, 1, height);
-  if (rand() > .48) {
-    context.fillStyle = "#07090d";
+function drawAtmosphereBands(context: CanvasRenderingContext2D, box: { x: number; y: number; w: number; h: number }, kind: string, elapsed: number, wind: number) {
+  if (kind === "clear") return;
+  const strength = kind === "storm" ? .32 : kind === "rain" ? .22 : kind === "fog" ? .17 : .13;
+  const travel = ((elapsed * Math.max(.0018, Math.abs(wind) * .00055)) % (box.w * 1.8)) - box.w * .45;
+  context.save();
+  context.globalCompositeOperation = "screen";
+  for (let layer = 0; layer < 3; layer += 1) {
+    const y = box.y + box.h * (.12 + layer * .14);
+    const drift = travel * (.28 + layer * .18) * (wind < 0 ? -1 : 1);
+    const band = context.createLinearGradient(box.x + drift, y, box.x + box.w + drift, y + 34);
+    band.addColorStop(0, "rgba(0,0,0,0)");
+    band.addColorStop(.18, `rgba(118,126,143,${strength * (.52 + layer * .12)})`);
+    band.addColorStop(.52, `rgba(151,157,169,${strength * (.8 - layer * .08)})`);
+    band.addColorStop(.83, `rgba(96,105,122,${strength * .42})`);
+    band.addColorStop(1, "rgba(0,0,0,0)");
+    context.fillStyle = band;
     context.beginPath();
-    context.moveTo(x + width * .2, top);
-    context.lineTo(x + width * .5, top - Math.min(15, height * .16));
-    context.lineTo(x + width * .8, top);
+    context.moveTo(box.x - box.w * .4, y + 13);
+    context.bezierCurveTo(box.x + box.w * .02 + drift, y - 9, box.x + box.w * .28 + drift, y + 19, box.x + box.w * .48 + drift, y + 3);
+    context.bezierCurveTo(box.x + box.w * .7 + drift, y - 12, box.x + box.w * .92 + drift, y + 20, box.x + box.w * 1.4, y + 5);
+    context.lineTo(box.x + box.w * 1.4, y + 42);
+    context.lineTo(box.x - box.w * .4, y + 42);
+    context.closePath();
     context.fill();
   }
-  const cell = Math.max(3, Math.floor(width / 4));
-  for (let wy = top + 8; wy < base - 5; wy += 8) {
-    for (let wx = x + 3; wx < x + width - 2; wx += cell) {
-      const on = rand() < lit * (.45 + depth * .4);
-      context.fillStyle = on ? `rgba(238,185,90,${.35 + depth * .48})` : "rgba(10,13,18,.68)";
-      context.fillRect(wx, wy, depth > .65 ? 1.5 : 1, 2);
-    }
-  }
+  context.restore();
+}
+
+function drawSkylinePlate(
+  context: CanvasRenderingContext2D,
+  image: HTMLImageElement,
+  box: { x: number; y: number; w: number; h: number },
+  horizon: number,
+  focus: number,
+  tiltX: number,
+  ambient: number,
+  flash: number,
+) {
+  const plateWidth = box.w * 1.78;
+  const plateHeight = plateWidth / (image.naturalWidth / image.naturalHeight);
+  const plateX = box.x + (box.w - plateWidth) * clamp(focus) + tiltX;
+  const plateY = horizon - plateHeight;
+
+  context.save();
+  context.globalAlpha = .22;
+  context.filter = `blur(1.4px) brightness(${.48 + ambient * .22 + flash * .24}) saturate(.62)`;
+  context.drawImage(image, plateX - tiltX * .55, plateY - 17, plateWidth, plateHeight);
+  context.restore();
+
+  context.save();
+  context.globalAlpha = .9;
+  context.filter = `brightness(${.55 + ambient * .34 + flash * .28}) saturate(${.68 + ambient * .26}) contrast(1.08)`;
+  context.drawImage(image, plateX, plateY, plateWidth, plateHeight);
+  context.restore();
 }
 
 function drawLandmark(context: CanvasRenderingContext2D, kind: LandmarkKind, x: number, base: number, scale: number, glow: number) {
@@ -467,6 +527,7 @@ export function WeatherCinemaEngine({ code, isDay, place, updatedAt, wind = 4, p
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const tiltRef = useRef(tilt);
   const profile = useMemo(() => buildProfile(place), [place]);
+  const skylinePreset = useMemo(() => skylinePresetForPlace(place), [place]);
   const kind = weatherKind(code);
 
   useEffect(() => { tiltRef.current = tilt; }, [tilt]);
@@ -488,6 +549,9 @@ export function WeatherCinemaEngine({ code, isDay, place, updatedAt, wind = 4, p
     const roomImage = new Image();
     roomImage.decoding = "async";
     roomImage.src = roomAssetForProfile(profile);
+    const skylineImage = new Image();
+    skylineImage.decoding = "async";
+    skylineImage.src = skylineAssetForPreset(skylinePreset);
 
     const resize = () => {
       const bounds = canvas.getBoundingClientRect();
@@ -567,35 +631,25 @@ export function WeatherCinemaEngine({ code, isDay, place, updatedAt, wind = 4, p
         for (let index = 0; index < 38; index += 1) { const px = windowBox.x + starRand() * windowBox.w; const py = windowBox.y + starRand() * windowBox.h * .52; context.fillRect(px, py, starRand() > .8 ? 1.2 : .6, .6); }
       }
 
-      if (kind !== "clear") {
-        const speed = presentationTime * .005 * Math.max(1, Math.abs(wind) * .25);
-        drawCloud(context, windowBox.x + ((speed + profile.seed) % (windowBox.w + 150)) - 75, windowBox.y + 54, 1.25, kind === "storm" ? "rgba(9,12,20,.82)" : "rgba(38,42,50,.62)");
-        drawCloud(context, windowBox.x + ((speed * .62 + 110) % (windowBox.w + 170)) - 85, windowBox.y + 91, .88, "rgba(47,50,59,.45)");
-      }
-
-      const cityRand = mulberry32(profile.seed + 71);
       const horizon = windowBox.y + windowBox.h * .86;
-      for (let layer = 0; layer < 3; layer += 1) {
-        const depth = layer / 2;
-        let x = windowBox.x - 18 + liveTilt.x * (depth + .2) * 1.4;
-        const density = profile.skylineDensity - layer * 3;
-        for (let index = 0; index < density; index += 1) {
-          const bw = 8 + cityRand() * (13 + layer * 2);
-          const bh = 28 + cityRand() * (74 + layer * 23);
-          drawBuilding(context, x, horizon + layer * 8, bw, bh, depth, cityRand, isDay ? .12 : .78);
-          x += bw + 1 + cityRand() * 2;
-        }
+      drawAtmosphereBands(context, windowBox, kind, presentationTime, wind);
+
+      const skylineReady = skylineImage.complete && skylineImage.naturalWidth > 0;
+      if (!skylinePreset.landmarkInPlate) {
+        drawLandmark(context, profile.landmark, windowBox.x + windowBox.w * (.48 + ((profile.seed % 17) - 8) * .006) + liveTilt.x * .82, horizon + 5, .68, isDay ? .11 : .48);
       }
-      drawLandmark(context, profile.landmark, windowBox.x + windowBox.w * (.42 + ((profile.seed % 17) - 8) * .009) + liveTilt.x * 2.4, horizon + 6, .88, isDay ? .2 : .82);
+      if (skylineReady) {
+        drawSkylinePlate(context, skylineImage, windowBox, horizon + 6, skylinePreset.focus, liveTilt.x * 1.35, ambient, flash);
+      }
 
       if (profile.landmark === "bridge" || profile.landmark === "opera" || profile.landmark === "marina") {
         const water = context.createLinearGradient(0, horizon, 0, windowBox.y + windowBox.h);
         water.addColorStop(0, "rgba(25,32,43,.75)"); water.addColorStop(1, "rgba(5,8,13,.94)");
         context.fillStyle = water; context.fillRect(windowBox.x - 10, horizon + 5, windowBox.w + 20, windowBox.h);
         context.strokeStyle = `rgba(221,169,78,${isDay ? .08 : .24})`;
-        for (let index = 0; index < 8; index += 1) { const wy = horizon + 11 + index * 8; context.beginPath(); context.moveTo(windowBox.x + cityRand() * 60, wy); context.lineTo(windowBox.x + windowBox.w - cityRand() * 45, wy); context.stroke(); }
+        const waterRand = mulberry32(profile.seed + 71);
+        for (let index = 0; index < 8; index += 1) { const wy = horizon + 11 + index * 8; context.beginPath(); context.moveTo(windowBox.x + waterRand() * 60, wy); context.lineTo(windowBox.x + windowBox.w - waterRand() * 45, wy); context.stroke(); }
       }
-
       drawWeather(context, windowBox.x - 12, windowBox.y - 9, windowBox.w + 24, windowBox.h + 18, kind, particles, presentationTime, wind, flash);
       context.restore();
 
@@ -632,9 +686,7 @@ export function WeatherCinemaEngine({ code, isDay, place, updatedAt, wind = 4, p
       frame = window.requestAnimationFrame(render);
     };
     const fallback = window.setTimeout(begin, 1800);
-    roomImage.decode().then(begin).catch(() => {
-      if (roomImage.complete) begin();
-    });
+    Promise.allSettled([roomImage.decode(), skylineImage.decode()]).then(begin);
 
     return () => {
       disposed = true;
@@ -642,7 +694,7 @@ export function WeatherCinemaEngine({ code, isDay, place, updatedAt, wind = 4, p
       window.cancelAnimationFrame(frame);
       observer.disconnect();
     };
-  }, [code, inspectionMs, isDay, kind, place, precipitation, profile, updatedAt, wind]);
+  }, [code, inspectionMs, isDay, kind, place, precipitation, profile, skylinePreset, updatedAt, wind]);
 
   return <canvas ref={canvasRef} className="weather-cinema-canvas" aria-hidden="true" />;
 }
