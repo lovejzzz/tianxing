@@ -877,18 +877,21 @@ function drawRainField(
   for (let layer = 0; layer < 4; layer += 1) {
     const minDepth = layer / 4;
     const maxDepth = (layer + 1) / 4;
+    const layerDepth = .12 + ((minDepth + maxDepth) * .5) * .88;
+    const darkPath = new Path2D();
+    const lightPath = new Path2D();
     context.save();
     context.lineCap = "round";
-    context.filter = layer === 0 ? "blur(1.4px)" : layer === 1 ? "blur(.72px)" : layer === 2 ? "blur(.25px)" : "blur(.12px)";
+    // Depth is expressed with opacity, scale and one restrained far-field
+    // blur. Applying a live filter to hundreds of individual strokes was
+    // needlessly expensive and made the rain cadence visibly sticky.
+    context.filter = layer === 0 ? "blur(.65px)" : "none";
     particles.forEach((particle) => {
       if (particle.z < minDepth || particle.z >= maxDepth) return;
       const depth = .12 + particle.z * .88;
       const timeline = elapsed / particle.life + particle.offset;
       const cycle = Math.floor(timeline);
       const progress = fract(timeline);
-      const birth = smoothstep(.015, .085, progress);
-      const death = 1 - smoothstep(.895, .985, progress);
-      const envelope = birth * death;
       const localGust = Math.sin(elapsed * (.00023 + particle.turbulence * .00019) + particle.phase)
         * (.045 + particle.turbulence * .04)
         + Math.sin(elapsed * .00071 + particle.phase * 1.7) * .018;
@@ -903,35 +906,21 @@ function drawRainField(
       const x = fract(particle.x + cycleDrift) * (width + 28) - 14 + windDrift + sway;
       const length = particle.length * (.5 + depth * .94) * (kind === "storm" ? 1.1 : .94);
       const dx = slant * length + Math.sin(particle.phase + progress * TAU) * .22;
-      const alpha = (.12 + depth * .32) * particle.brightness * intensity * exposure * envelope;
-      // The scene is rendered at a compact internal resolution and then fitted
-      // into the phone. A physical minimum keeps distant rain from collapsing
-      // into sub-pixel noise while preserving four distinct depth layers.
-      const lineWidth = Math.max(.38, particle.width * (.54 + depth * .82));
-      const streak = context.createLinearGradient(x, y, x + dx, y + length);
-      streak.addColorStop(0, `rgba(${lighting.sourceColor},0)`);
-      streak.addColorStop(.18, `rgba(${lighting.sourceColor},${alpha * .38})`);
-      streak.addColorStop(.47, `rgba(${lighting.sourceColor},${alpha})`);
-      streak.addColorStop(.82, `rgba(${lighting.sourceColor},${alpha * .52})`);
-      streak.addColorStop(1, `rgba(${lighting.sourceColor},0)`);
-
-      // A restrained dark lobe makes drops remain legible against a bright sky;
-      // the offset bright lobe catches room, sky and lightning illumination.
-      context.globalCompositeOperation = "source-over";
-      context.strokeStyle = `rgba(3,6,10,${alpha * .3})`;
-      context.lineWidth = lineWidth * 1.22;
-      context.beginPath();
-      context.moveTo(x - .24, y);
-      context.quadraticCurveTo(x + dx * .38, y + length * .48, x + dx - .18, y + length);
-      context.stroke();
-      context.globalCompositeOperation = "screen";
-      context.strokeStyle = streak;
-      context.lineWidth = lineWidth;
-      context.beginPath();
-      context.moveTo(x + .18, y);
-      context.quadraticCurveTo(x + dx * .42, y + length * .49, x + dx + .16, y + length);
-      context.stroke();
+      darkPath.moveTo(x - .24, y);
+      darkPath.quadraticCurveTo(x + dx * .38, y + length * .48, x + dx - .18, y + length);
+      lightPath.moveTo(x + dx * .12 + .18, y + length * .12);
+      lightPath.quadraticCurveTo(x + dx * .42, y + length * .49, x + dx * .9 + .16, y + length * .9);
     });
+    const layerAlpha = (.13 + layerDepth * .29) * intensity * exposure;
+    const layerWidth = .42 + layerDepth * .66;
+    context.globalCompositeOperation = "source-over";
+    context.strokeStyle = `rgba(3,6,10,${layerAlpha * .23})`;
+    context.lineWidth = layerWidth * 1.18;
+    context.stroke(darkPath);
+    context.globalCompositeOperation = "screen";
+    context.strokeStyle = `rgba(${lighting.sourceColor},${layerAlpha * .58})`;
+    context.lineWidth = layerWidth;
+    context.stroke(lightPath);
     context.restore();
   }
 }
@@ -985,7 +974,7 @@ function drawWindowRain(
   const trickleRate = kind === "storm" ? 1.2 : .84;
   const windLean = clamp(wind * .018, -.3, .3);
 
-  droplets.forEach((drop, index) => {
+  const resolvedDrops = droplets.map((drop, index) => {
     const raw = elapsed / drop.life * trickleRate + drop.offset;
     const local = fract(raw);
     const stepped = stickSlip(local, drop.hold);
@@ -1007,15 +996,36 @@ function drawWindowRain(
     const slideEnergy = clamp(firstSlide + finalSlide);
     const trailLength = drop.trail * (.12 + slideEnergy * .88) * envelope;
 
+    return { drop, index, envelope, x, y, radius, verticalRadius, wander, slideEnergy, trailLength };
+  });
+
+  // Refract the world once, then reveal it through every bead as a single
+  // mask. The previous per-drop clipping and resized drawImage path performed
+  // dozens of scene resamples per frame and was the main source of the visible
+  // stutter. One coherent refraction plate also makes all beads share the same
+  // lightning and room exposure.
+  rainContext.save();
+  rainContext.globalAlpha = .78;
+  rainContext.filter = `brightness(${1.04 + lighting.flash * .08}) saturate(.82)`;
+  rainContext.drawImage(scene, -1.1 - windLean, -1.8, width + 2.2, height + 3.6);
+  rainContext.filter = "none";
+  rainContext.globalCompositeOperation = "destination-in";
+  rainContext.fillStyle = "#fff";
+  resolvedDrops.forEach(({ envelope, x, y, radius, verticalRadius }) => {
+    rainContext.globalAlpha = envelope * .9;
+    rainContext.beginPath();
+    rainContext.ellipse(x, y, radius, verticalRadius, windLean * .08, 0, TAU);
+    rainContext.fill();
+  });
+  rainContext.restore();
+
+  resolvedDrops.forEach(({ drop, index, envelope, x, y, radius, verticalRadius, wander, slideEnergy, trailLength }) => {
+
     rainContext.save();
     rainContext.globalAlpha = envelope;
     rainContext.lineCap = "round";
     if (trailLength > 1.1) {
-      const trailGradient = rainContext.createLinearGradient(x, y - trailLength, x, y);
-      trailGradient.addColorStop(0, "rgba(4,8,12,0)");
-      trailGradient.addColorStop(.6, `rgba(4,8,12,${.04 + drop.weight * .03})`);
-      trailGradient.addColorStop(1, `rgba(4,8,12,${.075 + drop.weight * .05})`);
-      rainContext.strokeStyle = trailGradient;
+      rainContext.strokeStyle = `rgba(4,8,12,${.055 + drop.weight * .04})`;
       rainContext.lineWidth = Math.max(.45, radius * .7);
       rainContext.beginPath();
       rainContext.moveTo(x - wander * .12, y - trailLength);
@@ -1045,33 +1055,6 @@ function drawWindowRain(
       rainContext.globalCompositeOperation = "source-over";
     }
 
-    // Refract a slightly displaced, magnified patch of the actual skyline.
-    // The droplet is therefore never a pasted white dot: it contains the same
-    // city, exposure and lightning as the view behind it.
-    rainContext.beginPath();
-    rainContext.ellipse(x, y, radius, verticalRadius, windLean * .08, 0, TAU);
-    rainContext.clip();
-    const sampleRadius = Math.max(1.2, radius * 1.8);
-    rainContext.globalAlpha = .86 * envelope;
-    rainContext.drawImage(
-      scene,
-      clamp(x - sampleRadius + wander * .18, 0, width - sampleRadius * 2),
-      clamp(y - sampleRadius - radius * .4, 0, height - sampleRadius * 2),
-      sampleRadius * 2,
-      sampleRadius * 2,
-      x - radius * 1.08,
-      y - verticalRadius * 1.05,
-      radius * 2.16,
-      verticalRadius * 2.1,
-    );
-    rainContext.globalAlpha = 1;
-    const body = rainContext.createLinearGradient(x - radius, y, x + radius, y + verticalRadius);
-    body.addColorStop(0, `rgba(2,5,9,${.14 + drop.weight * .05})`);
-    body.addColorStop(.46, "rgba(8,14,20,.015)");
-    body.addColorStop(.78, `rgba(${lighting.sourceColor},${.065 * lightResponse})`);
-    body.addColorStop(1, `rgba(${lighting.sourceColor},${.2 * lightResponse})`);
-    rainContext.fillStyle = body;
-    rainContext.fillRect(x - radius, y - verticalRadius, radius * 2, verticalRadius * 2);
     rainContext.restore();
 
     rainContext.save();
@@ -1148,7 +1131,14 @@ export function WeatherCinemaEngine({ code, isDay, place, updatedAt, wind = 4, p
   useEffect(() => {
     const canvas = canvasRef.current;
     if (!canvas) return;
-    const context = canvas.getContext("2d", { alpha: false });
+    const displayContext = canvas.getContext("2d", { alpha: false });
+    if (!displayContext) return;
+    // Compose the cinematic scene at its authored resolution, then perform one
+    // final upscale to the Retina display canvas. Drawing hundreds of filtered
+    // paths directly into the DPR-scaled backing store made a 430px phone
+    // render nearly four times as many pixels and could stall for 150–250ms.
+    const frameCanvas = document.createElement("canvas");
+    const context = frameCanvas.getContext("2d", { alpha: false });
     if (!context) return;
     const apertureCanvas = document.createElement("canvas");
     const apertureContext = apertureCanvas.getContext("2d");
@@ -1161,7 +1151,7 @@ export function WeatherCinemaEngine({ code, isDay, place, updatedAt, wind = 4, p
     const sceneCanvas = document.createElement("canvas");
     const sceneContext = sceneCanvas.getContext("2d");
     if (!apertureContext || !roomContext || !lightContext || !glassContext || !sceneContext) return;
-    [apertureCanvas, roomCanvas, lightCanvas, glassCanvas, sceneCanvas].forEach((buffer) => {
+    [frameCanvas, apertureCanvas, roomCanvas, lightCanvas, glassCanvas, sceneCanvas].forEach((buffer) => {
       buffer.width = 320;
       buffer.height = 430;
     });
@@ -1222,9 +1212,9 @@ export function WeatherCinemaEngine({ code, isDay, place, updatedAt, wind = 4, p
       height = Math.max(1, bounds.height);
       canvas.width = Math.round(width * dpr);
       canvas.height = Math.round(height * dpr);
-      context.setTransform(dpr, 0, 0, dpr, 0, 0);
-      context.imageSmoothingEnabled = true;
-      context.imageSmoothingQuality = "high";
+      displayContext.setTransform(1, 0, 0, 1, 0, 0);
+      displayContext.imageSmoothingEnabled = true;
+      displayContext.imageSmoothingQuality = "high";
     };
 
     const observer = new ResizeObserver(resize);
@@ -1255,7 +1245,7 @@ export function WeatherCinemaEngine({ code, isDay, place, updatedAt, wind = 4, p
       const sx = width / baseW;
       const sy = height / baseH;
       context.save();
-      context.setTransform(canvas.width / baseW, 0, 0, canvas.height / baseH, 0, 0);
+      context.setTransform(1, 0, 0, 1, 0, 0);
       context.clearRect(0, 0, baseW, baseH);
       const artReady = roomImage.complete && roomImage.naturalWidth > 0;
       const fallbackWindow = profile.window === "wide" ? { x: 30, y: 55, w: 260, h: 247 }
@@ -1318,7 +1308,7 @@ export function WeatherCinemaEngine({ code, isDay, place, updatedAt, wind = 4, p
       // top. Wet-glass droplets sample this plate for local refraction, so the
       // city never disconnects from the water optically.
       sceneContext.clearRect(0, 0, baseW, baseH);
-      sceneContext.drawImage(canvas, 0, 0, canvas.width, canvas.height, 0, 0, baseW, baseH);
+      sceneContext.drawImage(frameCanvas, 0, 0);
 
       if (!artReady) drawWindowFrame(context, profile, windowBox, flash);
 
@@ -1344,6 +1334,9 @@ export function WeatherCinemaEngine({ code, isDay, place, updatedAt, wind = 4, p
       drawUnifiedGrade(context, baseW, baseH, lighting);
       drawFilmFinish(context, baseW, baseH, presentationTime, profile);
       context.restore();
+      displayContext.setTransform(1, 0, 0, 1, 0, 0);
+      displayContext.clearRect(0, 0, canvas.width, canvas.height);
+      displayContext.drawImage(frameCanvas, 0, 0, canvas.width, canvas.height);
       void sx; void sy; void precipitation;
       // Inspection mode freezes the presentation clock, not the render loop;
       // keeping the loop alive guarantees a ResizeObserver pass can never
