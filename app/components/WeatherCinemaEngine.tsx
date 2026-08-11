@@ -712,7 +712,7 @@ function drawRoomOverlay(context: CanvasRenderingContext2D, roomContext: CanvasR
   roomContext.fillStyle = directionalWash;
   roomContext.fillRect(0, 0, width, height);
   roomContext.restore();
-  context.drawImage(roomContext.canvas, 0, 0);
+  context.drawImage(roomContext.canvas, 0, 0, width, height);
 }
 
 function prepareApertureMask(context: CanvasRenderingContext2D, image: HTMLImageElement, width: number, height: number, profile: SceneProfile) {
@@ -794,7 +794,7 @@ function drawInteriorLightField(
   context.save();
   context.globalCompositeOperation = "screen";
   context.globalAlpha = .58 + lighting.directStrength * .42 + lighting.flash * .18;
-  context.drawImage(lightContext.canvas, 0, 0);
+  context.drawImage(lightContext.canvas, 0, 0, width, height);
   context.restore();
 
   // Unlit surfaces become the shadow field naturally: the projected aperture
@@ -804,7 +804,7 @@ function drawInteriorLightField(
 function drawGlassResponse(context: CanvasRenderingContext2D, glassContext: CanvasRenderingContext2D, aperture: HTMLCanvasElement, width: number, height: number, lighting: SceneLighting, elapsed: number) {
   glassContext.save();
   glassContext.clearRect(0, 0, width, height);
-  glassContext.drawImage(aperture, 0, 0);
+  glassContext.drawImage(aperture, 0, 0, width, height);
   glassContext.globalCompositeOperation = "source-in";
   const reflection = glassContext.createLinearGradient(-40 + (elapsed * .004) % (width + 80), 0, width + (elapsed * .004) % (width + 80), height);
   reflection.addColorStop(0, "rgba(255,255,255,0)");
@@ -819,7 +819,7 @@ function drawGlassResponse(context: CanvasRenderingContext2D, glassContext: Canv
   context.save();
   context.globalCompositeOperation = "screen";
   context.globalAlpha = .72;
-  context.drawImage(glassContext.canvas, 0, 0);
+  context.drawImage(glassContext.canvas, 0, 0, width, height);
   context.restore();
 }
 
@@ -1093,7 +1093,7 @@ function drawWindowRain(
   rainContext.fillRect(0, 0, width, height);
 
   rainContext.globalCompositeOperation = "destination-in";
-  rainContext.drawImage(aperture, 0, 0);
+  rainContext.drawImage(aperture, 0, 0, width, height);
   rainContext.restore();
 
   context.save();
@@ -1208,10 +1208,37 @@ export function WeatherCinemaEngine({ code, isDay, place, updatedAt, wind = 4, p
     const resize = () => {
       const bounds = canvas.getBoundingClientRect();
       const dpr = Math.min(2, window.devicePixelRatio || 1);
-      width = Math.max(1, bounds.width);
-      height = Math.max(1, bounds.height);
+      // CSS transforms used by the iPhone's opening animation change the
+      // bounding rectangle but not the screen's layout size. Sampling the
+      // transformed rect during the first frames could permanently collapse
+      // this canvas to roughly 57 × 115 pixels and then stretch it full-screen.
+      width = Math.max(1, canvas.clientWidth || bounds.width);
+      height = Math.max(1, canvas.clientHeight || bounds.height);
       canvas.width = Math.round(width * dpr);
       canvas.height = Math.round(height * dpr);
+      // Preserve close to a million authored pixels for crisp architecture and
+      // furniture, while the visible Retina canvas remains full resolution.
+      // This is adaptive to the unusually tall mobile browser viewport rather
+      // than stretching the former fixed 320 × 430 intermediate frame.
+      const renderRatio = Math.min(dpr, Math.max(1, Math.sqrt(780_000 / (width * height))));
+      const renderWidth = Math.max(320, Math.round(width * renderRatio));
+      const renderHeight = Math.max(430, Math.round(height * renderRatio));
+      const renderScaleX = renderWidth / 320;
+      const renderScaleY = renderHeight / 430;
+      const buffers = [frameCanvas, apertureCanvas, roomCanvas, lightCanvas, glassCanvas, sceneCanvas];
+      const bufferContexts = [context, apertureContext, roomContext, lightContext, glassContext, sceneContext];
+      buffers.forEach((buffer, index) => {
+        if (buffer.width !== renderWidth || buffer.height !== renderHeight) {
+          buffer.width = renderWidth;
+          buffer.height = renderHeight;
+        }
+        const bufferContext = bufferContexts[index];
+        bufferContext.setTransform(renderScaleX, 0, 0, renderScaleY, 0, 0);
+        bufferContext.imageSmoothingEnabled = true;
+        bufferContext.imageSmoothingQuality = "high";
+      });
+      // A resized mask must be derived again from the source art.
+      aperturePrepared = false;
       displayContext.setTransform(1, 0, 0, 1, 0, 0);
       displayContext.imageSmoothingEnabled = true;
       displayContext.imageSmoothingQuality = "high";
@@ -1245,7 +1272,7 @@ export function WeatherCinemaEngine({ code, isDay, place, updatedAt, wind = 4, p
       const sx = width / baseW;
       const sy = height / baseH;
       context.save();
-      context.setTransform(1, 0, 0, 1, 0, 0);
+      context.setTransform(frameCanvas.width / baseW, 0, 0, frameCanvas.height / baseH, 0, 0);
       context.clearRect(0, 0, baseW, baseH);
       const artReady = roomImage.complete && roomImage.naturalWidth > 0;
       const fallbackWindow = profile.window === "wide" ? { x: 30, y: 55, w: 260, h: 247 }
@@ -1308,7 +1335,7 @@ export function WeatherCinemaEngine({ code, isDay, place, updatedAt, wind = 4, p
       // top. Wet-glass droplets sample this plate for local refraction, so the
       // city never disconnects from the water optically.
       sceneContext.clearRect(0, 0, baseW, baseH);
-      sceneContext.drawImage(frameCanvas, 0, 0);
+      sceneContext.drawImage(frameCanvas, 0, 0, frameCanvas.width, frameCanvas.height, 0, 0, baseW, baseH);
 
       if (!artReady) drawWindowFrame(context, profile, windowBox, flash);
 
