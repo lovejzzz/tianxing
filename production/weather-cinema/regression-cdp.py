@@ -58,9 +58,14 @@ def evaluate(cdp: CDP, expression: str):
 def run_case(port: int, output_dir: pathlib.Path, case: dict):
     url = case["url"]
     parsed = urllib.parse.urlsplit(url)
-    host_url = f"http://127.0.0.1:{parsed.port or 80}{parsed.path}"
-    if parsed.query:
-        host_url += f"?{parsed.query}"
+    host_url = url
+    # Local runs use a stable loopback hostname so the headless browser never
+    # depends on IPv6 localhost resolution. Live HTTPS runs must preserve the
+    # supplied origin and port exactly.
+    if parsed.hostname in {"localhost", "127.0.0.1"}:
+        default_port = 443 if parsed.scheme == "https" else 80
+        netloc = f"127.0.0.1:{parsed.port or default_port}"
+        host_url = urllib.parse.urlunsplit((parsed.scheme, netloc, parsed.path, parsed.query, parsed.fragment))
     target = requests.put(
         f"http://127.0.0.1:{port}/json/new?{urllib.parse.quote(url, safe=':/?=&-')}"
     ).json()
