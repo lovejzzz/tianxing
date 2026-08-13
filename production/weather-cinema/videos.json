@@ -1,0 +1,827 @@
+{
+  "version": 1,
+  "model": "seedance_2_5",
+  "duration": 5,
+  "resolution": "720p",
+  "aspectRatio": "9:16",
+  "frameRate": 24,
+  "loopCrossfadeMs": 350,
+  "items": [
+    {
+      "city": "new-york",
+      "weather": "sunny",
+      "light": "day",
+      "id": "d7f026a7-2404-40f2-a8b4-46a8676bf802",
+      "url": "/media/weather/cinema/new-york-sunny-day.mp4",
+      "qa": "accepted",
+      "sourceUrl": "https://d8j0ntlcm91z4.cloudfront.net/user_3Au9TAIqGcnNLtVXUzb9pCUk3gp/hf_20260811_053940_d7f026a7-2404-40f2-a8b4-46a8676bf802.mp4"
+    },
+    {
+      "city": "new-york",
+      "weather": "sunny",
+      "light": "night",
+      "id": "69b67c13-25d9-4860-9cba-b0a95345bcbe",
+      "url": "/media/weather/cinema/new-york-sunny-night.mp4",
+      "qa": "accepted",
+      "sourceUrl": "https://d8j0ntlcm91z4.cloudfront.net/user_3Au9TAIqGcnNLtVXUzb9pCUk3gp/hf_20260811_055630_69b67c13-25d9-4860-9cba-b0a95345bcbe.mp4"
+    },
+    {
+      "city": "new-york",
+      "weather": "rainy",
+      "light": "day",
+      "id": "338f661e-40f3-47ad-a68c-db73c707c420",
+      "url": "/media/weather/cinema/new-york-rainy-day.mp4",
+      "qa": "accepted",
+      "sourceUrl": "https://d8j0ntlcm91z4.cloudfront.net/user_3Au9TAIqGcnNLtVXUzb9pCUk3gp/hf_20260811_063212_338f661e-40f3-47ad-a68c-db73c707c420.mp4"
+    },
+    {
+      "city": "new-york",
+      "weather": "rainy",
+      "light": "night",
+      "id": "b6337c3c-110b-4764-8fcc-62b9312fd5d4",
+      "url": "/media/weather/cinema/new-york-rainy-night.mp4",
+      "qa": "accepted",
+      "sourceUrl": "https://d8j0ntlcm91z4.cloudfront.net/user_3Au9TAIqGcnNLtVXUzb9pCUk3gp/hf_20260811_064838_b6337c3c-110b-4764-8fcc-62b9312fd5d4.mp4"
+    },
+    {
+      "city": "new-york",
+      "weather": "snowy",
+      "light": "day",
+      "id": "6475aa2a-4077-43dc-8a4b-50a5eac0efe8",
+      "url": "/media/weather/cinema/new-york-snowy-day.mp4",
+      "qa": "accepted",
+      "sourceUrl": "https://d8j0ntlcm91z4.cloudfront.net/user_3Au9TAIqGcnNLtVXUzb9pCUk3gp/hf_20260811_065644_6475aa2a-4077-43dc-8a4b-50a5eac0efe8.mp4"
+    },
+    {
+      "city": "new-york",
+      "weather": "snowy",
+      "light": "night",
+      "id": "02f9dc84-34ef-4cda-a977-43d40ac9bb68",
+      "url": "/media/weather/cinema/new-york-snowy-night.mp4",
+      "qa": "accepted",
+      "sourceUrl": "https://d8j0ntlcm91z4.cloudfront.net/user_3Au9TAIqGcnNLtVXUzb9pCUk3gp/hf_20260811_070108_02f9dc84-34ef-4cda-a977-43d40ac9bb68.mp4"
+    },
+    {
+      "city": "new-york",
+      "weather": "foggy",
+      "light": "day",
+      "id": "56a42641-864d-4eb2-8d30-c2f3a067a946",
+      "url": "/media/weather/cinema/new-york-foggy-day.mp4",
+      "qa": "accepted",
+      "sourceUrl": "https://d8j0ntlcm91z4.cloudfront.net/user_3Au9TAIqGcnNLtVXUzb9pCUk3gp/hf_20260811_070807_56a42641-864d-4eb2-8d30-c2f3a067a946.mp4"
+    },
+    {
+      "city": "new-york",
+      "weather": "foggy",
+      "light": "night",
+      "id": "ffc70a37-f96a-4a42-8b7d-d25f14618bc8",
+      "url": "/media/weather/cinema/new-york-foggy-night.mp4",
+      "qa": "accepted",
+      "sourceUrl": "https://d8j0ntlcm91z4.cloudfront.net/user_3Au9TAIqGcnNLtVXUzb9pCUk3gp/hf_20260811_072006_ffc70a37-f96a-4a42-8b7d-d25f14618bc8.mp4"
+    },
+    {
+      "city": "new-york",
+      "weather": "foggy",
+      "light": "night",
+      "id": "539db703-f3de-4966-82f1-b5ef73f2daef",
+      "url": "https://d8j0ntlcm91z4.cloudfront.net/user_3Au9TAIqGcnNLtVXUzb9pCUk3gp/hf_20260811_055139_539db703-f3de-4966-82f1-b5ef73f2daef.mp4",
+      "qa": "rejected",
+      "reason": "Fog was visually too weak; looked like a clear night."
+    },
+    {
+      "city": "los-angeles",
+      "weather": "sunny",
+      "light": "day",
+      "id": "67c92c6c-373e-4253-9bfd-21fbb8b5a1cd",
+      "url": "/media/weather/cinema/los-angeles-sunny-day.mp4",
+      "qa": "accepted",
+      "sourceUrl": "https://d8j0ntlcm91z4.cloudfront.net/user_3Au9TAIqGcnNLtVXUzb9pCUk3gp/hf_20260811_155927_67c92c6c-373e-4253-9bfd-21fbb8b5a1cd.mp4"
+    },
+    {
+      "city": "los-angeles",
+      "weather": "sunny",
+      "light": "night",
+      "id": "88c29e85-2162-48c8-ad0e-14a6b6f00376",
+      "url": "https://d8j0ntlcm91z4.cloudfront.net/user_3Au9TAIqGcnNLtVXUzb9pCUk3gp/hf_20260811_160634_88c29e85-2162-48c8-ad0e-14a6b6f00376.mp4",
+      "qa": "rejected",
+      "reason": "The clip performed an obvious day-to-night transition instead of remaining a stable night loop."
+    },
+    {
+      "city": "los-angeles",
+      "weather": "rainy",
+      "light": "day",
+      "id": "c0f366e3-7551-4a2d-8f23-1c19f67f8452",
+      "url": "https://d8j0ntlcm91z4.cloudfront.net/user_3Au9TAIqGcnNLtVXUzb9pCUk3gp/hf_20260811_162127_c0f366e3-7551-4a2d-8f23-1c19f67f8452.mp4",
+      "qa": "rejected",
+      "reason": "The atmosphere became gray, but rain streaks, glass droplets, and wet reflections were not clearly visible."
+    },
+    {
+      "city": "los-angeles",
+      "weather": "sunny",
+      "light": "night",
+      "id": "48003b72-355e-42d7-8b4b-c3a528b666a7",
+      "url": "/media/weather/cinema/los-angeles-sunny-night.mp4",
+      "qa": "accepted",
+      "sourceUrl": "https://d8j0ntlcm91z4.cloudfront.net/user_3Au9TAIqGcnNLtVXUzb9pCUk3gp/hf_20260811_163204_48003b72-355e-42d7-8b4b-c3a528b666a7.mp4"
+    },
+    {
+      "city": "los-angeles",
+      "weather": "rainy",
+      "light": "night",
+      "id": "1a9b7614-3610-4f42-9102-7e9807030d14",
+      "url": "https://d8j0ntlcm91z4.cloudfront.net/user_3Au9TAIqGcnNLtVXUzb9pCUk3gp/hf_20260811_163908_1a9b7614-3610-4f42-9102-7e9807030d14.mp4",
+      "qa": "rejected",
+      "reason": "The scene read as overcast night rather than unmistakable rain."
+    },
+    {
+      "city": "los-angeles",
+      "weather": "snowy",
+      "light": "day",
+      "id": "80cabd97-1e81-4a92-929b-c9c47e0a060a",
+      "url": "/media/weather/cinema/los-angeles-snowy-day.mp4",
+      "qa": "accepted",
+      "sourceUrl": "https://d8j0ntlcm91z4.cloudfront.net/user_3Au9TAIqGcnNLtVXUzb9pCUk3gp/hf_20260811_164257_80cabd97-1e81-4a92-929b-c9c47e0a060a.mp4"
+    },
+    {
+      "city": "los-angeles",
+      "weather": "snowy",
+      "light": "night",
+      "id": "0228c852-7583-4c51-9901-d785511098a8",
+      "url": "/media/weather/cinema/los-angeles-snowy-night.mp4",
+      "qa": "accepted",
+      "sourceUrl": "https://d8j0ntlcm91z4.cloudfront.net/user_3Au9TAIqGcnNLtVXUzb9pCUk3gp/hf_20260811_164731_0228c852-7583-4c51-9901-d785511098a8.mp4"
+    },
+    {
+      "city": "los-angeles",
+      "weather": "foggy",
+      "light": "day",
+      "id": "51df9004-ee86-4072-8ccd-a2e6e751aaa5",
+      "url": "/media/weather/cinema/los-angeles-foggy-day.mp4",
+      "qa": "accepted",
+      "sourceUrl": "https://d8j0ntlcm91z4.cloudfront.net/user_3Au9TAIqGcnNLtVXUzb9pCUk3gp/hf_20260811_165351_51df9004-ee86-4072-8ccd-a2e6e751aaa5.mp4"
+    },
+    {
+      "city": "los-angeles",
+      "weather": "foggy",
+      "light": "night",
+      "id": "9ac6199d-babd-4d85-b568-01671841ddf1",
+      "url": "/media/weather/cinema/los-angeles-foggy-night.mp4",
+      "qa": "accepted",
+      "sourceUrl": "https://d8j0ntlcm91z4.cloudfront.net/user_3Au9TAIqGcnNLtVXUzb9pCUk3gp/hf_20260811_170210_9ac6199d-babd-4d85-b568-01671841ddf1.mp4"
+    },
+    {
+      "city": "los-angeles",
+      "weather": "rainy",
+      "light": "day",
+      "id": "54be650e-2998-4e0a-88c4-5899b4ced849",
+      "url": "/media/weather/cinema/los-angeles-rainy-day.mp4",
+      "qa": "accepted",
+      "sourceUrl": "https://d8j0ntlcm91z4.cloudfront.net/user_3Au9TAIqGcnNLtVXUzb9pCUk3gp/hf_20260811_171330_54be650e-2998-4e0a-88c4-5899b4ced849.mp4"
+    },
+    {
+      "city": "los-angeles",
+      "weather": "rainy",
+      "light": "night",
+      "id": "9a82ac96-ad08-478e-958a-e379756fe622",
+      "url": "/media/weather/cinema/los-angeles-rainy-night.mp4",
+      "qa": "accepted",
+      "sourceUrl": "https://d8j0ntlcm91z4.cloudfront.net/user_3Au9TAIqGcnNLtVXUzb9pCUk3gp/hf_20260811_172117_9a82ac96-ad08-478e-958a-e379756fe622.mp4"
+    },
+    {
+      "city": "san-francisco",
+      "weather": "sunny",
+      "light": "day",
+      "id": "1fa4f02a-ce43-49fa-983f-69462a82b839",
+      "url": "/media/weather/cinema/san-francisco-sunny-day.mp4",
+      "qa": "accepted",
+      "sourceUrl": "https://d8j0ntlcm91z4.cloudfront.net/user_3Au9TAIqGcnNLtVXUzb9pCUk3gp/hf_20260811_174132_1fa4f02a-ce43-49fa-983f-69462a82b839.mp4"
+    },
+    {
+      "city": "san-francisco",
+      "weather": "sunny",
+      "light": "night",
+      "id": "41897d8c-a0e3-4724-8abc-d6d4b54b7964",
+      "url": "/media/weather/cinema/san-francisco-sunny-night.mp4",
+      "qa": "accepted",
+      "sourceUrl": "https://d8j0ntlcm91z4.cloudfront.net/user_3Au9TAIqGcnNLtVXUzb9pCUk3gp/hf_20260811_174836_41897d8c-a0e3-4724-8abc-d6d4b54b7964.mp4"
+    },
+    {
+      "city": "san-francisco",
+      "weather": "rainy",
+      "light": "day",
+      "id": "09495553-e8a6-4d99-be78-76f248b4f43d",
+      "url": "/media/weather/cinema/san-francisco-rainy-day.mp4",
+      "qa": "accepted",
+      "sourceUrl": "https://d8j0ntlcm91z4.cloudfront.net/user_3Au9TAIqGcnNLtVXUzb9pCUk3gp/hf_20260811_175728_09495553-e8a6-4d99-be78-76f248b4f43d.mp4"
+    },
+    {
+      "city": "san-francisco",
+      "weather": "rainy",
+      "light": "night",
+      "id": "087ac400-d5e1-478a-96ae-e254480dd22f",
+      "url": "https://d8j0ntlcm91z4.cloudfront.net/user_3Au9TAIqGcnNLtVXUzb9pCUk3gp/hf_20260811_180633_087ac400-d5e1-478a-96ae-e254480dd22f.mp4",
+      "qa": "rejected",
+      "reason": "Rain was visible, but the exterior and room remained daytime/overcast rather than a stable cinematic night."
+    },
+    {
+      "city": "san-francisco",
+      "weather": "rainy",
+      "light": "night",
+      "id": "e1752930-8734-453c-a361-f366fc236c95",
+      "url": "/media/weather/cinema/san-francisco-rainy-night.mp4",
+      "qa": "accepted",
+      "sourceUrl": "https://d8j0ntlcm91z4.cloudfront.net/user_3Au9TAIqGcnNLtVXUzb9pCUk3gp/hf_20260811_181915_e1752930-8734-453c-a361-f366fc236c95.mp4"
+    },
+    {
+      "city": "san-francisco",
+      "weather": "snowy",
+      "light": "day",
+      "id": "0e2b3431-c6c5-4dd3-8b8a-985589516546",
+      "url": "/media/weather/cinema/san-francisco-snowy-day.mp4",
+      "qa": "accepted",
+      "sourceUrl": "https://d8j0ntlcm91z4.cloudfront.net/user_3Au9TAIqGcnNLtVXUzb9pCUk3gp/hf_20260811_182812_0e2b3431-c6c5-4dd3-8b8a-985589516546.mp4"
+    },
+    {
+      "city": "san-francisco",
+      "weather": "snowy",
+      "light": "night",
+      "id": "49b21504-11d2-4638-b84b-3588d0288403",
+      "url": "/media/weather/cinema/san-francisco-snowy-night.mp4",
+      "qa": "accepted",
+      "sourceUrl": "https://d8j0ntlcm91z4.cloudfront.net/user_3Au9TAIqGcnNLtVXUzb9pCUk3gp/hf_20260811_183802_49b21504-11d2-4638-b84b-3588d0288403.mp4"
+    },
+    {
+      "city": "san-francisco",
+      "weather": "foggy",
+      "light": "day",
+      "id": "f9fd2aa9-874b-4d29-a58b-1f2e8d82804b",
+      "url": "https://d8j0ntlcm91z4.cloudfront.net/user_3Au9TAIqGcnNLtVXUzb9pCUk3gp/hf_20260811_184811_f9fd2aa9-874b-4d29-a58b-1f2e8d82804b.mp4",
+      "qa": "rejected",
+      "reason": "The fog visibly dissipated during the clip, changing from dense fog to a mostly clear skyline instead of holding a stable loop."
+    },
+    {
+      "city": "san-francisco",
+      "weather": "foggy",
+      "light": "day",
+      "id": "a9f53df6-2133-4e16-8b81-047058866618",
+      "url": "/media/weather/cinema/san-francisco-foggy-day.mp4",
+      "qa": "accepted",
+      "sourceUrl": "https://d8j0ntlcm91z4.cloudfront.net/user_3Au9TAIqGcnNLtVXUzb9pCUk3gp/hf_20260811_190821_a9f53df6-2133-4e16-8b81-047058866618.mp4"
+    },
+    {
+      "city": "san-francisco",
+      "weather": "foggy",
+      "light": "night",
+      "id": "ef9a9c57-5158-40e5-ace7-0133ccc4e6bf",
+      "url": "/media/weather/cinema/san-francisco-foggy-night.mp4",
+      "qa": "accepted",
+      "sourceUrl": "https://d8j0ntlcm91z4.cloudfront.net/user_3Au9TAIqGcnNLtVXUzb9pCUk3gp/hf_20260811_191727_ef9a9c57-5158-40e5-ace7-0133ccc4e6bf.mp4"
+    },
+    {
+      "city": "chicago",
+      "weather": "sunny",
+      "light": "day",
+      "id": "5cac721b-970f-4e6d-bbcf-a610bf6e92a6",
+      "url": "/media/weather/cinema/chicago-sunny-day.mp4",
+      "qa": "accepted",
+      "sourceUrl": "https://d8j0ntlcm91z4.cloudfront.net/user_3Au9TAIqGcnNLtVXUzb9pCUk3gp/hf_20260811_203545_5cac721b-970f-4e6d-bbcf-a610bf6e92a6.mp4"
+    },
+    {
+      "city": "chicago",
+      "weather": "sunny",
+      "light": "night",
+      "id": "cd1eb01b-587f-43dd-8cea-281961d9ee41",
+      "url": "/media/weather/cinema/chicago-sunny-night.mp4",
+      "qa": "accepted",
+      "sourceUrl": "https://d8j0ntlcm91z4.cloudfront.net/user_3Au9TAIqGcnNLtVXUzb9pCUk3gp/hf_20260811_205142_cd1eb01b-587f-43dd-8cea-281961d9ee41.mp4"
+    },
+    {
+      "city": "chicago",
+      "weather": "rainy",
+      "light": "day",
+      "id": "06398683-c3f0-4672-8ec7-e6558ed52823",
+      "url": "/media/weather/cinema/chicago-rainy-day.mp4",
+      "qa": "accepted",
+      "sourceUrl": "https://d8j0ntlcm91z4.cloudfront.net/user_3Au9TAIqGcnNLtVXUzb9pCUk3gp/hf_20260811_210340_06398683-c3f0-4672-8ec7-e6558ed52823.mp4"
+    },
+    {
+      "city": "chicago",
+      "weather": "rainy",
+      "light": "night",
+      "id": "385bb93d-4921-40c7-96b1-8110aca6a1c8",
+      "url": "/media/weather/cinema/chicago-rainy-night.mp4",
+      "qa": "accepted",
+      "sourceUrl": "https://d8j0ntlcm91z4.cloudfront.net/user_3Au9TAIqGcnNLtVXUzb9pCUk3gp/hf_20260811_211558_385bb93d-4921-40c7-96b1-8110aca6a1c8.mp4"
+    },
+    {
+      "city": "chicago",
+      "weather": "snowy",
+      "light": "day",
+      "id": "d59bc9d7-64f7-41c9-a393-45c619d03421",
+      "url": "/media/weather/cinema/chicago-snowy-day.mp4",
+      "qa": "accepted",
+      "sourceUrl": "https://d8j0ntlcm91z4.cloudfront.net/user_3Au9TAIqGcnNLtVXUzb9pCUk3gp/hf_20260811_212658_d59bc9d7-64f7-41c9-a393-45c619d03421.mp4"
+    },
+    {
+      "city": "chicago",
+      "weather": "snowy",
+      "light": "night",
+      "id": "1194adc2-0ce2-4e71-8faf-9776655c92b4",
+      "url": "/media/weather/cinema/chicago-snowy-night.mp4",
+      "qa": "accepted",
+      "sourceUrl": "https://d8j0ntlcm91z4.cloudfront.net/user_3Au9TAIqGcnNLtVXUzb9pCUk3gp/hf_20260811_213911_1194adc2-0ce2-4e71-8faf-9776655c92b4.mp4"
+    },
+    {
+      "city": "chicago",
+      "weather": "foggy",
+      "light": "day",
+      "id": "2638ddd0-34db-4566-a50d-c62e7a170ee9",
+      "url": "/media/weather/cinema/chicago-foggy-day.mp4",
+      "qa": "accepted",
+      "sourceUrl": "https://d8j0ntlcm91z4.cloudfront.net/user_3Au9TAIqGcnNLtVXUzb9pCUk3gp/hf_20260811_215307_2638ddd0-34db-4566-a50d-c62e7a170ee9.mp4"
+    },
+    {
+      "city": "chicago",
+      "weather": "foggy",
+      "light": "night",
+      "id": "c80b2594-fd4d-4eec-abbb-a7687622b4f0",
+      "url": "/media/weather/cinema/chicago-foggy-night.mp4",
+      "qa": "accepted",
+      "sourceUrl": "https://d8j0ntlcm91z4.cloudfront.net/user_3Au9TAIqGcnNLtVXUzb9pCUk3gp/hf_20260811_233309_c80b2594-fd4d-4eec-abbb-a7687622b4f0.mp4"
+    },
+    {
+      "city": "toronto",
+      "weather": "sunny",
+      "light": "day",
+      "id": "4d9106ca-4980-4817-8e07-5056191d8cd0",
+      "url": "https://d8j0ntlcm91z4.cloudfront.net/user_3Au9TAIqGcnNLtVXUzb9pCUk3gp/hf_20260812_002724_4d9106ca-4980-4817-8e07-5056191d8cd0.mp4",
+      "qa": "rejected",
+      "reason": "Loop stability was excellent, but the weather read as bright overcast instead of unmistakably sunny clear daylight."
+    },
+    {
+      "city": "toronto",
+      "weather": "sunny",
+      "light": "day",
+      "id": "a8e2b6a2-2099-4a93-bfbd-1e051d267df4",
+      "url": "/media/weather/cinema/toronto-sunny-day.mp4",
+      "qa": "accepted",
+      "sourceUrl": "https://d8j0ntlcm91z4.cloudfront.net/user_3Au9TAIqGcnNLtVXUzb9pCUk3gp/hf_20260812_005312_a8e2b6a2-2099-4a93-bfbd-1e051d267df4.mp4"
+    },
+    {
+      "city": "toronto",
+      "weather": "sunny",
+      "light": "night",
+      "id": "9c8a8825-2801-4449-9ba9-258015432ad0",
+      "url": "/media/weather/cinema/toronto-sunny-night.mp4",
+      "qa": "accepted",
+      "sourceUrl": "https://d8j0ntlcm91z4.cloudfront.net/user_3Au9TAIqGcnNLtVXUzb9pCUk3gp/hf_20260812_013640_9c8a8825-2801-4449-9ba9-258015432ad0.mp4"
+    },
+    {
+      "city": "toronto",
+      "weather": "rainy",
+      "light": "day",
+      "id": "31396bd6-78dc-4654-92f8-f8f95bd04b8b",
+      "url": "/media/weather/cinema/toronto-rainy-day.mp4",
+      "qa": "accepted",
+      "sourceUrl": "https://d8j0ntlcm91z4.cloudfront.net/user_3Au9TAIqGcnNLtVXUzb9pCUk3gp/hf_20260812_015912_31396bd6-78dc-4654-92f8-f8f95bd04b8b.mp4"
+    },
+    {
+      "city": "toronto",
+      "weather": "rainy",
+      "light": "night",
+      "id": "7c712294-a019-4887-b2af-f9e9cb648e2a",
+      "url": "/media/weather/cinema/toronto-rainy-night.mp4",
+      "qa": "accepted",
+      "sourceUrl": "https://d8j0ntlcm91z4.cloudfront.net/user_3Au9TAIqGcnNLtVXUzb9pCUk3gp/hf_20260812_021341_7c712294-a019-4887-b2af-f9e9cb648e2a.mp4"
+    },
+    {
+      "city": "toronto",
+      "weather": "snowy",
+      "light": "day",
+      "id": "d9edc778-971b-472b-838f-dff854538799",
+      "url": "/media/weather/cinema/toronto-snowy-day.mp4",
+      "qa": "accepted",
+      "sourceUrl": "https://d8j0ntlcm91z4.cloudfront.net/user_3Au9TAIqGcnNLtVXUzb9pCUk3gp/hf_20260812_023438_d9edc778-971b-472b-838f-dff854538799.mp4"
+    },
+    {
+      "city": "toronto",
+      "weather": "snowy",
+      "light": "night",
+      "id": "cd1319fb-0f0f-449d-b0a9-628e5813312a",
+      "url": "/media/weather/cinema/toronto-snowy-night.mp4",
+      "qa": "accepted",
+      "sourceUrl": "https://d8j0ntlcm91z4.cloudfront.net/user_3Au9TAIqGcnNLtVXUzb9pCUk3gp/hf_20260812_025223_cd1319fb-0f0f-449d-b0a9-628e5813312a.mp4"
+    },
+    {
+      "city": "toronto",
+      "weather": "foggy",
+      "light": "day",
+      "id": "5b2f8953-c9f2-4e57-85fd-dbb2aa21acd4",
+      "url": "https://d8j0ntlcm91z4.cloudfront.net/user_3Au9TAIqGcnNLtVXUzb9pCUk3gp/hf_20260812_030641_5b2f8953-c9f2-4e57-85fd-dbb2aa21acd4.mp4",
+      "qa": "rejected",
+      "reason": "The fog visibly dissipated across the clip, revealing the middle-distance skyline instead of holding a stable mature fog field."
+    },
+    {
+      "city": "toronto",
+      "weather": "foggy",
+      "light": "day",
+      "id": "28ca92a1-3136-49fd-90b9-e76a64d14714",
+      "url": "/media/weather/cinema/toronto-foggy-day.mp4",
+      "qa": "accepted",
+      "sourceUrl": "https://d8j0ntlcm91z4.cloudfront.net/user_3Au9TAIqGcnNLtVXUzb9pCUk3gp/hf_20260812_032012_28ca92a1-3136-49fd-90b9-e76a64d14714.mp4"
+    },
+    {
+      "city": "toronto",
+      "weather": "foggy",
+      "light": "night",
+      "id": "5ba5f2b8-16cb-42c7-9484-3a486758d4da",
+      "url": "/media/weather/cinema/toronto-foggy-night.mp4",
+      "qa": "accepted",
+      "sourceUrl": "https://d8j0ntlcm91z4.cloudfront.net/user_3Au9TAIqGcnNLtVXUzb9pCUk3gp/hf_20260812_033336_5ba5f2b8-16cb-42c7-9484-3a486758d4da.mp4"
+    },
+    {
+      "city": "mexico-city",
+      "weather": "sunny",
+      "light": "day",
+      "id": "10ee37e7-745c-476f-bcfd-38a552392568",
+      "url": "/media/weather/cinema/mexico-city-sunny-day.mp4",
+      "qa": "accepted",
+      "sourceUrl": "https://d8j0ntlcm91z4.cloudfront.net/user_3Au9TAIqGcnNLtVXUzb9pCUk3gp/hf_20260812_035936_10ee37e7-745c-476f-bcfd-38a552392568.mp4"
+    },
+    {
+      "city": "mexico-city",
+      "weather": "sunny",
+      "light": "night",
+      "id": "ba1ff4fd-9915-44a8-a939-b01ae4517771",
+      "url": "/media/weather/cinema/mexico-city-sunny-night.mp4",
+      "qa": "accepted",
+      "sourceUrl": "https://d8j0ntlcm91z4.cloudfront.net/user_3Au9TAIqGcnNLtVXUzb9pCUk3gp/hf_20260812_041446_ba1ff4fd-9915-44a8-a939-b01ae4517771.mp4"
+    },
+    {
+      "city": "mexico-city",
+      "weather": "rainy",
+      "light": "day",
+      "id": "0b0fcaaa-7399-4231-b6db-1ce98c4f034f",
+      "url": "https://d8j0ntlcm91z4.cloudfront.net/user_3Au9TAIqGcnNLtVXUzb9pCUk3gp/hf_20260812_043105_0b0fcaaa-7399-4231-b6db-1ce98c4f034f.mp4",
+      "qa": "rejected",
+      "reason": "Room and landmarks were stable, but rain resolved mainly as a few long near-parallel vertical glass lines; exterior multi-depth precipitation and continuous spatial rain motion were too weak to read as a convincing rainstorm."
+    },
+    {
+      "city": "mexico-city",
+      "weather": "rainy",
+      "light": "day",
+      "id": "3e8c21a2-3970-46b3-a648-83d13c28232c",
+      "url": "https://d8j0ntlcm91z4.cloudfront.net/user_3Au9TAIqGcnNLtVXUzb9pCUk3gp/hf_20260812_050820_3e8c21a2-3970-46b3-a648-83d13c28232c.mp4",
+      "qa": "rejected",
+      "reason": "The retry removed the long parallel glass lines and held geometry well, but it also removed nearly all visible precipitation: the 24-frame contact sheet reads as static overcast and frame-difference analysis is almost black, so neither outdoor rain volume nor continuous rain motion is legible."
+    },
+    {
+      "city": "mexico-city",
+      "weather": "rainy",
+      "light": "day",
+      "id": "a2f0c3b4-3cf8-480c-86e8-c285c25615b2",
+      "url": "https://d8j0ntlcm91z4.cloudfront.net/user_3Au9TAIqGcnNLtVXUzb9pCUk3gp/hf_20260812_052633_a2f0c3b4-3cf8-480c-86e8-c285c25615b2.mp4",
+      "qa": "rejected",
+      "reason": "Take 3 preserved the room, landmarks, exposure and loop well (first/last SSIM 0.975624), but still rendered as a nearly static overcast tableau. The 24-frame sheet shows no unmistakable rain and the frame-difference sheet is essentially empty, so the required moving outdoor precipitation is absent."
+    },
+    {
+      "city": "mexico-city",
+      "weather": "rainy",
+      "light": "day",
+      "id": "46baa38b-bd10-45a0-9a94-a2de98f0129e",
+      "url": "https://d8j0ntlcm91z4.cloudfront.net/user_3Au9TAIqGcnNLtVXUzb9pCUk3gp/hf_20260812_061116_46baa38b-bd10-45a0-9a94-a2de98f0129e.mp4",
+      "qa": "rejected",
+      "reason": "Take 4 finally produced continuous dense multi-depth rain and preserved landmark identity, but introduced an approximately 11.6% continuous push-in plus perspective redraw. The raw loop jumps, temporal crossfade creates visible double exposure, and architecture-only stabilization cannot restore exact room geometry without a damaging crop, so this take is not production-safe."
+    },
+    {
+      "city": "mexico-city",
+      "weather": "rainy",
+      "light": "day",
+      "id": "1670ab4c-3627-4af0-8c49-cefafa0bab50",
+      "url": "/media/weather/cinema/mexico-city-rainy-day.mp4",
+      "qa": "accepted",
+      "sourceUrl": "https://d8j0ntlcm91z4.cloudfront.net/user_3Au9TAIqGcnNLtVXUzb9pCUk3gp/hf_20260812_064505_1670ab4c-3627-4af0-8c49-cefafa0bab50.mp4"
+    },
+    {
+      "city": "mexico-city",
+      "weather": "rainy",
+      "light": "night",
+      "id": "aed828e1-f9cc-45e7-bddd-5c52cc1eb2b7-locked-lighting",
+      "sourceId": "aed828e1-f9cc-45e7-bddd-5c52cc1eb2b7",
+      "url": "/media/weather/cinema/mexico-city-rainy-night.mp4",
+      "qa": "accepted",
+      "postProcess": "low-frequency illumination locked to frame 1"
+    },
+    {
+      "city": "mexico-city",
+      "weather": "snowy",
+      "light": "day",
+      "id": "fcf992fc-6605-4248-a3aa-8e76dd4aea94",
+      "url": "/media/weather/cinema/mexico-city-snowy-day.mp4",
+      "qa": "accepted",
+      "sourceUrl": "https://d8j0ntlcm91z4.cloudfront.net/user_3Au9TAIqGcnNLtVXUzb9pCUk3gp/hf_20260812_094442_fcf992fc-6605-4248-a3aa-8e76dd4aea94.mp4"
+    },
+    {
+      "city": "mexico-city",
+      "weather": "snowy",
+      "light": "night",
+      "id": "19f08741-466a-4036-b9f4-7001ec63ab65-locked-lighting",
+      "sourceId": "19f08741-466a-4036-b9f4-7001ec63ab65",
+      "url": "/media/weather/cinema/mexico-city-snowy-night.mp4",
+      "qa": "accepted",
+      "postProcess": "low-frequency illumination locked to frame 1"
+    },
+    {
+      "city": "mexico-city",
+      "weather": "foggy",
+      "light": "day",
+      "id": "3d0d26fa-34a8-4507-91f2-0a12f04da589-locked-lighting",
+      "sourceId": "3d0d26fa-34a8-4507-91f2-0a12f04da589",
+      "url": "/media/weather/cinema/mexico-city-foggy-day.mp4",
+      "qa": "accepted",
+      "postProcess": "low-frequency illumination locked to frame 1"
+    },
+    {
+      "city": "mexico-city",
+      "weather": "foggy",
+      "light": "night",
+      "id": "8aa034d4-ba52-45ab-b8b7-bdb5376c1db0-locked-lighting",
+      "sourceId": "8aa034d4-ba52-45ab-b8b7-bdb5376c1db0",
+      "url": "/media/weather/cinema/mexico-city-foggy-night.mp4",
+      "qa": "accepted",
+      "postProcess": "low-frequency illumination locked to frame 1"
+    },
+    {
+      "city": "rio-de-janeiro",
+      "weather": "sunny",
+      "light": "day",
+      "id": "78524884-d60c-4e8c-a66b-3ead647bac44-locked-lighting",
+      "sourceId": "78524884-d60c-4e8c-a66b-3ead647bac44",
+      "url": "/media/weather/cinema/rio-de-janeiro-sunny-day.mp4",
+      "qa": "accepted",
+      "postProcess": "lock-illumination"
+    },
+    {
+      "city": "rio-de-janeiro",
+      "weather": "sunny",
+      "light": "night",
+      "id": "3173e9c1-e24e-46ce-bf08-c2dcb23a2d7e-locked-lighting",
+      "sourceId": "3173e9c1-e24e-46ce-bf08-c2dcb23a2d7e",
+      "url": "/media/weather/cinema/rio-de-janeiro-sunny-night.mp4",
+      "qa": "accepted",
+      "postProcess": "lock-illumination"
+    },
+    {
+      "city": "rio-de-janeiro",
+      "weather": "rainy",
+      "light": "day",
+      "id": "7507b43f-fe62-4b4b-a750-d5e60fac2d4f",
+      "url": "/media/weather/cinema/rio-de-janeiro-rainy-day.mp4",
+      "qa": "accepted"
+    },
+    {
+      "city": "rio-de-janeiro",
+      "weather": "rainy",
+      "light": "night",
+      "id": "168c2cda-b149-40c8-893b-953b90e13e2c",
+      "url": "/media/weather/cinema/rio-de-janeiro-rainy-night.mp4",
+      "qa": "accepted"
+    },
+    {
+      "city": "rio-de-janeiro",
+      "weather": "snowy",
+      "light": "day",
+      "id": "93fca282-de22-4bc3-9533-745a25a6ed6a",
+      "url": "/media/weather/cinema/rio-de-janeiro-snowy-day.mp4",
+      "qa": "accepted"
+    },
+    {
+      "city": "rio-de-janeiro",
+      "weather": "snowy",
+      "light": "night",
+      "id": "56bb4081-2047-4e4c-a6f5-9d6b4db4a9c9",
+      "url": "/media/weather/cinema/rio-de-janeiro-snowy-night.mp4",
+      "qa": "accepted"
+    },
+    {
+      "city": "rio-de-janeiro",
+      "weather": "foggy",
+      "light": "day",
+      "id": "3724b56e-eefe-4123-ac3a-8efa9c39efd4",
+      "url": "/media/weather/cinema/rio-de-janeiro-foggy-day.mp4",
+      "qa": "accepted"
+    },
+    {
+      "city": "rio-de-janeiro",
+      "weather": "foggy",
+      "light": "night",
+      "id": "e304121b-5233-46da-8716-935a7eb92959-locked-lighting",
+      "url": "/media/weather/cinema/rio-de-janeiro-foggy-night.mp4",
+      "qa": "accepted"
+    },
+    {
+      "city": "london",
+      "weather": "sunny",
+      "light": "day",
+      "id": "0638306e-b4b1-4561-8afd-06914ba46866-locked-lighting",
+      "url": "/media/weather/cinema/london-sunny-day.mp4",
+      "qa": "accepted"
+    },
+    {
+      "city": "london",
+      "weather": "sunny",
+      "light": "night",
+      "id": "b185d0a9-cff5-4916-92c4-edfe23784bf5-locked-lighting",
+      "url": "/media/weather/cinema/london-sunny-night.mp4",
+      "qa": "accepted"
+    },
+    {
+      "city": "london",
+      "weather": "rainy",
+      "light": "day",
+      "id": "b987863c-c0f7-4699-ae6e-f2093fb389a8",
+      "url": "/media/weather/cinema/london-rainy-day.mp4",
+      "qa": "accepted"
+    },
+    {
+      "city": "london",
+      "weather": "rainy",
+      "light": "night",
+      "id": "9bf97601-1116-423d-b12b-7426afb64c75",
+      "url": "/media/weather/cinema/london-rainy-night.mp4",
+      "qa": "accepted"
+    },
+    {
+      "city": "london",
+      "weather": "snowy",
+      "light": "day",
+      "id": "c82d4614-8d80-4320-8c54-39c592c66a20",
+      "url": "/media/weather/cinema/london-snowy-day.mp4",
+      "qa": "accepted"
+    },
+    {
+      "city": "london",
+      "weather": "snowy",
+      "light": "night",
+      "id": "6b345880-1f5a-4f0f-a415-ddbdc673635a",
+      "sourceId": "713bb637-e9d0-4419-9725-c00f3fe164e0",
+      "url": "/media/weather/cinema/london-snowy-night.mp4",
+      "qa": "accepted"
+    },
+    {
+      "city": "london",
+      "weather": "foggy",
+      "light": "day",
+      "id": "bb0850c8-aefe-478c-8820-23fcba188995-locked-lighting",
+      "sourceId": "073884a4-e8c0-4c71-adcd-6dc42a2a8e6d",
+      "url": "/media/weather/cinema/london-foggy-day.mp4",
+      "qa": "accepted",
+      "postProcess": "illumination-lock"
+    },
+    {
+      "city": "london",
+      "weather": "foggy",
+      "light": "night",
+      "id": "6556721d-5b27-468e-b7b2-3eeb22176cfc-locked-lighting",
+      "sourceId": "713bb637-e9d0-4419-9725-c00f3fe164e0",
+      "url": "/media/weather/cinema/london-foggy-night.mp4",
+      "qa": "accepted",
+      "postProcess": "illumination-lock"
+    },
+    {
+      "city": "paris",
+      "weather": "sunny",
+      "light": "day",
+      "id": "6863ae08-a0b7-4240-9686-befe77b359f2",
+      "sourceId": "efa6b75e-6c28-4fc6-b087-95a2fe43c0c0",
+      "url": "/media/weather/cinema/paris-sunny-day.mp4",
+      "qa": "accepted"
+    },
+    {
+      "city": "paris",
+      "weather": "sunny",
+      "light": "night",
+      "id": "dae4f16d-6631-4616-a643-a2f9c6e0f211",
+      "url": "/media/weather/cinema/paris-sunny-night.mp4",
+      "qa": "accepted"
+    },
+    {
+      "city": "paris",
+      "weather": "rainy",
+      "light": "day",
+      "id": "4b8152c2-46e5-4a74-99bf-af603f43db8e",
+      "url": "/media/weather/cinema/paris-rainy-day.mp4",
+      "qa": "accepted"
+    },
+    {
+      "city": "paris",
+      "weather": "rainy",
+      "light": "night",
+      "id": "1028a2e7-a73f-4a82-aa25-faad5e87d4a8",
+      "url": "/media/weather/cinema/paris-rainy-night.mp4",
+      "qa": "accepted"
+    },
+    {
+      "city": "paris",
+      "weather": "snowy",
+      "light": "day",
+      "id": "316112fe-d910-4b50-a2ad-70cf91aff9bf",
+      "url": "/media/weather/cinema/paris-snowy-day.mp4",
+      "qa": "accepted"
+    },
+    {
+      "city": "paris",
+      "weather": "snowy",
+      "light": "night",
+      "id": "b542992f-23b6-454e-aaa3-1f58f961eca1",
+      "url": "/media/weather/cinema/paris-snowy-night.mp4",
+      "qa": "accepted"
+    },
+    {
+      "city": "paris",
+      "weather": "foggy",
+      "light": "day",
+      "id": "c44ed4ba-aa82-4cea-b6b7-7e9d6cc44f5e-locked-lighting",
+      "sourceId": "c44ed4ba-aa82-4cea-b6b7-7e9d6cc44f5e",
+      "url": "/media/weather/cinema/paris-foggy-day.mp4",
+      "qa": "accepted",
+      "postProcess": "lock-illumination"
+    },
+    {
+      "city": "paris",
+      "weather": "foggy",
+      "light": "night",
+      "id": "fc36b7af-b1cd-44f6-bb9b-1e771ca440ef-locked-lighting",
+      "sourceId": "fc36b7af-b1cd-44f6-bb9b-1e771ca440ef",
+      "url": "/media/weather/cinema/paris-foggy-night.mp4",
+      "qa": "accepted",
+      "postProcess": "lock-illumination"
+    },
+    {
+      "city": "rome",
+      "weather": "sunny",
+      "light": "day",
+      "id": "2c479e8e-7f1f-4f0e-8477-1b2a2a6c5fcd",
+      "url": "/media/weather/cinema/rome-sunny-day.mp4",
+      "qa": "accepted"
+    },
+    {
+      "city": "rome",
+      "weather": "sunny",
+      "light": "night",
+      "id": "b9f26766-2715-49d3-ae5d-bb0832344cf3",
+      "url": "/media/weather/cinema/rome-sunny-night.mp4",
+      "qa": "accepted"
+    },
+    {
+      "city": "rome",
+      "weather": "rainy",
+      "light": "day",
+      "id": "7d0d950b-c3ed-4797-a8b5-b1f8dfa721cf",
+      "url": "/media/weather/cinema/rome-rainy-day.mp4",
+      "qa": "accepted"
+    },
+    {
+      "city": "rome",
+      "weather": "rainy",
+      "light": "night",
+      "id": "878543d7-f176-4a56-9152-a1e62b3c39be",
+      "url": "/media/weather/cinema/rome-rainy-night.mp4",
+      "qa": "accepted"
+    },
+    {
+      "city": "rome",
+      "weather": "snowy",
+      "light": "day",
+      "id": "fdd3dc18-392b-4dbf-81ee-d5f1ac4f32ac",
+      "url": "/media/weather/cinema/rome-snowy-day.mp4",
+      "qa": "accepted"
+    },
+    {
+      "city": "rome",
+      "weather": "snowy",
+      "light": "night",
+      "id": "f063e5c2-7043-43f6-b19a-dff02dc4e732",
+      "url": "/media/weather/cinema/rome-snowy-night.mp4",
+      "qa": "accepted"
+    },
+    {
+      "city": "rome",
+      "weather": "foggy",
+      "light": "day",
+      "id": "58bc8c04-d7dc-42cd-ae55-e92185ffac37",
+      "url": "/media/weather/cinema/rome-foggy-day.mp4",
+      "qa": "accepted"
+    },
+    {
+      "city": "rome",
+      "weather": "foggy",
+      "light": "night",
+      "id": "58bc8c04-d7dc-42cd-ae55-e92185ffac37",
+      "sourceId": "rome-foggy-night-v1",
+      "url": "/media/weather/cinema/rome-foggy-night.mp4",
+      "qa": "accepted",
+      "postProcess": "transferred-generated-fog-motion"
+    }
+  ]
+}

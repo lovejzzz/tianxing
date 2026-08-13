@@ -10,7 +10,8 @@ import { portfolioPhotos } from "../photoManifest";
 import { playSound, toggleRinger, useRinger } from "../sound";
 import { AppIcon } from "./AppIcon";
 import { Phone3DIntro } from "./Phone3DIntro";
-import { WeatherCinemaEngine } from "./WeatherCinemaEngine";
+import { WeatherCinemaVideo } from "./WeatherCinemaVideo";
+import { WEATHER_CINEMA_CITIES } from "../data/weatherCinema";
 
 type NativeApp =
   | "messages"
@@ -241,7 +242,9 @@ export function PhoneExperience() {
 
   useEffect(() => {
     let mobileStartFrame = 0;
-    if (window.matchMedia("(max-width: 560px)").matches) {
+    const params = new URLSearchParams(window.location.search);
+    const isWeatherRegression = params.get("regressionTest") === "weather";
+    if (window.matchMedia("(max-width: 560px)").matches && !isWeatherRegression) {
       mobileStartFrame = window.requestAnimationFrame(() => {
         setMode("home");
         setActiveApp(null);
@@ -264,8 +267,8 @@ export function PhoneExperience() {
   }, []);
 
   useEffect(() => {
-    if (process.env.NODE_ENV === "production") return;
     const params = new URLSearchParams(window.location.search);
+    if (process.env.NODE_ENV === "production" && params.get("regressionTest") !== "weather") return;
     const funValue = params.get("funFrame");
     const arrivalValue = params.get("arrivalFrame");
     const weatherValue = params.get("weatherTest");
@@ -1363,16 +1366,7 @@ type WeatherData = {
 };
 
 const defaultWeatherPlace: WeatherPlace = { name: "New York", country: "United States", admin: "New York", latitude: 40.7128, longitude: -74.006 };
-const featuredWeatherPlaces: Array<WeatherPlace & { glow: string }> = [
-  { ...defaultWeatherPlace, glow: "rgba(218,157,73,.3)" },
-  { name: "Shanghai", country: "China", admin: "Shanghai", latitude: 31.2304, longitude: 121.4737, glow: "rgba(74,184,202,.28)" },
-  { name: "Paris", country: "France", admin: "Île-de-France", latitude: 48.8566, longitude: 2.3522, glow: "rgba(204,119,111,.28)" },
-  { name: "Tokyo", country: "Japan", admin: "Tokyo", latitude: 35.6762, longitude: 139.6503, glow: "rgba(186,105,160,.3)" },
-  { name: "London", country: "United Kingdom", admin: "England", latitude: 51.5072, longitude: -.1276, glow: "rgba(121,151,177,.3)" },
-  { name: "Sydney", country: "Australia", admin: "New South Wales", latitude: -33.8688, longitude: 151.2093, glow: "rgba(74,170,178,.28)" },
-  { name: "Dubai", country: "United Arab Emirates", admin: "Dubai", latitude: 25.2048, longitude: 55.2708, glow: "rgba(223,168,75,.3)" },
-  { name: "Singapore", country: "Singapore", latitude: 1.3521, longitude: 103.8198, glow: "rgba(75,164,121,.28)" },
-];
+const featuredWeatherPlaces: Array<WeatherPlace & { glow: string }> = WEATHER_CINEMA_CITIES;
 
 function WeatherApp() {
   const [place, setPlace] = useState<WeatherPlace>(() => {
@@ -1402,8 +1396,8 @@ function WeatherApp() {
 
   useEffect(() => { weatherRef.current = weather; }, [weather]);
   useEffect(() => {
-    if (process.env.NODE_ENV === "production") return;
     const params = new URLSearchParams(window.location.search);
+    if (process.env.NODE_ENV === "production" && params.get("regressionTest") !== "weather") return;
     const requested = params.get("weatherTest");
     if (!requested) return;
     const testCodes: Record<string, number> = { clear: 0, cloud: 3, fog: 45, rain: 63, snow: 73, storm: 95 };
@@ -1576,7 +1570,7 @@ function WeatherApp() {
       aria-busy={loading}
     >
       <div className="weather-scene weather-engine-stage" aria-hidden="true">
-        <WeatherCinemaEngine
+        <WeatherCinemaVideo
           code={cinemaPreview?.code ?? weather?.code ?? 0}
           isDay={cinemaPreview?.isDay ?? weather?.isDay ?? true}
           place={cinemaPreview?.place ?? weather?.place ?? place}
@@ -1602,7 +1596,7 @@ function WeatherApp() {
           </div>
           {results.length === 0 && (
             <section className="weather-featured-cities" aria-label="Featured city scenes">
-              <header><strong>Featured Cities</strong><small>Eight cinematic windows</small></header>
+              <header><strong>Cinematic Cities</strong><small>Ten windows</small></header>
               <div className="weather-featured-grid">
                 {featuredWeatherPlaces.map((featured, index) => (
                   <button

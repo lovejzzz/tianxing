@@ -41,3 +41,8 @@ next-env.d.ts
 /.wrangler/
 /outputs/
 /work/
+
+# Local weather-cinema generation and QA caches. Final accepted clips live in
+# public/media/weather/cinema and are committed for production playback.
+/production/weather-cinema/generated-reference-frames/
+/production/weather-cinema/qa/

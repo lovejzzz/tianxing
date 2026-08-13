@@ -25,6 +25,10 @@ npm run dev
 
 `npm run build` validates the Sites build. `npm run build:pages` creates the static GitHub Pages site in `out/`.
 
+## Weather cinema
+
+The Weather app uses a hybrid renderer. Ten curated cities have eight cinematic day/night weather films each. Any other city found through search—and any curated film that is still missing or fails to load—falls back automatically to the procedural weather engine, so global search always remains usable without a blank or placeholder state.
+
 ## Deployment
 
 Pushing `main` runs the GitHub Pages workflow. The public site is available at [tian.fun](https://tian.fun/).

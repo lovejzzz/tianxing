@@ -12,6 +12,14 @@
     "start": "WRANGLER_LOG_PATH=.wrangler/wrangler.log vinext start",
     "test": "npm run build && node --test tests/rendered-html.test.mjs",
     "lint": "eslint . --ignore-pattern dist --ignore-pattern .next --ignore-pattern out",
+    "weather:qa": "node production/weather-cinema/qa.mjs",
+    "weather:sheets": "node production/weather-cinema/contact-sheets.mjs",
+    "weather:progress": "node production/weather-cinema/progress.mjs",
+    "weather:next": "node production/weather-cinema/next.mjs",
+    "weather:ready": "node production/weather-cinema/ready.mjs",
+    "weather:accept": "node production/weather-cinema/accept.mjs",
+    "weather:localize": "node production/weather-cinema/localize.mjs",
+    "weather:analyze": "python3 production/weather-cinema/analyze-clip.py",
     "db:generate": "drizzle-kit generate"
   },
   "dependencies": {

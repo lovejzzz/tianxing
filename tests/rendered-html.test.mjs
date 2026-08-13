@@ -32,7 +32,7 @@ test("renders the finished portfolio home", async () => {
 });
 
 test("renders a project detail route", async () => {
-  const response = await render("/projects/surge-method/");
+  const response = await render("/projects/surge-method");
   assert.equal(response.status, 200);
   const html = await response.text();
   assert.match(html, /Push\. Recover\. Come back stronger\./);
@@ -41,7 +41,7 @@ test("renders a project detail route", async () => {
 });
 
 test("embeds playable projects and full-resolution screenshots", async () => {
-  const response = await render("/projects/bebop-puzzle/");
+  const response = await render("/projects/bebop-puzzle");
   assert.equal(response.status, 200);
   const html = await response.text();
   assert.match(html, /Play Bebop Puzzle here/);
@@ -53,6 +53,8 @@ test("embeds playable projects and full-resolution screenshots", async () => {
 test("keeps the iPhone interactive and time-aware", async () => {
   const source = await readFile(new URL("../app/components/PhoneExperience.tsx", import.meta.url), "utf8");
   const weatherEngineSource = await readFile(new URL("../app/components/WeatherCinemaEngine.tsx", import.meta.url), "utf8");
+  const weatherVideoSource = await readFile(new URL("../app/components/WeatherCinemaVideo.tsx", import.meta.url), "utf8");
+  const weatherCinemaDataSource = await readFile(new URL("../app/data/weatherCinema.ts", import.meta.url), "utf8");
   const phone3dSource = await readFile(new URL("../app/components/Phone3DIntro.tsx", import.meta.url), "utf8");
   const styles = await readFile(new URL("../app/globals.css", import.meta.url), "utf8");
   const photoManifest = await readFile(new URL("../app/photoManifest.ts", import.meta.url), "utf8");
@@ -96,7 +98,20 @@ test("keeps the iPhone interactive and time-aware", async () => {
   assert.doesNotMatch(source, /Delivered ✓/);
   assert.match(source, /Photo Booth effects/);
   assert.match(source, /photo-viewer/);
-  assert.match(source, /WeatherCinemaEngine/);
+  assert.match(source, /WeatherCinemaVideo/);
+  assert.match(weatherVideoSource, /WeatherCinemaEngine/);
+  assert.match(weatherVideoSource, /CROSSFADE_MS/);
+  assert.match(weatherVideoSource, /weather-cinema-video-layer/);
+  assert.match(weatherVideoSource, /visibilitychange/);
+  assert.match(weatherVideoSource, /HAVE_CURRENT_DATA/);
+  assert.match(weatherVideoSource, /onUnavailable/);
+  assert.match(weatherVideoSource, /data-weather-renderer="procedural"/);
+  assert.match(weatherVideoSource, /data-weather-fallback=\{asset \? \(videoUnavailable \? "video-error" : "curated-video-pending"\) : "global-city"\}/);
+  assert.match(weatherVideoSource, /<WeatherCinemaEngine code=\{code\} isDay=\{isDay\} place=\{place\}/);
+  assert.doesNotMatch(weatherVideoSource, /weather-cinema-fallback[\s\S]{0,520}<img src=\{asset\?\.poster\}/);
+  assert.match(weatherVideoSource, /data-weather-renderer="cinematic-video"/);
+  assert.match(weatherCinemaDataSource, /if \(!city\) return null/);
+  assert.match(weatherCinemaDataSource, /names\.includes\(normalized\)/);
   assert.match(weatherEngineSource, /cityLandmark/);
   assert.match(weatherEngineSource, /sceneLighting/);
   assert.match(weatherEngineSource, /prepareApertureMask/);
@@ -136,10 +151,10 @@ test("keeps the iPhone interactive and time-aware", async () => {
   assert.doesNotMatch(styles, /weather-picker-open>\.weather-engine-stage\{[^}]*transform:/);
   assert.match(styles, /weather-cinema-canvas/);
   assert.match(styles, /weather-engine-stage/);
-  assert.match(source, /Featured Cities/);
-  assert.match(source, /Eight cinematic windows/);
+  assert.match(source, /Cinematic Cities/);
+  assert.match(source, /Ten windows/);
   assert.match(source, /weather-featured-grid/);
-  for (const city of ["New York", "Shanghai", "Paris", "Tokyo", "London", "Sydney", "Dubai", "Singapore"]) assert.match(source, new RegExp(city));
+  for (const city of ["New York", "Los Angeles", "San Francisco", "Chicago", "Toronto", "Mexico City", "Rio de Janeiro", "London", "Paris", "Rome"]) assert.match(weatherCinemaDataSource, new RegExp(city));
   await Promise.all([
     "studio",
     "hotel",
@@ -326,4 +341,39 @@ test("keeps the iPhone interactive and time-aware", async () => {
   assert.match(projectSource, /slug: "slotronome"[\s\S]{0,180}year: "2025"/);
   assert.match(source, /open\.spotify\.com\/embed\/playlist\/6hYj1RoYJ85hj8c1kaDFJ2/);
   assert.doesNotMatch(source, /appstore|youtube:|id: "about"/i);
+});
+
+test("keeps the weather-cinema production catalog internally consistent", async () => {
+  const masters = JSON.parse(await readFile(new URL("../production/weather-cinema/masters.json", import.meta.url), "utf8"));
+  const videos = JSON.parse(await readFile(new URL("../production/weather-cinema/videos.json", import.meta.url), "utf8"));
+  const dataSource = await readFile(new URL("../app/data/weatherCinema.ts", import.meta.url), "utf8");
+  const catalogSource = await readFile(new URL("../production/weather-cinema/catalog.mjs", import.meta.url), "utf8");
+  const expectedStates = new Set(["sunny:day", "sunny:night", "rainy:day", "rainy:night", "snowy:day", "snowy:night", "foggy:day", "foggy:night"]);
+  const curatedCities = ["new-york", "los-angeles", "san-francisco", "chicago", "toronto", "mexico-city", "rio-de-janeiro", "london", "paris", "rome"];
+
+  assert.equal(masters.items.length, 30);
+  assert.equal(new Set(masters.items.map((item) => item.slug)).size, 30);
+  for (const master of masters.items) {
+    assert.match(master.url, /^https:\/\//);
+  }
+  assert.equal((dataSource.match(/slug: "/g) ?? []).length, 10);
+  for (const slug of curatedCities) {
+    assert.ok(masters.items.some((master) => master.slug === slug));
+    assert.match(dataSource, new RegExp(`slug: "${slug}"`));
+    assert.ok(catalogSource.includes(`["${slug}"`));
+  }
+
+  const accepted = videos.items.filter((item) => item.qa === "accepted");
+  const acceptedKeys = accepted.map((item) => `${item.city}:${item.weather}:${item.light}`);
+  assert.equal(new Set(acceptedKeys).size, acceptedKeys.length);
+  assert.equal(new Set(accepted.map((item) => item.url)).size, accepted.length);
+  for (const item of videos.items) {
+    assert.ok(expectedStates.has(`${item.weather}:${item.light}`));
+    assert.ok(masters.items.some((master) => master.slug === item.city));
+    assert.match(item.url, /^(https:\/\/|\/media\/weather\/cinema\/)/);
+    if (item.url.startsWith("/media/weather/cinema/")) {
+      await access(new URL(`../public${item.url}`, import.meta.url));
+    }
+    assert.ok(["accepted", "candidate", "rejected"].includes(item.qa));
+  }
 });
