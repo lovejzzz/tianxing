@@ -270,6 +270,8 @@ test("keeps the iPhone interactive and time-aware", async () => {
   assert.match(phone3dSource, /let caseTextureReady = !showFujiCase/);
   assert.match(phone3dSource, /if \(!modelActive \|\| introStarted \|\| !caseTextureReady\) return/);
   assert.match(phone3dSource, /startedAt = performance\.now\(\)/);
+  assert.match(phone3dSource, /revealFrame = window\.requestAnimationFrame\(\(\) => \{[\s\S]*?renderer\.render\(scene, camera\);[\s\S]*?document\.documentElement\.classList\.remove\("phone-intro-pending"\)/);
+  assert.match(phone3dSource, /window\.cancelAnimationFrame\(revealFrame\)/);
   assert.match(phone3dSource, /\/media\/cases\/red-fuji-case\.jpg/);
   assert.doesNotMatch(phone3dSource, /file\.nbfox\.com/);
   assert.match(phone3dSource, /product\.style\.transform/);

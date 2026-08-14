@@ -751,6 +751,7 @@ export function Phone3DIntro({ productRef }: { productRef: RefObject<HTMLDivElem
     observer.observe(host);
 
     let frame = 0;
+    let revealFrame = 0;
     let homeButtonFrame = 0;
     let homeButtonDepth = 0;
     let homeButtonTarget = 0;
@@ -817,19 +818,33 @@ export function Phone3DIntro({ productRef }: { productRef: RefObject<HTMLDivElem
       if (!modelActive || introStarted || !caseTextureReady) return;
       introStarted = true;
       resize();
-      // Reveal only after the model and the case artwork have both produced a
-      // complete WebGL frame. Animation time begins here as well, so waiting
-      // for the case texture never skips or compresses the opening frames.
+      // Keep the pre-paint guard for one more browser frame after switching to
+      // the 3D composition. Removing it in the same task as `phone-3d-ready`
+      // let Chrome occasionally submit the old, flat Fun desktop for a single
+      // frame before the WebGL layer was composited. Render the exact opening
+      // pose again inside rAF, then reveal the already-settled 3D frame.
       document.documentElement.classList.add("phone-3d-ready");
-      document.documentElement.classList.remove("phone-3d-complete", "phone-intro-pending");
-      startedAt = performance.now();
-      frame = window.requestAnimationFrame(render);
+      document.documentElement.classList.remove("phone-3d-complete");
+      revealFrame = window.requestAnimationFrame(() => {
+        if (!modelActive) return;
+        currentPose = poseAt(0);
+        scene.environmentRotation.y = 0.9;
+        keyLight.position.x = -6.4;
+        keyLight.intensity = 0.92;
+        warmFill.intensity = 2.35;
+        applyPose(currentPose);
+        renderer.render(scene, camera);
+        startedAt = performance.now();
+        document.documentElement.classList.remove("phone-intro-pending");
+        frame = window.requestAnimationFrame(render);
+      });
     };
     startIntro();
 
     return () => {
       modelActive = false;
       window.cancelAnimationFrame(frame);
+      window.cancelAnimationFrame(revealFrame);
       window.cancelAnimationFrame(homeButtonFrame);
       window.removeEventListener("tian:home-button", onHomeButton);
       observer.disconnect();
