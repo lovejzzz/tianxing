@@ -65,9 +65,9 @@ export default function RootLayout({ children }: Readonly<{ children: React.Reac
           as="image"
           href="/media/cases/red-fuji-case.jpg"
         />
-        <style dangerouslySetInnerHTML={{ __html: "html.phone-intro-pending{background:#020305!important}html.phone-intro-pending body{visibility:hidden!important}" }} />
+        <style dangerouslySetInnerHTML={{ __html: "html.phone-intro-pending{background:#020305!important}html.phone-intro-pending::before{content:'';position:fixed;z-index:2147483647;inset:0;background:#020305}html.phone-intro-pending body{visibility:hidden!important}" }} />
         <noscript>
-          <style>{"html.phone-intro-pending body{visibility:visible!important}"}</style>
+          <style>{"html.phone-intro-pending::before{content:none!important}html.phone-intro-pending body{visibility:visible!important}"}</style>
         </noscript>
         <script dangerouslySetInnerHTML={{ __html: phoneIntroBootstrap }} />
       </head>

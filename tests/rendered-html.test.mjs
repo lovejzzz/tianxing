@@ -24,6 +24,7 @@ test("renders the finished portfolio home", async () => {
   const phoneMarkup = html.indexOf('class="phone-product"');
   assert.ok(introGuard >= 0 && phoneMarkup > introGuard, "the pre-paint dark-field guard must arrive before the phone markup");
   assert.match(html, /<html[^>]*class="phone-intro-pending"[^>]*data-phone-intro="pending"/);
+  assert.match(html, /html\.phone-intro-pending::before\{content:'';position:fixed;z-index:2147483647;inset:0;background:#020305\}/);
   assert.match(html, /html\.phone-intro-pending body\{visibility:hidden!important\}/);
   assert.doesNotMatch(html, /dataset\.phoneIntro = 'pending'/);
   assert.doesNotMatch(html, /classList\.add\('phone-intro-pending'\)/);
