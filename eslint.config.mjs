@@ -11,6 +11,12 @@ const eslintConfig = defineConfig([
     ".next/**",
     "out/**",
     "build/**",
+    // Generated weather assets are validated by the dedicated weather QA
+    // scripts. Excluding them keeps ESLint focused on executable source and
+    // avoids traversing hundreds of large frames and videos.
+    "public/media/**",
+    "production/weather-cinema/qa/**",
+    "production/weather-cinema/generated-reference-frames/**",
     "next-env.d.ts",
   ]),
 ]);

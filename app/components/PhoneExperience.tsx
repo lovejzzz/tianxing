@@ -1400,7 +1400,18 @@ function WeatherApp() {
     if (process.env.NODE_ENV === "production" && params.get("regressionTest") !== "weather") return;
     const requested = params.get("weatherTest");
     if (!requested) return;
-    const testCodes: Record<string, number> = { clear: 0, cloud: 3, fog: 45, rain: 63, snow: 73, storm: 95 };
+    const testCodes: Record<string, number> = {
+      clear: 0,
+      sunny: 0,
+      cloud: 3,
+      fog: 45,
+      foggy: 45,
+      rain: 63,
+      rainy: 63,
+      snow: 73,
+      snowy: 73,
+      storm: 95,
+    };
     const numericCode = Number(requested);
     const code = Number.isFinite(numericCode) ? numericCode : testCodes[requested.toLowerCase()];
     if (!Number.isFinite(code)) return;
@@ -1408,14 +1419,11 @@ function WeatherApp() {
     const frameValue = params.get("weatherFrame");
     const inspectionMs = frameValue === null ? null : Math.max(0, Number(frameValue) || 0);
     const testPlaces: Record<string, WeatherPlace> = {
-      "new-york": defaultWeatherPlace,
+      ...Object.fromEntries(WEATHER_CINEMA_CITIES.map((city) => [city.slug, city])),
       shanghai: { name: "Shanghai", country: "China", latitude: 31.2304, longitude: 121.4737 },
-      paris: { name: "Paris", country: "France", latitude: 48.8566, longitude: 2.3522 },
-      london: { name: "London", country: "United Kingdom", latitude: 51.5072, longitude: -.1276 },
       seattle: { name: "Seattle", country: "United States", latitude: 47.6062, longitude: -122.3321 },
       dubai: { name: "Dubai", country: "United Arab Emirates", latitude: 25.2048, longitude: 55.2708 },
       sydney: { name: "Sydney", country: "Australia", latitude: -33.8688, longitude: 151.2093 },
-      rome: { name: "Rome", country: "Italy", latitude: 41.9028, longitude: 12.4964 },
       singapore: { name: "Singapore", country: "Singapore", latitude: 1.3521, longitude: 103.8198 },
       istanbul: { name: "Istanbul", country: "Türkiye", latitude: 41.0082, longitude: 28.9784 },
     };
