@@ -4,9 +4,9 @@ import "./globals.css";
 const phoneIntroBootstrap = `
 try {
   var desktopIntro = window.matchMedia('(min-width: 561px) and (prefers-reduced-motion: no-preference)').matches;
-  if (desktopIntro) {
-    document.documentElement.dataset.phoneIntro = 'pending';
-    document.documentElement.classList.add('phone-intro-pending');
+  if (!desktopIntro) {
+    delete document.documentElement.dataset.phoneIntro;
+    document.documentElement.classList.remove('phone-intro-pending');
   }
 } catch (_) {}
 `;
@@ -53,7 +53,12 @@ export const viewport: Viewport = {
 
 export default function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
   return (
-    <html lang="en" suppressHydrationWarning>
+    <html
+      lang="en"
+      className="phone-intro-pending"
+      data-phone-intro="pending"
+      suppressHydrationWarning
+    >
       <head>
         <link
           rel="preload"
@@ -61,6 +66,9 @@ export default function RootLayout({ children }: Readonly<{ children: React.Reac
           href="/media/cases/red-fuji-case.jpg"
         />
         <style dangerouslySetInnerHTML={{ __html: "html.phone-intro-pending{background:#020305!important}html.phone-intro-pending body{visibility:hidden!important}" }} />
+        <noscript>
+          <style>{"html.phone-intro-pending body{visibility:visible!important}"}</style>
+        </noscript>
         <script dangerouslySetInnerHTML={{ __html: phoneIntroBootstrap }} />
       </head>
       <body>{children}</body>

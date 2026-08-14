@@ -23,8 +23,11 @@ test("renders the finished portfolio home", async () => {
   const introGuard = html.indexOf("html.phone-intro-pending{background:#020305!important}");
   const phoneMarkup = html.indexOf('class="phone-product"');
   assert.ok(introGuard >= 0 && phoneMarkup > introGuard, "the pre-paint dark-field guard must arrive before the phone markup");
+  assert.match(html, /<html[^>]*class="phone-intro-pending"[^>]*data-phone-intro="pending"/);
   assert.match(html, /html\.phone-intro-pending body\{visibility:hidden!important\}/);
-  assert.match(html, /dataset\.phoneIntro = 'pending'/);
+  assert.doesNotMatch(html, /dataset\.phoneIntro = 'pending'/);
+  assert.doesNotMatch(html, /classList\.add\('phone-intro-pending'\)/);
+  assert.match(html, /if \(!desktopIntro\)/);
   assert.doesNotMatch(html, /tian-phone-intro-played/);
   assert.doesNotMatch(html, /Portfolio · Edition 01|Selected work|2024—2026|Tian Xing delivers|Designed &amp; built by Tian Xing|New York/i);
   assert.doesNotMatch(html, /Choose an icon to open a project|Nine things I care about|makes things|systems thinking and play/i);
