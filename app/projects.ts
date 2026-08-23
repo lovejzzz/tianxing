@@ -12,6 +12,15 @@ export type Project = {
   description: string;
   note: string;
   livePreview?: { url: string; label: string; note: string };
+  caseStudy?: {
+    problem: string;
+    exactRole: string;
+    collaboration: string;
+    decisions: string[];
+    constraints: string[];
+    results: string[];
+    built: string[];
+  };
   model?: {
     eyebrow: string;
     title: string;
@@ -38,6 +47,31 @@ export const projects: Project[] = [
     description: "Course Mapper turns a syllabus into an editable instructional system: course maps, lesson plans, slide decks, rubrics, quizzes, assignments, discussions, study guides, and a polished syllabus. Its current Scion path combines local-first authoring with a deterministic course compiler and explicit evidence boundaries.",
     note: "Built for instructors who need structured artifacts—not another wall of chatbot prose.",
     livePreview: { url: "https://edutool.dev", label: "Build a course here", note: "The real browser-local course workspace, running inside this page." },
+    caseStudy: {
+      problem: "Course-generation tools can produce a lot of text without producing a coherent course. Instructors still have to reconcile objectives, lessons, assessments, rubrics, citations, and exports by hand—and model output can quietly drift beyond the original brief.",
+      exactRole: "Product strategy, interaction design, system architecture, AI workflow design, front-end engineering, and release",
+      collaboration: "Independent project. I set the product direction and built the complete experience end to end.",
+      decisions: [
+        "Use one canonical course model so every artifact is generated from the same objectives, schedule, and evidence.",
+        "Follow generation with deterministic compilation, quality checks, and repair passes instead of trusting a single model response.",
+        "Keep the workspace local-first and make evidence boundaries, review status, and source gaps visible to the instructor.",
+      ],
+      constraints: [
+        "Early outputs drifted across artifacts: an objective could change meaning between a lesson, rubric, and quiz.",
+        "Generated material could sound certain even when the source package did not support it.",
+        "The system had to remain directly editable; automation could not turn the course into an opaque black box.",
+      ],
+      results: [
+        "Launched publicly at edutool.dev as a working browser-based course workspace.",
+        "Scion V0.18.7 generates and revises 10 connected deliverable types with visible quality and evidence checks.",
+        "A complete package can be reviewed, repaired, edited, and prepared for export from one course model.",
+      ],
+      built: [
+        "The canonical course schema, generation pipeline, deterministic compiler, and cross-artifact checks.",
+        "The Scion agent experience, direct editors, quality report, evidence workflow, and export path.",
+        "The product language, interaction system, visual design, and public web release.",
+      ],
+    },
     model: {
       eyebrow: "THE COURSE INTELLIGENCE LAYER",
       title: "Meet Scion",
@@ -70,6 +104,31 @@ export const projects: Project[] = [
     tagline: "Push. Recover. Come back stronger.",
     description: "Surge Method is an active-recovery training system for anything with repetitions. It alternates increasingly demanding push sets with lower-intensity recovery sets, turning a target into a clear workout wave you can follow, feel, and finish.",
     note: "No account, no internet, no collected data—training history stays on the device.",
+    caseStudy: {
+      problem: "Most workout timers either prescribe a fixed routine or merely count. I wanted a tool that could turn one personal target into a paced training wave—hard enough to create progression, clear enough to follow mid-set, and general enough to work for strength, endurance, or skill practice.",
+      exactRole: "Product concept, training-system design, interaction and visual design, iOS engineering, testing, and App Store release",
+      collaboration: "Independent project. I designed and shipped the product without a separate product, design, or engineering team.",
+      decisions: [
+        "Model each session as a progressive push-and-recovery wave rather than a flat ladder of identical sets.",
+        "Support both repetition-based and timed sessions through the same planning logic and workout language.",
+        "Use motion, sound, and haptics as state feedback so the interface remains legible while the user is moving.",
+      ],
+      constraints: [
+        "One planner had to make sense for activities with very different units, intensity curves, and recovery needs.",
+        "The interface had to communicate the current set, the next set, and total progress at a glance during exertion.",
+        "Privacy and offline use ruled out accounts, cloud history, and server-dependent planning.",
+      ],
+      results: [
+        "Released publicly on the Apple App Store as a production iPhone app.",
+        "Ships repetition and timed modes, automatic wave planning, guided sessions, and private on-device history.",
+        "The released product requires no account, internet connection, or collection of personal training data.",
+      ],
+      built: [
+        "The wave-planning system, rep and timed workout engines, setup flow, and live session interface.",
+        "Local workout history, progress visualization, haptic and sound cues, and completion experience.",
+        "The complete iOS product, its visual language, testing passes, store assets, and release.",
+      ],
+    },
     features: [
       { title: "Two training modes", body: "Rep-based waves for strength and timed waves for endurance, skills, or focus practice." },
       { title: "Smart wave planning", body: "A complete set pattern is generated from the target, with warmup, recovery, and peak phases." },
@@ -96,6 +155,31 @@ export const projects: Project[] = [
     description: "Bebop Puzzle teaches jazz vocabulary as a tactile connection game. Drag four-note melodic pieces onto a chord grid, line up their entry and exit points, and hear the complete bebop phrase come alive through a Rhodes-inspired instrument.",
     note: "Six chapters, 80 levels, daily missions, a printable boardgame kit, and a freeform Composer Mode.",
     livePreview: { url: "https://beboppuzzle.com", label: "Play Bebop Puzzle here", note: "Audio, drag-and-drop pieces, lessons, and the full campaign are available in the embedded game." },
+    caseStudy: {
+      problem: "Jazz theory is often taught as notation and terminology before a learner can hear or manipulate the underlying language. The challenge was to make voice leading, approaches, enclosures, and phrase construction tangible without reducing the music to a worksheet.",
+      exactRole: "Game concept and rules, learning design, interaction design, sound design, web engineering, level design, and release",
+      collaboration: "Independent project. I designed the learning system and built the game, audio, content, and public release.",
+      decisions: [
+        "Represent jazz vocabulary as four-note pieces with explicit entry and exit points so voice leading becomes a spatial connection rule.",
+        "Play every decision immediately through a Rhodes-inspired Web Audio instrument instead of separating theory from listening.",
+        "Move from guided chapters into Composer Mode, daily missions, and a printable kit so one mechanic supports learning and open play.",
+      ],
+      constraints: [
+        "Early concepts risked feeling like a theory worksheet with decorative sound rather than a musical game.",
+        "A connection could be visually valid but musically weak, so puzzle rules and audible feedback had to reinforce each other.",
+        "Drag interactions and responsive audio had to remain reliable across desktop and touch browsers with different audio policies.",
+      ],
+      results: [
+        "Launched publicly at beboppuzzle.com as a playable browser game.",
+        "The released campaign contains six chapters and 80 levels, plus daily missions and freeform Composer Mode.",
+        "The same core system extends beyond the screen through a downloadable, printable board-game kit.",
+      ],
+      built: [
+        "The puzzle grammar, melodic-piece system, validation rules, progression structure, and 80-level campaign.",
+        "The browser game, drag-and-drop interaction, Rhodes-inspired synth, playback controls, and responsive audio feedback.",
+        "Composer Mode, daily missions, lesson content, printable components, visual identity, and public web release.",
+      ],
+    },
     features: [
       { title: "Theory becomes touch", body: "Arpeggios, neighbors, approaches, and enclosures behave like pieces you can connect." },
       { title: "Hear every decision", body: "Playback, tempo, swing, tone, drive, reverb, and tremolo make the grid musical." },

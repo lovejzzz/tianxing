@@ -60,6 +60,51 @@ export default async function ProjectPage({ params }: { params: Promise<{ slug: 
           </div>
         </section>
 
+        {project.caseStudy && (
+          <section className="case-study-section" aria-labelledby={`case-study-${project.slug}`}>
+            <header className="case-study-heading">
+              <div>
+                <p>FLAGSHIP CASE STUDY</p>
+                <h2 id={`case-study-${project.slug}`}>How the work was made</h2>
+              </div>
+              <p>A closer account of the decisions, constraints, shipped outcomes, and individual contribution behind the finished experience.</p>
+            </header>
+
+            <article className="case-study-problem">
+              <span>01 / The problem</span>
+              <p>{project.caseStudy.problem}</p>
+            </article>
+
+            <div className="case-study-ownership">
+              <article>
+                <span>Exact role</span>
+                <p>{project.caseStudy.exactRole}</p>
+              </article>
+              <article>
+                <span>Team</span>
+                <p>{project.caseStudy.collaboration}</p>
+              </article>
+            </div>
+
+            <div className="case-study-evidence">
+              {[
+                { number: "02", title: "Important technical decisions", items: project.caseStudy.decisions },
+                { number: "03", title: "Constraints & failures", items: project.caseStudy.constraints },
+                { number: "04", title: "Results", items: project.caseStudy.results },
+                { number: "05", title: "What I personally built", items: project.caseStudy.built },
+              ].map(({ number, title, items }) => (
+                <article key={title}>
+                  <span>{number}</span>
+                  <h3>{title}</h3>
+                  <ul>
+                    {items.map((item) => <li key={item}>{item}</li>)}
+                  </ul>
+                </article>
+              ))}
+            </div>
+          </section>
+        )}
+
         {project.model && (
           <section className="model-section" aria-labelledby={`model-${project.slug}`}>
             <div className="model-heading">
