@@ -44,12 +44,24 @@ test("renders a project detail route", async () => {
   assert.match(html, /main-hi\.png/);
 });
 
+test("shows the current EduTool generation workspace and Scion model", async () => {
+  const response = await render("/projects/edutool");
+  assert.equal(response.status, 200);
+  const html = await response.text();
+  assert.match(html, /edutool-generation\.png/);
+  assert.match(html, /Meet Scion/);
+  assert.match(html, /Brief-anchored/);
+  assert.match(html, /Evidence-honest/);
+  assert.doesNotMatch(html, /edutool-live\.png/);
+});
+
 test("embeds playable projects and full-resolution screenshots", async () => {
   const response = await render("/projects/bebop-puzzle");
   assert.equal(response.status, 200);
   const html = await response.text();
   assert.match(html, /Play Bebop Puzzle here/);
   assert.match(html, /https:\/\/beboppuzzle\.com/);
+  assert.match(html, /youtube-nocookie\.com\/embed\/uRz4HQILA_c/);
   assert.match(html, /bebop-live\.png/);
   assert.match(html, /FULL RESOLUTION/);
 });

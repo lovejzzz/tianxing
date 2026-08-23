@@ -60,6 +60,28 @@ export default async function ProjectPage({ params }: { params: Promise<{ slug: 
           </div>
         </section>
 
+        {project.model && (
+          <section className="model-section" aria-labelledby={`model-${project.slug}`}>
+            <div className="model-heading">
+              <div>
+                <p>{project.model.eyebrow}</p>
+                <span>{project.model.version}</span>
+                <h2 id={`model-${project.slug}`}>{project.model.title}</h2>
+              </div>
+              <p>{project.model.description}</p>
+            </div>
+            <div className="model-principles">
+              {project.model.principles.map((principle, principleIndex) => (
+                <article key={principle.title}>
+                  <span>{String(principleIndex + 1).padStart(2, "0")}</span>
+                  <h3>{principle.title}</h3>
+                  <p>{principle.body}</p>
+                </article>
+              ))}
+            </div>
+          </section>
+        )}
+
         {project.livePreview && (
           <section className="live-demo-section" aria-label={`${project.title} live demo`}>
             <div className="live-demo-heading">

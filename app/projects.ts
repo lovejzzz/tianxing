@@ -12,6 +12,13 @@ export type Project = {
   description: string;
   note: string;
   livePreview?: { url: string; label: string; note: string };
+  model?: {
+    eyebrow: string;
+    title: string;
+    version: string;
+    description: string;
+    principles: { title: string; body: string }[];
+  };
   features: { title: string; body: string }[];
   media: { type: "image" | "video" | "youtube"; src: string; alt: string; caption?: string; portrait?: boolean; width?: number; height?: number }[];
 };
@@ -31,12 +38,24 @@ export const projects: Project[] = [
     description: "Course Mapper turns a syllabus into an editable instructional system: course maps, lesson plans, slide decks, rubrics, quizzes, assignments, discussions, study guides, and a polished syllabus. Its current Scion path combines local-first authoring with a deterministic course compiler and explicit evidence boundaries.",
     note: "Built for instructors who need structured artifacts—not another wall of chatbot prose.",
     livePreview: { url: "https://edutool.dev", label: "Build a course here", note: "The real browser-local course workspace, running inside this page." },
+    model: {
+      eyebrow: "THE COURSE INTELLIGENCE LAYER",
+      title: "Meet Scion",
+      version: "V0.18.7",
+      description: "Scion is the model behind EduTool. It keeps the instructor’s original brief and evidence in view while it generates, checks, and revises every part of the course as one connected package.",
+      principles: [
+        { title: "Brief-anchored", body: "The starting request remains active across generation and revision, so the package does not drift away from the instructor’s intent." },
+        { title: "System-aware", body: "Scion reasons across the course map, syllabus, lessons, assignments, rubrics, and assessment bank instead of treating each artifact as isolated text." },
+        { title: "Evidence-honest", body: "Quality reports expose source gaps, citation boundaries, readability problems, and review requirements rather than hiding uncertainty." },
+        { title: "Human-editable", body: "Every result stays inspectable and editable. Instructors can refine one item, repair the full package, and review the evidence before export." },
+      ],
+    },
     features: [
       { title: "10 aligned deliverables", body: "A single course model keeps objectives, lessons, assessments, and exports connected." },
       { title: "Course-aware agent", body: "Inspect, explain, and revise the generated workspace through natural conversation." },
       { title: "Local-first Scion", body: "A free browser-local authoring path with privacy boundaries and evidence-led compilation." },
     ],
-    media: [{ type: "image", src: "/media/projects/edutool-live.png", alt: "EduTool course setup running in the browser", caption: "A real Music Theory course brief inside the live EduTool workspace.", width: 1800, height: 1125 }],
+    media: [{ type: "image", src: "/media/projects/edutool-generation.png", alt: "EduTool generation workspace showing Scion, the quiz bank, quality report, and export status", caption: "The current generation workspace: Scion refining a connected Astronomy course package with visible evidence checks and review status.", width: 1275, height: 717 }],
   },
   {
     slug: "surge-method",
@@ -82,7 +101,10 @@ export const projects: Project[] = [
       { title: "Hear every decision", body: "Playback, tempo, swing, tone, drive, reverb, and tremolo make the grid musical." },
       { title: "From lessons to play", body: "A guided campaign gradually opens into composition, daily missions, and print-at-home play." },
     ],
-    media: [{ type: "image", src: "/media/projects/bebop-live.png", alt: "Bebop Puzzle first level in play", caption: "The real first level: hear the line, then place the melodic pieces across the changes.", width: 1800, height: 1125 }],
+    media: [
+      { type: "youtube", src: "uRz4HQILA_c", alt: "Bebop Puzzle project video", caption: "Bebop Puzzle — a video about the project." },
+      { type: "image", src: "/media/projects/bebop-live.png", alt: "Bebop Puzzle first level in play", caption: "The real first level: hear the line, then place the melodic pieces across the changes.", width: 1800, height: 1125 },
+    ],
   },
   {
     slug: "quicky-resume",
