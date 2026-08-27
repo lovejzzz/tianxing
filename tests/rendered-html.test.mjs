@@ -74,6 +74,14 @@ test("embeds playable projects and full-resolution screenshots", async () => {
   assert.match(html, /Constraints &amp; failures/);
   assert.match(html, /80-level campaign/);
   assert.match(html, /Launched publicly at beboppuzzle\.com/);
+  assert.ok(
+    html.indexOf("youtube-nocookie.com/embed/uRz4HQILA_c") < html.indexOf("LIVE DEMO"),
+    "the project video should introduce Bebop Puzzle before the playable embed",
+  );
+  assert.ok(
+    html.indexOf("Inside the work") < html.indexOf("FLAGSHIP CASE STUDY"),
+    "the visual project story should appear before the long-form case study",
+  );
 });
 
 test("reserves flagship case-study evidence for the three lead projects", async () => {

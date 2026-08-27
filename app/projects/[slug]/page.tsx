@@ -23,6 +23,40 @@ export default async function ProjectPage({ params }: { params: Promise<{ slug: 
   const index = projects.findIndex((item) => item.slug === project.slug);
   const next = projects[(index + 1) % projects.length];
   const base = process.env.NEXT_PUBLIC_BASE_PATH ?? "";
+  const leadMedia = project.slug === "bebop-puzzle" ? project.media.filter((item) => item.type === "youtube") : [];
+  const galleryMedia = project.media.filter((item) => !leadMedia.includes(item));
+
+  const renderMediaGallery = (media: typeof project.media) => media.length > 0 && (
+    <section className={`media-gallery ${media.some((item) => item.portrait) ? "portrait-gallery" : ""}`} aria-label={`${project.title} screenshots`}>
+      {media.map((item) => {
+        const mediaIndex = project.media.indexOf(item);
+        return (
+          <figure
+            className={`media-item media-${item.type}`}
+            key={`${item.src}-${mediaIndex}`}
+            style={{ "--media-max": item.width ? `${item.width}px` : "1600px" } as CSSProperties}
+          >
+            <div className="media-frame">
+              <div className="media-chrome" aria-hidden="true"><i /><i /><i /><span>{project.title}</span></div>
+              {item.type === "image" && (
+                <a className="media-image-link" href={`${base}${item.src}`} target="_blank" rel="noreferrer" aria-label={`View full resolution: ${item.alt}`}>
+                  {/* Raw screenshots keep their native aspect ratios and never render wider than their source pixels. */}
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img src={`${base}${item.src}`} alt={item.alt} width={item.width} height={item.height} loading={mediaIndex ? "lazy" : "eager"} decoding="async" />
+                  <span>FULL RESOLUTION ↗</span>
+                </a>
+              )}
+              {item.type === "video" && <video src={`${base}${item.src}`} aria-label={item.alt} controls muted loop playsInline poster={`${base}/media/film/5279-projection-hi.jpg`} />}
+              {item.type === "youtube" && (
+                <iframe src={`https://www.youtube-nocookie.com/embed/${item.src}?rel=0`} title={item.alt} allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" allowFullScreen />
+              )}
+            </div>
+            {item.caption && <figcaption><span>{String(mediaIndex + 1).padStart(2, "0")}</span>{item.caption}</figcaption>}
+          </figure>
+        );
+      })}
+    </section>
+  );
 
   return (
     <main className={`detail-page accent-${project.accent}`}>
@@ -57,6 +91,73 @@ export default async function ProjectPage({ params }: { params: Promise<{ slug: 
           <div className="project-copy">
             <p>{project.description}</p>
             <blockquote>{project.note}</blockquote>
+          </div>
+        </section>
+
+        {project.model && (
+          <section className="model-section" aria-labelledby={`model-${project.slug}`}>
+            <div className="model-heading">
+              <div>
+                <p>{project.model.eyebrow}</p>
+                <span>{project.model.version}</span>
+                <h2 id={`model-${project.slug}`}>{project.model.title}</h2>
+              </div>
+              <p>{project.model.description}</p>
+            </div>
+            <div className="model-principles">
+              {project.model.principles.map((principle, principleIndex) => (
+                <article key={principle.title}>
+                  <span>{String(principleIndex + 1).padStart(2, "0")}</span>
+                  <h3>{principle.title}</h3>
+                  <p>{principle.body}</p>
+                </article>
+              ))}
+            </div>
+          </section>
+        )}
+
+        {renderMediaGallery(leadMedia)}
+
+        {project.livePreview && (
+          <section className="live-demo-section" aria-label={`${project.title} live demo`}>
+            <div className="live-demo-heading">
+              <div>
+                <p>LIVE DEMO</p>
+                <h2>{project.livePreview.label}</h2>
+              </div>
+              <p>{project.livePreview.note}</p>
+            </div>
+            <div className="live-demo-frame">
+              <div className="live-demo-bar" aria-hidden="true">
+                <span><i /><i /><i /></span>
+                <b>{project.livePreview.url.replace(/^https?:\/\//, "").replace(/\/$/, "")}</b>
+                <a href={project.livePreview.url} target="_blank" rel="noreferrer" tabIndex={-1}>Open ↗</a>
+              </div>
+              <iframe
+                className="live-demo-embed"
+                src={project.livePreview.url}
+                title={`${project.title} interactive demo`}
+                loading="lazy"
+                allow="autoplay; clipboard-write; fullscreen; gamepad"
+                allowFullScreen
+              />
+            </div>
+            <a className="live-demo-fallback" href={project.livePreview.url} target="_blank" rel="noreferrer">Open the full project in a new window <span>↗</span></a>
+          </section>
+        )}
+
+        {renderMediaGallery(galleryMedia)}
+
+        <section className="feature-section">
+          <div className="section-kicker"><span>Inside the work</span><i /></div>
+          <div className="feature-grid">
+            {project.features.map((feature, featureIndex) => (
+              <article key={feature.title}>
+                <span>{String(featureIndex + 1).padStart(2, "0")}</span>
+                <h2>{feature.title}</h2>
+                <p>{feature.body}</p>
+              </article>
+            ))}
           </div>
         </section>
 
@@ -104,96 +205,6 @@ export default async function ProjectPage({ params }: { params: Promise<{ slug: 
             </div>
           </section>
         )}
-
-        {project.model && (
-          <section className="model-section" aria-labelledby={`model-${project.slug}`}>
-            <div className="model-heading">
-              <div>
-                <p>{project.model.eyebrow}</p>
-                <span>{project.model.version}</span>
-                <h2 id={`model-${project.slug}`}>{project.model.title}</h2>
-              </div>
-              <p>{project.model.description}</p>
-            </div>
-            <div className="model-principles">
-              {project.model.principles.map((principle, principleIndex) => (
-                <article key={principle.title}>
-                  <span>{String(principleIndex + 1).padStart(2, "0")}</span>
-                  <h3>{principle.title}</h3>
-                  <p>{principle.body}</p>
-                </article>
-              ))}
-            </div>
-          </section>
-        )}
-
-        {project.livePreview && (
-          <section className="live-demo-section" aria-label={`${project.title} live demo`}>
-            <div className="live-demo-heading">
-              <div>
-                <p>LIVE DEMO</p>
-                <h2>{project.livePreview.label}</h2>
-              </div>
-              <p>{project.livePreview.note}</p>
-            </div>
-            <div className="live-demo-frame">
-              <div className="live-demo-bar" aria-hidden="true">
-                <span><i /><i /><i /></span>
-                <b>{project.livePreview.url.replace(/^https?:\/\//, "").replace(/\/$/, "")}</b>
-                <a href={project.livePreview.url} target="_blank" rel="noreferrer" tabIndex={-1}>Open ↗</a>
-              </div>
-              <iframe
-                className="live-demo-embed"
-                src={project.livePreview.url}
-                title={`${project.title} interactive demo`}
-                loading="lazy"
-                allow="autoplay; clipboard-write; fullscreen; gamepad"
-                allowFullScreen
-              />
-            </div>
-            <a className="live-demo-fallback" href={project.livePreview.url} target="_blank" rel="noreferrer">Open the full project in a new window <span>↗</span></a>
-          </section>
-        )}
-
-        <section className={`media-gallery ${project.media.some((item) => item.portrait) ? "portrait-gallery" : ""}`} aria-label={`${project.title} screenshots`}>
-          {project.media.map((item, mediaIndex) => (
-            <figure
-              className={`media-item media-${item.type}`}
-              key={`${item.src}-${mediaIndex}`}
-              style={{ "--media-max": item.width ? `${item.width}px` : "1600px" } as CSSProperties}
-            >
-              <div className="media-frame">
-                <div className="media-chrome" aria-hidden="true"><i /><i /><i /><span>{project.title}</span></div>
-                {item.type === "image" && (
-                  <a className="media-image-link" href={`${base}${item.src}`} target="_blank" rel="noreferrer" aria-label={`View full resolution: ${item.alt}`}>
-                    {/* Raw screenshots keep their native aspect ratios and never render wider than their source pixels. */}
-                    {/* eslint-disable-next-line @next/next/no-img-element */}
-                    <img src={`${base}${item.src}`} alt={item.alt} width={item.width} height={item.height} loading={mediaIndex ? "lazy" : "eager"} decoding="async" />
-                    <span>FULL RESOLUTION ↗</span>
-                  </a>
-                )}
-                {item.type === "video" && <video src={`${base}${item.src}`} aria-label={item.alt} controls muted loop playsInline poster={`${base}/media/film/5279-projection-hi.jpg`} />}
-                {item.type === "youtube" && (
-                  <iframe src={`https://www.youtube-nocookie.com/embed/${item.src}?rel=0`} title={item.alt} allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" allowFullScreen />
-                )}
-              </div>
-              {item.caption && <figcaption><span>{String(mediaIndex + 1).padStart(2, "0")}</span>{item.caption}</figcaption>}
-            </figure>
-          ))}
-        </section>
-
-        <section className="feature-section">
-          <div className="section-kicker"><span>Inside the work</span><i /></div>
-          <div className="feature-grid">
-            {project.features.map((feature, featureIndex) => (
-              <article key={feature.title}>
-                <span>{String(featureIndex + 1).padStart(2, "0")}</span>
-                <h2>{feature.title}</h2>
-                <p>{feature.body}</p>
-              </article>
-            ))}
-          </div>
-        </section>
       </article>
 
       <footer className="next-project">
