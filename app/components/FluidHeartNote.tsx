@@ -36,7 +36,7 @@ const IMPACT_EVENT = "tian:immersive-home";
 
 export function FluidHeartNote() {
   const rootRef = useRef<HTMLDivElement>(null);
-  const copyRef = useRef<HTMLParagraphElement>(null);
+  const copyRef = useRef<HTMLHeadingElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const animationRef = useRef<number | null>(null);
   const preparedRef = useRef<PreparedFluid | null>(null);
@@ -255,11 +255,11 @@ export function FluidHeartNote() {
       ref={rootRef}
       className={`heart-note ${fluidActive ? "is-fluid-active" : ""} ${fluidComplete ? "is-fluid-complete" : ""}`}
     >
-      <p ref={copyRef} className="heart-copy" aria-label="Welcome to my heart. Have fun. — Tian Xing">
+      <h1 ref={copyRef} className="heart-copy" aria-label="Welcome to my heart. Have fun. — Tian Xing">
         <span className="heart-line" data-fluid-line>Welcome to my heart.</span>
         <span className="heart-line" data-fluid-line>Have fun.</span>
         <span className="heart-signature" data-fluid-line>— Tian Xing</span>
-      </p>
+      </h1>
       <canvas ref={canvasRef} className="heart-fluid-canvas" aria-hidden="true" />
     </div>
   );

@@ -6,7 +6,7 @@ export function AppIcon({ project, large = false }: { project: Project; large?: 
     <span className={`app-icon icon-${project.slug} ${large ? "app-icon-large" : ""}`} aria-hidden="true">
       <span className="icon-gloss" />
       <span className="app-icon-art">
-        <img src={`/art/work-icons/${project.slug}.png`} alt="" draggable={false} />
+        <img src={`/art/work-icons/optimized/${project.slug}.webp`} alt="" draggable={false} />
       </span>
     </span>
   );

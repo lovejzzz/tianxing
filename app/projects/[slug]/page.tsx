@@ -68,11 +68,11 @@ export default async function ProjectPage({ params }: { params: Promise<{ slug: 
                 <a className="media-image-link" href={`${base}${item.src}`} target="_blank" rel="noreferrer" aria-label={`View full resolution: ${item.alt}`}>
                   {/* Raw screenshots keep their native aspect ratios and never render wider than their source pixels. */}
                   {/* eslint-disable-next-line @next/next/no-img-element */}
-                  <img src={`${base}${item.src}`} alt={item.alt} width={item.width} height={item.height} loading={mediaIndex ? "lazy" : "eager"} decoding="async" />
+                  <img src={`${base}${item.displaySrc ?? item.src}`} alt={item.alt} width={item.width} height={item.height} loading={mediaIndex ? "lazy" : "eager"} decoding="async" />
                   <span>FULL RESOLUTION ↗</span>
                 </a>
               )}
-              {item.type === "video" && <video src={`${base}${item.src}`} aria-label={item.alt} controls muted loop playsInline poster={item.poster ? `${base}${item.poster}` : undefined} />}
+              {item.type === "video" && <video src={`${base}${item.src}`} aria-label={item.alt} controls muted loop playsInline preload="metadata" poster={item.poster ? `${base}${item.poster}` : undefined} />}
               {item.type === "youtube" && (
                 <iframe src={`https://www.youtube-nocookie.com/embed/${item.src}?rel=0`} title={item.alt} loading="lazy" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" allowFullScreen />
               )}
@@ -107,7 +107,7 @@ export default async function ProjectPage({ params }: { params: Promise<{ slug: 
             style={{ "--hero-position": project.hero.position ?? "50% 50%" } as CSSProperties}
           >
             {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img src={`${base}${project.hero.src}`} alt={project.hero.alt} width={project.hero.width} height={project.hero.height} fetchPriority="high" decoding="async" />
+            <img src={`${base}${project.hero.displaySrc ?? project.hero.src}`} alt={project.hero.alt} width={project.hero.width} height={project.hero.height} fetchPriority="high" decoding="async" />
           </figure>
           <a className="store-button" href={project.externalUrl} target="_blank" rel="noreferrer">
             <AppIcon project={project} />
@@ -185,7 +185,7 @@ export default async function ProjectPage({ params }: { params: Promise<{ slug: 
               </div>
               <p>{project.livePreview.note}</p>
             </div>
-            <div className="live-demo-frame" style={{ "--demo-poster": `url(${base}${project.hero.src})` } as CSSProperties}>
+            <div className="live-demo-frame" style={{ "--demo-poster": `url(${base}${project.hero.displaySrc ?? project.hero.src})` } as CSSProperties}>
               <div className="live-demo-bar" aria-hidden="true">
                 <span><i /><i /><i /></span>
                 <b>{project.livePreview.url.replace(/^https?:\/\//, "").replace(/\/$/, "")}</b>

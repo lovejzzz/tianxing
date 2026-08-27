@@ -23,12 +23,17 @@ export function AboutExperience() {
         <div className="about-screen">
           <div className="about-status" aria-label={`Current time ${time}`}><span>●●●●○</span><span>{time}</span><span>100% ▰</span></div>
           <div className="about-nav"><Link href="/" onClick={() => playSound("close")}>‹ Projects</Link><strong>About</strong><span /></div>
-          <section>
-            <div className="coming-icon coming-photo"><img src={`${base}/media/about/tian-xing-iphone4.jpg`} alt="Tian Xing photographed on an iPhone 4" /></div>
-            <p>PROFILE UPDATE</p>
-            <h1>Coming Soon</h1>
-            <span>The story is still being written.</span>
-            <Link href="/" onClick={() => playSound("close")}>Return to Selected Work</Link>
+          <section className="about-profile">
+            <div className="coming-icon coming-photo"><img src={`${base}/media/about/tian-xing.jpg`} alt="Tian Xing" /></div>
+            <p>VISUAL ARTIST · FILMMAKER · BUILDER</p>
+            <h1>I make ideas real.</h1>
+            <span>Products, games, films, and tools—designed and shipped end to end.</span>
+            <small>New York · Open to thoughtful collaborations.</small>
+            <div className="about-actions">
+              <a href="mailto:xingpicture@gmail.com?subject=Hello%20Tian" onClick={() => playSound("send")}>Email me</a>
+              <a href="https://github.com/lovejzzz" target="_blank" rel="noreferrer" onClick={() => playSound("open")}>GitHub ↗</a>
+            </div>
+            <Link className="about-work-link" href="/" onClick={() => playSound("close")}>View selected work</Link>
           </section>
         </div>
         <Link className="home-button about-home-button" href="/" onClick={() => playSound("close")} aria-label="Return to the iPhone Home screen"><span /></Link>

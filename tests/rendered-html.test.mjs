@@ -18,6 +18,9 @@ test("renders the finished portfolio home", async () => {
   assert.match(html, /EduTool/);
   assert.match(html, /Slotronome/);
   assert.match(html, /Welcome to my heart\. Have fun\./);
+  assert.match(html, /<h1[^>]*class="heart-copy"/);
+  assert.match(html, /water-drops\.webp/);
+  assert.match(html, /work-icons\/thumbs\/edutool\.webp/);
   assert.match(html, /Welcome to my heart\.<\/span><span[^>]*>Have fun\./);
   assert.match(html, /— Tian Xing/);
   const introGuard = html.indexOf("html.phone-intro-pending{background:#020305!important}");
@@ -34,6 +37,33 @@ test("renders the finished portfolio home", async () => {
   assert.doesNotMatch(html, /Portfolio · Edition 01|Selected work|2024—2026|Tian Xing delivers|Designed &amp; built by Tian Xing|New York/i);
   assert.doesNotMatch(html, /Choose an icon to open a project|Nine things I care about|makes things|systems thinking and play/i);
   assert.doesNotMatch(html, /codex-preview|react-loading-skeleton|Your site is taking shape/);
+});
+
+test("publishes a finished about page", async () => {
+  const response = await render("/about");
+  assert.equal(response.status, 200);
+  const html = await response.text();
+  assert.match(html, /I make ideas real\./);
+  assert.match(html, /Visual artist · filmmaker · builder/i);
+  assert.match(html, /xingpicture@gmail\.com/);
+  assert.match(html, /github\.com\/lovejzzz/);
+  assert.doesNotMatch(html, /Coming Soon|story is still being written/i);
+});
+
+test("publishes crawler and install metadata", async () => {
+  const robotsResponse = await render("/robots.txt");
+  assert.equal(robotsResponse.status, 200);
+  assert.match(await robotsResponse.text(), /Sitemap: https:\/\/tian\.fun\/sitemap\.xml/);
+
+  const sitemapResponse = await render("/sitemap.xml");
+  assert.equal(sitemapResponse.status, 200);
+  const sitemap = await sitemapResponse.text();
+  assert.match(sitemap, /https:\/\/tian\.fun\/projects\/edutool\//);
+  assert.match(sitemap, /https:\/\/tian\.fun\/projects\/here-we-go-film-studio\//);
+
+  const manifestResponse = await render("/manifest.webmanifest");
+  assert.equal(manifestResponse.status, 200);
+  assert.match(await manifestResponse.text(), /Tian Xing — Selected Work/);
 });
 
 test("renders a project detail route", async () => {
@@ -137,7 +167,7 @@ test("keeps the iPhone interactive and time-aware", async () => {
   assert.match(source, /matchMedia\("\(max-width: 560px\)"\)/);
   assert.match(source, /className="mobile-home-nav"/);
   assert.match(source, /label: "Fun"/);
-  assert.match(source, /media\/about\/tian-xing-iphone4\.jpg/);
+  assert.match(source, /media\/about\/tian-xing\.jpg/);
   assert.match(source, /navigator\.mediaDevices\.getUserMedia/);
   assert.match(source, /xingpicture@gmail\.com/);
   assert.match(source, /xing_tian_lifeitself/);
@@ -361,7 +391,7 @@ test("keeps the iPhone interactive and time-aware", async () => {
   assert.doesNotMatch(styles, /@keyframes phone-product-flip/);
   assert.match(styles, /phone-3d-ready:not\(\.phone-3d-complete\) \.phone-product/);
   assert.match(styles, /phone-product>\.phone:has\(\.screen\.phone-mode-folder\)/);
-  assert.match(styles, /water-drops\.png/);
+  assert.match(styles, /water-drops\.webp/);
   assert.match(styles, /transform:scale\(1\.035,1\.012\)/);
   assert.match(styles, /phone-3d-ready \.phone-product \.status-bar[\s\S]*padding-inline:13px/);
   assert.match(styles, /\.status-time\s*\{[^}]*left:50%[^}]*translate\(-50%,-50%\)/);

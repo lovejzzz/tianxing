@@ -13,6 +13,7 @@ export type Project = {
   note: string;
   hero: {
     src: string;
+    displaySrc?: string;
     alt: string;
     width: number;
     height: number;
@@ -47,7 +48,7 @@ export type Project = {
     principles: { title: string; body: string }[];
   };
   features: { title: string; body: string }[];
-  media: { type: "image" | "video" | "youtube"; src: string; alt: string; caption?: string; portrait?: boolean; width?: number; height?: number; chrome?: boolean; poster?: string; gallery?: boolean }[];
+  media: { type: "image" | "video" | "youtube"; src: string; displaySrc?: string; alt: string; caption?: string; portrait?: boolean; width?: number; height?: number; chrome?: boolean; poster?: string; gallery?: boolean }[];
 };
 
 export const projects: Project[] = [
@@ -124,7 +125,7 @@ export const projects: Project[] = [
     tagline: "Push. Recover. Come back stronger.",
     description: "Turn one target into a training wave. Surge alternates harder push sets with active recovery so every session builds, peaks, and finishes clear.",
     note: "No account. No internet. No data collection. History stays on-device.",
-    hero: { src: "/media/surge/main-hi.png", alt: "Surge Method setup screen showing a progressive training wave", width: 1197, height: 2600, fit: "contain", repeatInGallery: true },
+    hero: { src: "/media/surge/main-hi.png", displaySrc: "/media/optimized/main-hi.webp", alt: "Surge Method setup screen showing a progressive training wave", width: 1197, height: 2600, fit: "contain", repeatInGallery: true },
     caseStudy: {
       summary: "Make progression obvious while the user is moving.",
       problem: "Most workout timers prescribe or count. Surge had to turn one personal target into a progressive session anyone could follow mid-set.",
@@ -157,10 +158,10 @@ export const projects: Project[] = [
       { title: "Built to feel alive", body: "Haptics, motion, sound, progress, and a boss-set finish." },
     ],
     media: [
-      { type: "image", src: "/media/surge/main-hi.png", alt: "Surge Method setup screen", caption: "Set the target. See the wave.", portrait: true, width: 1197, height: 2600 },
-      { type: "image", src: "/media/surge/push-hi.png", alt: "Surge Method push set", caption: "Push toward the peak.", portrait: true, width: 1197, height: 2600 },
-      { type: "image", src: "/media/surge/recovery-hi.png", alt: "Surge Method recovery set", caption: "Recover without stopping.", portrait: true, width: 1197, height: 2600 },
-      { type: "image", src: "/media/surge/complete-hi.png", alt: "Surge Method workout complete screen", caption: "Finish with a clear record.", portrait: true, width: 1197, height: 2600 },
+      { type: "image", src: "/media/surge/main-hi.png", displaySrc: "/media/optimized/main-hi.webp", alt: "Surge Method setup screen", caption: "Set the target. See the wave.", portrait: true, width: 1197, height: 2600 },
+      { type: "image", src: "/media/surge/push-hi.png", displaySrc: "/media/optimized/push-hi.webp", alt: "Surge Method push set", caption: "Push toward the peak.", portrait: true, width: 1197, height: 2600 },
+      { type: "image", src: "/media/surge/recovery-hi.png", displaySrc: "/media/optimized/recovery-hi.webp", alt: "Surge Method recovery set", caption: "Recover without stopping.", portrait: true, width: 1197, height: 2600 },
+      { type: "image", src: "/media/surge/complete-hi.png", displaySrc: "/media/optimized/complete-hi.webp", alt: "Surge Method workout complete screen", caption: "Finish with a clear record.", portrait: true, width: 1197, height: 2600 },
     ],
   },
   {
@@ -250,7 +251,7 @@ export const projects: Project[] = [
     tagline: "Rebuilding a film stock from the silver up.",
     description: "Rebuild Kodak VISION 500T 5279 from Panasonic GH7 ProRes RAW through physical events—not a color preset. The pipeline models silver halide, dye clouds, the negative mask, 2383 print, and a period 2K scan.",
     note: "V29: 165 full frames at 5760×4320. 12-bit projection and scan masters. No creative grade in the baseline.",
-    hero: { src: "/media/film/5279-projection-hi.jpg", alt: "A projected reference frame from the 5279 emulsion reconstruction", width: 2560, height: 1920, position: "50% 44%" },
+    hero: { src: "/media/film/5279-projection-hi.jpg", displaySrc: "/media/optimized/5279-projection-hi.webp", alt: "A projected reference frame from the 5279 emulsion reconstruction", width: 2560, height: 1920, position: "50% 44%" },
     livePreview: { url: "https://lovejzzz.github.io/90sKid/", label: "Explore the research here", note: "Versions, evidence, methods, and full-size frame comparisons." },
     features: [
       { title: "Physical image model", body: "Emulsion, dye, grain, print, and scan are explicit stages." },
@@ -260,8 +261,8 @@ export const projects: Project[] = [
     media: [
       { type: "video", src: "/media/film/5279-motion.mp4", alt: "5279 V29 motion validation", caption: "V29 in motion. Projection view.", chrome: false },
       { type: "image", src: "/media/projects/5279-live.png", alt: "5279 Emulsion Project live research site", caption: "V29 research and motion-validation baseline.", width: 1800, height: 1125, gallery: false },
-      { type: "image", src: "/media/film/5279-projection-hi.jpg", alt: "5279 2383 projection result", caption: "2383 projection. 2560×1920 reference frame.", width: 2560, height: 1920, chrome: false },
-      { type: "image", src: "/media/film/5279-scan-hi.jpg", alt: "5279 period scan result", caption: "Period 2K scan. 2560×1920 reference frame.", width: 2560, height: 1920, chrome: false },
+      { type: "image", src: "/media/film/5279-projection-hi.jpg", displaySrc: "/media/optimized/5279-projection-hi.webp", alt: "5279 2383 projection result", caption: "2383 projection. 2560×1920 reference frame.", width: 2560, height: 1920, chrome: false },
+      { type: "image", src: "/media/film/5279-scan-hi.jpg", displaySrc: "/media/optimized/5279-scan-hi.webp", alt: "5279 period scan result", caption: "Period 2K scan. 2560×1920 reference frame.", width: 2560, height: 1920, chrome: false },
     ],
   },
   {

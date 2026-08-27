@@ -8,6 +8,9 @@ const nextConfig: NextConfig = {
   // redirecting it to the invalid `scene.mp4/`).
   trailingSlash: Boolean(process.env.BUILD_FOR_PAGES),
   images: { unoptimized: true },
+  typescript: process.env.BUILD_FOR_PAGES
+    ? { tsconfigPath: "tsconfig.pages.json" }
+    : undefined,
 };
 
 export default nextConfig;

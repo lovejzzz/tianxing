@@ -611,7 +611,7 @@ function FunShelf({ compact = false }: { compact?: boolean }) {
   return (
     <span className={`fun-shelf ${compact ? "is-compact" : ""}`}>
       {projects.slice(0, 9).map((project) => (
-        <img src={`/art/work-icons/${project.slug}.png`} alt="" draggable={false} key={project.slug} />
+        <img src={`/art/work-icons/thumbs/${project.slug}.webp`} alt="" draggable={false} key={project.slug} />
       ))}
     </span>
   );
@@ -668,7 +668,7 @@ function SystemAppIcon({ id, calendarDay, calendarWeekday }: {
   if (id === "calendar") {
     return (
       <span className="system-app-icon sys-authentic authentic-calendar">
-        <img src={`${base}/media/ios4/icons/calendar.png`} alt="" aria-hidden="true" />
+        <img src={`${base}/media/ios4/icons/optimized/calendar.webp`} alt="" aria-hidden="true" />
         <span className="calendar-weekday">{calendarWeekday}</span>
         <span className="calendar-icon-day">{calendarDay}</span>
       </span>
@@ -676,7 +676,7 @@ function SystemAppIcon({ id, calendarDay, calendarWeekday }: {
   }
   return (
     <span className={`system-app-icon sys-authentic sys-${id}`}>
-      <img src={`${base}/media/ios4/icons/${icon}.png`} alt="" aria-hidden="true" />
+      <img src={`${base}/media/ios4/icons/optimized/${icon}.webp`} alt="" aria-hidden="true" />
     </span>
   );
 }
@@ -827,7 +827,7 @@ function MessagesApp() {
     <form className="message-compose" onSubmit={submit}>
       <div className="message-thread" ref={threadRef} aria-label="Conversation with Tian">
         <div className="message-intro">
-          <img src="/media/about/tian-xing-iphone4.jpg" alt="" aria-hidden="true" />
+          <img src="/media/about/tian-xing.jpg" alt="" aria-hidden="true" />
           <strong>Tian Xing</strong>
           <span>Your message goes straight to my email.</span>
         </div>
@@ -2316,7 +2316,7 @@ function noteColorName(color: string) {
 function ContactApp({ base }: { base: string }) {
   return (
     <div className="contact-app">
-      <img className="contact-photo" src={`${base}/media/about/tian-xing-iphone4.jpg`} alt="Tian Xing" />
+      <img className="contact-photo" src={`${base}/media/about/tian-xing.jpg`} alt="Tian Xing" />
       <h2>Tian Xing</h2><p>Visual artist · filmmaker · builder</p>
       <a href="https://xingpicture.myportfolio.com" target="_blank" rel="noreferrer" onClick={() => playSound("open")}><b>Photo</b><span>xingpicture.myportfolio.com</span></a>
       <a href="https://github.com/lovejzzz" target="_blank" rel="noreferrer" onClick={() => playSound("open")}><b>GitHub</b><span>lovejzzz</span></a>
@@ -2329,7 +2329,7 @@ function MailApp() {
   return (
     <div className="mail-app contact-mail-app">
       <div className="mail-paper">
-        <img className="mail-stamp" src="/media/about/tian-xing-iphone4.jpg" alt="" aria-hidden="true" />
+        <img className="mail-stamp" src="/media/about/tian-xing.jpg" alt="" aria-hidden="true" />
         <p>CONTACT CARD</p><h2>Tian Xing</h2><small>New York · available for thoughtful collaborations</small>
         <a className="contact-line" href="mailto:xingpicture@gmail.com" onClick={() => playSound("open")}><i className="mail-mini-icon">✉</i><span><b>Email</b>xingpicture@gmail.com</span><em>›</em></a>
         <a className="contact-line" href="https://www.instagram.com/xing_tian_lifeitself/" target="_blank" rel="noreferrer" onClick={() => playSound("open")}><i className="instagram-icon"><b /></i><span><b>Instagram</b>@xing_tian_lifeitself</span><em>›</em></a>

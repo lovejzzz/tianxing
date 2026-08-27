@@ -27,6 +27,7 @@ export const metadata: Metadata = {
   icons: {
     icon: "/favicon.png",
     shortcut: "/favicon.png",
+    apple: [{ url: "/favicon.png", sizes: "128x128", type: "image/png" }],
   },
   openGraph: {
     title: "Tian Xing",
