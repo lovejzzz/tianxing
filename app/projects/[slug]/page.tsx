@@ -129,6 +129,29 @@ export default async function ProjectPage({ params }: { params: Promise<{ slug: 
           </div>
         </section>
 
+        {project.latestRelease && (
+          <section className="project-release" aria-labelledby={`release-${project.slug}`}>
+            <div className="project-release-copy">
+              <p>NEW RELEASE</p>
+              <span>{project.latestRelease.format}</span>
+              <h2 id={`release-${project.slug}`}>{project.latestRelease.title}</h2>
+              <p>{project.latestRelease.description}</p>
+              <a href={project.latestRelease.url} target="_blank" rel="noreferrer">
+                Watch on YouTube <span aria-hidden="true">↗</span>
+              </a>
+            </div>
+            <div className="project-release-film">
+              <iframe
+                src={`https://www.youtube-nocookie.com/embed/${project.latestRelease.youtubeId}?rel=0`}
+                title={`${project.latestRelease.title} — ${project.latestRelease.format}`}
+                loading="lazy"
+                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+                allowFullScreen
+              />
+            </div>
+          </section>
+        )}
+
         {project.model && (
           <section className="model-section" aria-labelledby={`model-${project.slug}`}>
             <div className="model-heading">

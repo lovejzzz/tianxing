@@ -21,6 +21,13 @@ export type Project = {
     repeatInGallery?: boolean;
   };
   leadMedia?: number[];
+  latestRelease?: {
+    title: string;
+    format: string;
+    description: string;
+    youtubeId: string;
+    url: string;
+  };
   livePreview?: { url: string; label: string; note: string };
   caseStudy?: {
     summary: string;
@@ -335,13 +342,20 @@ export const projects: Project[] = [
     tagline: "The lab notebook is a movie channel.",
     description: "A public lab for filmmaking experiments. Lenses, light, motion, texture, edits, and unfinished questions leave the hard drive and become studies.",
     note: "Every experiment should teach the next shot.",
-    hero: { src: "/media/projects/channel-live.png", alt: "Here We Go Film Studio experiments and finished films", width: 1800, height: 1125, position: "78% 73%" },
+    hero: { src: "/media/projects/channel-live.png", alt: "Here We Go Film Studio channel featuring Reference Image and recent film experiments", width: 1265, height: 712, position: "18% 72%" },
+    latestRelease: {
+      title: "Reference Image",
+      format: "Short film",
+      description: "Made with Seedance 2.5.",
+      youtubeId: "509K8N368mg",
+      url: "https://www.youtube.com/watch?v=509K8N368mg",
+    },
     features: [
       { title: "Camera as research", body: "Test exposure, movement, texture, and material by shooting." },
       { title: "Keep the process visible", body: "Questions and imperfections stay in the work." },
       { title: "Practice in public", body: "Technical curiosity becomes finished images and films." },
     ],
-    media: [{ type: "image", src: "/media/projects/channel-live.png", alt: "Here We Go Film Studio YouTube channel", caption: "The channel. The experiments. The work in motion.", width: 1800, height: 1125 }],
+    media: [{ type: "image", src: "/media/projects/channel-live.png", alt: "Here We Go Film Studio channel featuring Reference Image", caption: "The channel. The experiments. The work in motion.", width: 1265, height: 712 }],
   },
 ];
 

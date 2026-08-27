@@ -110,6 +110,18 @@ test("reserves flagship case-study evidence for the three lead projects", async 
   assert.doesNotMatch(await nonFlagship.text(), /CASE STUDY/);
 });
 
+test("features the latest Here We Go Film Studio release", async () => {
+  const response = await render("/projects/here-we-go-film-studio");
+  assert.equal(response.status, 200);
+  const html = await response.text();
+  assert.match(html, /NEW RELEASE/);
+  assert.match(html, /Reference Image/);
+  assert.match(html, /Made with Seedance 2\.5\./);
+  assert.match(html, /youtube-nocookie\.com\/embed\/509K8N368mg/);
+  assert.match(html, /youtube\.com\/watch\?v=509K8N368mg/);
+  assert.ok(html.indexOf("Reference Image") < html.indexOf("What it does"));
+});
+
 test("keeps the iPhone interactive and time-aware", async () => {
   const source = await readFile(new URL("../app/components/PhoneExperience.tsx", import.meta.url), "utf8");
   const weatherEngineSource = await readFile(new URL("../app/components/WeatherCinemaEngine.tsx", import.meta.url), "utf8");
