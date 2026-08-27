@@ -13,7 +13,26 @@ export async function generateMetadata({ params }: { params: Promise<{ slug: str
   const { slug } = await params;
   const project = getProject(slug);
   if (!project) return {};
-  return { title: project.title, description: project.tagline };
+  const pageUrl = `https://tian.fun/projects/${project.slug}/`;
+  const imageUrl = new URL(project.hero.src, "https://tian.fun").toString();
+  return {
+    title: project.title,
+    description: project.tagline,
+    alternates: { canonical: pageUrl },
+    openGraph: {
+      title: `${project.title} — Tian Xing`,
+      description: project.tagline,
+      type: "website",
+      url: pageUrl,
+      images: [{ url: imageUrl, width: project.hero.width, height: project.hero.height, alt: project.hero.alt }],
+    },
+    twitter: {
+      card: "summary_large_image",
+      title: `${project.title} — Tian Xing`,
+      description: project.tagline,
+      images: [imageUrl],
+    },
+  };
 }
 
 export default async function ProjectPage({ params }: { params: Promise<{ slug: string }> }) {
@@ -23,8 +42,13 @@ export default async function ProjectPage({ params }: { params: Promise<{ slug: 
   const index = projects.findIndex((item) => item.slug === project.slug);
   const next = projects[(index + 1) % projects.length];
   const base = process.env.NEXT_PUBLIC_BASE_PATH ?? "";
-  const leadMedia = project.slug === "bebop-puzzle" ? project.media.filter((item) => item.type === "youtube") : [];
-  const galleryMedia = project.media.filter((item) => !leadMedia.includes(item));
+  const leadMediaIndexes = new Set(project.leadMedia ?? []);
+  const leadMedia = project.media.filter((_, mediaIndex) => leadMediaIndexes.has(mediaIndex));
+  const galleryMedia = project.media.filter((item, mediaIndex) => (
+    item.gallery !== false
+    && !leadMediaIndexes.has(mediaIndex)
+    && (project.hero.repeatInGallery || item.src !== project.hero.src)
+  ));
 
   const renderMediaGallery = (media: typeof project.media) => media.length > 0 && (
     <section className={`media-gallery ${media.some((item) => item.portrait) ? "portrait-gallery" : ""}`} aria-label={`${project.title} screenshots`}>
@@ -37,7 +61,9 @@ export default async function ProjectPage({ params }: { params: Promise<{ slug: 
             style={{ "--media-max": item.width ? `${item.width}px` : "1600px" } as CSSProperties}
           >
             <div className="media-frame">
-              <div className="media-chrome" aria-hidden="true"><i /><i /><i /><span>{project.title}</span></div>
+              {item.type === "image" && item.chrome !== false && !item.portrait && (
+                <div className="media-chrome" aria-hidden="true"><i /><i /><i /><span>{project.title}</span></div>
+              )}
               {item.type === "image" && (
                 <a className="media-image-link" href={`${base}${item.src}`} target="_blank" rel="noreferrer" aria-label={`View full resolution: ${item.alt}`}>
                   {/* Raw screenshots keep their native aspect ratios and never render wider than their source pixels. */}
@@ -46,9 +72,9 @@ export default async function ProjectPage({ params }: { params: Promise<{ slug: 
                   <span>FULL RESOLUTION ↗</span>
                 </a>
               )}
-              {item.type === "video" && <video src={`${base}${item.src}`} aria-label={item.alt} controls muted loop playsInline poster={`${base}/media/film/5279-projection-hi.jpg`} />}
+              {item.type === "video" && <video src={`${base}${item.src}`} aria-label={item.alt} controls muted loop playsInline poster={item.poster ? `${base}${item.poster}` : undefined} />}
               {item.type === "youtube" && (
-                <iframe src={`https://www.youtube-nocookie.com/embed/${item.src}?rel=0`} title={item.alt} allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" allowFullScreen />
+                <iframe src={`https://www.youtube-nocookie.com/embed/${item.src}?rel=0`} title={item.alt} loading="lazy" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" allowFullScreen />
               )}
             </div>
             {item.caption && <figcaption><span>{String(mediaIndex + 1).padStart(2, "0")}</span>{item.caption}</figcaption>}
@@ -60,13 +86,14 @@ export default async function ProjectPage({ params }: { params: Promise<{ slug: 
 
   return (
     <main className={`detail-page accent-${project.accent}`}>
+      <a className="skip-link" href="#project-content">Skip to project content</a>
       <header className="detail-nav">
         <Link className="back-button" href="/" aria-label="Back to all projects"><span>‹</span> Projects</Link>
         <Link className="wordmark" href="/">TIAN XING <small>/ SELECTED WORK</small></Link>
         <Link className="about-button" href="/about">About</Link>
       </header>
 
-      <article>
+      <article id="project-content">
         <section className="project-hero">
           <div className="project-identity">
             <div>
@@ -75,10 +102,16 @@ export default async function ProjectPage({ params }: { params: Promise<{ slug: 
               <p className="project-tagline">{project.tagline}</p>
             </div>
           </div>
+          <figure
+            className={`project-hero-visual ${project.hero.fit === "contain" ? "project-hero-contain" : ""}`}
+            style={{ "--hero-position": project.hero.position ?? "50% 50%" } as CSSProperties}
+          >
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img src={`${base}${project.hero.src}`} alt={project.hero.alt} width={project.hero.width} height={project.hero.height} fetchPriority="high" decoding="async" />
+          </figure>
           <a className="store-button" href={project.externalUrl} target="_blank" rel="noreferrer">
             <AppIcon project={project} />
             <span className="store-button-copy">
-              <small>VIEW PROJECT</small>
               <strong>{project.externalLabel}</strong>
             </span>
             <span className="store-button-arrow" aria-hidden="true">↗</span>
@@ -129,7 +162,7 @@ export default async function ProjectPage({ params }: { params: Promise<{ slug: 
               </div>
               <p>{project.livePreview.note}</p>
             </div>
-            <div className="live-demo-frame">
+            <div className="live-demo-frame" style={{ "--demo-poster": `url(${base}${project.hero.src})` } as CSSProperties}>
               <div className="live-demo-bar" aria-hidden="true">
                 <span><i /><i /><i /></span>
                 <b>{project.livePreview.url.replace(/^https?:\/\//, "").replace(/\/$/, "")}</b>
@@ -142,6 +175,7 @@ export default async function ProjectPage({ params }: { params: Promise<{ slug: 
                 loading="lazy"
                 allow="autoplay; clipboard-write; fullscreen; gamepad"
                 allowFullScreen
+                tabIndex={-1}
               />
             </div>
             <a className="live-demo-fallback" href={project.livePreview.url} target="_blank" rel="noreferrer">Open the full project in a new window <span>↗</span></a>
@@ -151,7 +185,7 @@ export default async function ProjectPage({ params }: { params: Promise<{ slug: 
         {renderMediaGallery(galleryMedia)}
 
         <section className="feature-section">
-          <div className="section-kicker"><span>Inside the work</span><i /></div>
+          <div className="section-kicker"><span>What it does</span><i /></div>
           <div className="feature-grid">
             {project.features.map((feature, featureIndex) => (
               <article key={feature.title}>
@@ -170,7 +204,7 @@ export default async function ProjectPage({ params }: { params: Promise<{ slug: 
                 <p>CASE STUDY</p>
                 <h2 id={`case-study-${project.slug}`}>Behind the work</h2>
               </div>
-              <p>Decisions. Constraints. Results. What I built.</p>
+              <p>{project.caseStudy.summary}</p>
             </header>
 
             <article className="case-study-problem">

@@ -4,11 +4,16 @@ import "./globals.css";
 const phoneIntroBootstrap = `
 try {
   var desktopIntro = window.matchMedia('(min-width: 561px) and (prefers-reduced-motion: no-preference)').matches;
-  if (!desktopIntro) {
+  var path = window.location.pathname.replace(/\\/+$/, '') || '/';
+  var isHome = path === '/';
+  if (!isHome || !desktopIntro) {
     delete document.documentElement.dataset.phoneIntro;
     document.documentElement.classList.remove('phone-intro-pending');
   }
-} catch (_) {}
+} catch (_) {
+  delete document.documentElement.dataset.phoneIntro;
+  document.documentElement.classList.remove('phone-intro-pending');
+}
 `;
 
 export const metadata: Metadata = {
@@ -46,7 +51,6 @@ export const metadata: Metadata = {
 export const viewport: Viewport = {
   width: "device-width",
   initialScale: 1,
-  maximumScale: 1,
   viewportFit: "cover",
   themeColor: "#05070a",
 };
@@ -60,11 +64,6 @@ export default function RootLayout({ children }: Readonly<{ children: React.Reac
       suppressHydrationWarning
     >
       <head>
-        <link
-          rel="preload"
-          as="image"
-          href="/media/cases/red-fuji-case.jpg"
-        />
         <style dangerouslySetInnerHTML={{ __html: "html.phone-intro-pending{background:#020305!important}html.phone-intro-pending::before{content:'';position:fixed;z-index:2147483647;inset:0;background:#020305}html.phone-intro-pending body{visibility:hidden!important}" }} />
         <noscript>
           <style>{"html.phone-intro-pending::before{content:none!important}html.phone-intro-pending body{visibility:visible!important}"}</style>

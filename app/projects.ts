@@ -11,8 +11,19 @@ export type Project = {
   tagline: string;
   description: string;
   note: string;
+  hero: {
+    src: string;
+    alt: string;
+    width: number;
+    height: number;
+    fit?: "cover" | "contain";
+    position?: string;
+    repeatInGallery?: boolean;
+  };
+  leadMedia?: number[];
   livePreview?: { url: string; label: string; note: string };
   caseStudy?: {
+    summary: string;
     problem: string;
     exactRole: string;
     collaboration: string;
@@ -29,7 +40,7 @@ export type Project = {
     principles: { title: string; body: string }[];
   };
   features: { title: string; body: string }[];
-  media: { type: "image" | "video" | "youtube"; src: string; alt: string; caption?: string; portrait?: boolean; width?: number; height?: number }[];
+  media: { type: "image" | "video" | "youtube"; src: string; alt: string; caption?: string; portrait?: boolean; width?: number; height?: number; chrome?: boolean; poster?: string; gallery?: boolean }[];
 };
 
 export const projects: Project[] = [
@@ -46,8 +57,10 @@ export const projects: Project[] = [
     tagline: "A course is a system. Build the whole thing.",
     description: "One course model. Ten connected deliverables. Course Mapper turns a syllabus into an editable system—then Scion checks the logic, evidence, and alignment.",
     note: "Built for instructors who need a course—not a wall of AI text.",
+    hero: { src: "/media/projects/edutool-live.png", alt: "EduTool course generator with the brief, course settings, and generation workflow visible", width: 1800, height: 1125, position: "50% 12%" },
     livePreview: { url: "https://edutool.dev", label: "Build a course here", note: "Build, inspect, and edit a complete course in your browser." },
     caseStudy: {
+      summary: "Generate broadly. Stay anchored to one brief.",
       problem: "AI can generate pages of course content and still fail to build a course. Objectives drift. Assessments disconnect. Evidence gets overstated.",
       exactRole: "Product strategy, UX, system architecture, AI workflows, front-end, and release.",
       collaboration: "Independent. Designed and built end to end.",
@@ -104,7 +117,9 @@ export const projects: Project[] = [
     tagline: "Push. Recover. Come back stronger.",
     description: "Turn one target into a training wave. Surge alternates harder push sets with active recovery so every session builds, peaks, and finishes clear.",
     note: "No account. No internet. No data collection. History stays on-device.",
+    hero: { src: "/media/surge/main-hi.png", alt: "Surge Method setup screen showing a progressive training wave", width: 1197, height: 2600, fit: "contain", repeatInGallery: true },
     caseStudy: {
+      summary: "Make progression obvious while the user is moving.",
       problem: "Most workout timers prescribe or count. Surge had to turn one personal target into a progressive session anyone could follow mid-set.",
       exactRole: "Concept, training system, UX, visual design, iOS, testing, and release.",
       collaboration: "Independent. Designed, built, and shipped solo.",
@@ -154,8 +169,11 @@ export const projects: Project[] = [
     tagline: "Learn the language of jazz with your hands.",
     description: "Build bebop lines by touch. Connect four-note pieces across a chord grid and hear every decision through a Rhodes-inspired instrument.",
     note: "6 chapters. 80 levels. Daily missions. Composer Mode. Printable board game.",
+    hero: { src: "/media/projects/bebop-live.png", alt: "Bebop Puzzle chord grid with melodic pieces ready to connect", width: 1800, height: 1125 },
+    leadMedia: [0],
     livePreview: { url: "https://beboppuzzle.com", label: "Play Bebop Puzzle here", note: "Drag the pieces. Hear the line. Play the full campaign." },
     caseStudy: {
+      summary: "Turn theory into play without flattening the music.",
       problem: "Jazz theory often starts with notation and jargon. Bebop Puzzle had to make voice leading, approaches, and enclosures tangible—without becoming a worksheet.",
       exactRole: "Game rules, learning design, UX, sound, web engineering, levels, and release.",
       collaboration: "Independent. Built the game, audio, content, and release.",
@@ -203,6 +221,7 @@ export const projects: Project[] = [
     tagline: "A good resume should not fight you.",
     description: "Edit the resume—not a form. Write on the page, move the photo, tune the layout, check the fit, and export privately in your browser.",
     note: "Multiple resumes. Autosave. Offline. Letter or A4. PDF, PNG, or JPG.",
+    hero: { src: "/media/projects/quicky-live.png", alt: "Quicky Resume direct editing canvas and style controls", width: 1800, height: 1125, position: "50% 18%" },
     livePreview: { url: "https://quickyresume.com", label: "Edit a resume here", note: "Write, style, review, and export on the page itself." },
     features: [
       { title: "Edit the page itself", body: "Words, sections, photos, type, and spacing—all in one canvas." },
@@ -224,6 +243,7 @@ export const projects: Project[] = [
     tagline: "Rebuilding a film stock from the silver up.",
     description: "Rebuild Kodak VISION 500T 5279 from Panasonic GH7 ProRes RAW through physical events—not a color preset. The pipeline models silver halide, dye clouds, the negative mask, 2383 print, and a period 2K scan.",
     note: "V29: 165 full frames at 5760×4320. 12-bit projection and scan masters. No creative grade in the baseline.",
+    hero: { src: "/media/film/5279-projection-hi.jpg", alt: "A projected reference frame from the 5279 emulsion reconstruction", width: 2560, height: 1920, position: "50% 44%" },
     livePreview: { url: "https://lovejzzz.github.io/90sKid/", label: "Explore the research here", note: "Versions, evidence, methods, and full-size frame comparisons." },
     features: [
       { title: "Physical image model", body: "Emulsion, dye, grain, print, and scan are explicit stages." },
@@ -231,10 +251,10 @@ export const projects: Project[] = [
       { title: "Motion, not a hero frame", body: "The baseline holds across a complete shot—not one lucky still." },
     ],
     media: [
-      { type: "video", src: "/media/film/5279-motion.mp4", alt: "5279 V29 motion validation", caption: "V29 in motion. Projection view." },
-      { type: "image", src: "/media/projects/5279-live.png", alt: "5279 Emulsion Project live research site", caption: "V29 research and motion-validation baseline.", width: 1800, height: 1125 },
-      { type: "image", src: "/media/film/5279-projection-hi.jpg", alt: "5279 2383 projection result", caption: "2383 projection. 2560×1920 reference frame.", width: 2560, height: 1920 },
-      { type: "image", src: "/media/film/5279-scan-hi.jpg", alt: "5279 period scan result", caption: "Period 2K scan. 2560×1920 reference frame.", width: 2560, height: 1920 },
+      { type: "video", src: "/media/film/5279-motion.mp4", alt: "5279 V29 motion validation", caption: "V29 in motion. Projection view.", chrome: false },
+      { type: "image", src: "/media/projects/5279-live.png", alt: "5279 Emulsion Project live research site", caption: "V29 research and motion-validation baseline.", width: 1800, height: 1125, gallery: false },
+      { type: "image", src: "/media/film/5279-projection-hi.jpg", alt: "5279 2383 projection result", caption: "2383 projection. 2560×1920 reference frame.", width: 2560, height: 1920, chrome: false },
+      { type: "image", src: "/media/film/5279-scan-hi.jpg", alt: "5279 period scan result", caption: "Period 2K scan. 2560×1920 reference frame.", width: 2560, height: 1920, chrome: false },
     ],
   },
   {
@@ -250,12 +270,13 @@ export const projects: Project[] = [
     tagline: "Begin with what is already here.",
     description: "A short film about starting with what is already here: the place, the people, the feeling. Made at NYU through performance, rhythm, and practical production.",
     note: "Start before conditions are perfect.",
+    hero: { src: "/media/projects/start-where-you-are.jpg", alt: "Black-and-white still from Start Where You Are", width: 1280, height: 720, position: "50% 42%" },
     features: [
       { title: "Performance first", body: "Camera and edit serve presence—not spectacle." },
       { title: "Limits become language", body: "A small production turned constraint into style." },
       { title: "Finish the film", body: "Made, completed, released. The work starts there." },
     ],
-    media: [{ type: "youtube", src: "i0xL_qslx8A", alt: "Start Where You Are short film", caption: "Watch the complete film." }],
+    media: [{ type: "youtube", src: "i0xL_qslx8A", alt: "Start Where You Are short film", caption: "Watch the complete film.", chrome: false }],
   },
   {
     slug: "texas-jack",
@@ -270,6 +291,7 @@ export const projects: Project[] = [
     tagline: "Blackjack meets Texas Hold’em.",
     description: "Blackjack urgency. Hold’em structure. Texas Jack collides two familiar card systems in one fast browser game.",
     note: "Learn it in one hand. Want another by the next.",
+    hero: { src: "/media/projects/texas-jack-live.png", alt: "Texas Jack browser game in the middle of a hand", width: 1800, height: 1125, position: "50% 58%" },
     livePreview: { url: "https://lovejzzz.github.io/TexasJack/", label: "Deal a hand here", note: "Set the bet. Deal the cards. Play now." },
     features: [
       { title: "Two games. One table.", body: "Hole cards and community cards race toward twenty-one." },
@@ -291,6 +313,7 @@ export const projects: Project[] = [
     tagline: "A slot machine that deals you a tempo.",
     description: "Stop practicing at the same comfortable speed. Set a range, pull the lever, and Slotronome deals the tempo—then keeps time.",
     note: "Pixel cabinet. Brass trim. Reels. Motion. Machine sound. All HTML, CSS, and Web Audio.",
+    hero: { src: "/media/projects/slotronome-live.png", alt: "Slotronome pixel cabinet running at 86 BPM", width: 1800, height: 1125, position: "50% 40%" },
     livePreview: { url: "https://lovejzzz.github.io/Slotronome/", label: "Pull the lever here", note: "Deal a tempo. Press start. Change the accents." },
     features: [
       { title: "Practice by chance", body: "Random or stepped tempos break the comfort-speed habit." },
@@ -312,6 +335,7 @@ export const projects: Project[] = [
     tagline: "The lab notebook is a movie channel.",
     description: "A public lab for filmmaking experiments. Lenses, light, motion, texture, edits, and unfinished questions leave the hard drive and become studies.",
     note: "Every experiment should teach the next shot.",
+    hero: { src: "/media/projects/channel-live.png", alt: "Here We Go Film Studio experiments and finished films", width: 1800, height: 1125, position: "78% 73%" },
     features: [
       { title: "Camera as research", body: "Test exposure, movement, texture, and material by shooting." },
       { title: "Keep the process visible", body: "Questions and imperfections stay in the work." },

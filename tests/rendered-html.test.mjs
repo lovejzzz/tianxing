@@ -28,7 +28,8 @@ test("renders the finished portfolio home", async () => {
   assert.match(html, /html\.phone-intro-pending body\{visibility:hidden!important\}/);
   assert.doesNotMatch(html, /dataset\.phoneIntro = 'pending'/);
   assert.doesNotMatch(html, /classList\.add\('phone-intro-pending'\)/);
-  assert.match(html, /if \(!desktopIntro\)/);
+  assert.match(html, /if \(!isHome \|\| !desktopIntro\)/);
+  assert.match(html, /window\.location\.pathname/);
   assert.doesNotMatch(html, /tian-phone-intro-played/);
   assert.doesNotMatch(html, /Portfolio · Edition 01|Selected work|2024—2026|Tian Xing delivers|Designed &amp; built by Tian Xing|New York/i);
   assert.doesNotMatch(html, /Choose an icon to open a project|Nine things I care about|makes things|systems thinking and play/i);
@@ -42,7 +43,9 @@ test("renders a project detail route", async () => {
   assert.match(html, /Push\. Recover\. Come back stronger\./);
   assert.match(html, /View on the App Store/);
   assert.match(html, /class="store-button"[\s\S]{0,500}class="app-icon icon-surge-method/);
+  assert.doesNotMatch(html, /VIEW PROJECT/);
   assert.doesNotMatch(html, /app-icon-large/);
+  assert.match(html, /class="project-hero-visual project-hero-contain"/);
   assert.match(html, /main-hi\.png/);
   assert.match(html, /Behind the work/);
   assert.match(html, /Designed, built, and shipped solo/);
@@ -61,7 +64,8 @@ test("shows the current EduTool generation workspace and Scion model", async () 
   assert.match(html, /What I built/);
   assert.match(html, /One canonical model/);
   assert.match(html, /Live at edutool\.dev/);
-  assert.doesNotMatch(html, /edutool-live\.png/);
+  assert.match(html, /edutool-live\.png/);
+  assert.match(html, /property="og:image" content="https:\/\/tian\.fun\/media\/projects\/edutool-live\.png"/);
 });
 
 test("embeds playable projects and full-resolution screenshots", async () => {
@@ -72,7 +76,7 @@ test("embeds playable projects and full-resolution screenshots", async () => {
   assert.match(html, /https:\/\/beboppuzzle\.com/);
   assert.match(html, /youtube-nocookie\.com\/embed\/uRz4HQILA_c/);
   assert.match(html, /bebop-live\.png/);
-  assert.match(html, /FULL RESOLUTION/);
+  assert.match(html, /class="project-hero-visual/);
   assert.match(html, /Limits &amp; misses/);
   assert.match(html, /80 levels/);
   assert.match(html, /Live at beboppuzzle\.com/);
@@ -81,9 +85,11 @@ test("embeds playable projects and full-resolution screenshots", async () => {
     "the project video should introduce Bebop Puzzle before the playable embed",
   );
   assert.ok(
-    html.indexOf("Inside the work") < html.indexOf("CASE STUDY"),
+    html.indexOf("What it does") < html.indexOf("CASE STUDY"),
     "the visual project story should appear before the long-form case study",
   );
+  assert.equal((html.match(/bebop-live\.png/g) ?? []).length >= 1, true);
+  assert.equal((html.match(/FULL RESOLUTION/g) ?? []).length, 0, "the hero screenshot should not repeat in the gallery");
 });
 
 test("reserves flagship case-study evidence for the three lead projects", async () => {
