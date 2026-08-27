@@ -44,9 +44,9 @@ test("renders a project detail route", async () => {
   assert.match(html, /class="store-button"[\s\S]{0,500}class="app-icon icon-surge-method/);
   assert.doesNotMatch(html, /app-icon-large/);
   assert.match(html, /main-hi\.png/);
-  assert.match(html, /How the work was made/);
-  assert.match(html, /Independent project/);
-  assert.match(html, /Released publicly on the Apple App Store/);
+  assert.match(html, /Behind the work/);
+  assert.match(html, /Designed, built, and shipped solo/);
+  assert.match(html, /Released on the Apple App Store/);
 });
 
 test("shows the current EduTool generation workspace and Scion model", async () => {
@@ -57,10 +57,10 @@ test("shows the current EduTool generation workspace and Scion model", async () 
   assert.match(html, /Meet Scion/);
   assert.match(html, /Brief-anchored/);
   assert.match(html, /Evidence-honest/);
-  assert.match(html, /Important technical decisions/);
-  assert.match(html, /What I personally built/);
-  assert.match(html, /canonical course model/);
-  assert.match(html, /Launched publicly at edutool\.dev/);
+  assert.match(html, /Key decisions/);
+  assert.match(html, /What I built/);
+  assert.match(html, /One canonical model/);
+  assert.match(html, /Live at edutool\.dev/);
   assert.doesNotMatch(html, /edutool-live\.png/);
 });
 
@@ -73,15 +73,15 @@ test("embeds playable projects and full-resolution screenshots", async () => {
   assert.match(html, /youtube-nocookie\.com\/embed\/uRz4HQILA_c/);
   assert.match(html, /bebop-live\.png/);
   assert.match(html, /FULL RESOLUTION/);
-  assert.match(html, /Constraints &amp; failures/);
-  assert.match(html, /80-level campaign/);
-  assert.match(html, /Launched publicly at beboppuzzle\.com/);
+  assert.match(html, /Limits &amp; misses/);
+  assert.match(html, /80 levels/);
+  assert.match(html, /Live at beboppuzzle\.com/);
   assert.ok(
     html.indexOf("youtube-nocookie.com/embed/uRz4HQILA_c") < html.indexOf("LIVE DEMO"),
     "the project video should introduce Bebop Puzzle before the playable embed",
   );
   assert.ok(
-    html.indexOf("Inside the work") < html.indexOf("FLAGSHIP CASE STUDY"),
+    html.indexOf("Inside the work") < html.indexOf("CASE STUDY"),
     "the visual project story should appear before the long-form case study",
   );
 });
@@ -92,7 +92,7 @@ test("reserves flagship case-study evidence for the three lead projects", async 
     const response = await render(path);
     assert.equal(response.status, 200);
     const html = await response.text();
-    assert.match(html, /FLAGSHIP CASE STUDY/);
+    assert.match(html, /CASE STUDY/);
     assert.match(html, /The problem/);
     assert.match(html, /Exact role/);
     assert.match(html, />Team</);
@@ -101,7 +101,7 @@ test("reserves flagship case-study evidence for the three lead projects", async 
 
   const nonFlagship = await render("/projects/quicky-resume");
   assert.equal(nonFlagship.status, 200);
-  assert.doesNotMatch(await nonFlagship.text(), /FLAGSHIP CASE STUDY/);
+  assert.doesNotMatch(await nonFlagship.text(), /CASE STUDY/);
 });
 
 test("keeps the iPhone interactive and time-aware", async () => {

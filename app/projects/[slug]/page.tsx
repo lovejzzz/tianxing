@@ -167,10 +167,10 @@ export default async function ProjectPage({ params }: { params: Promise<{ slug: 
           <section className="case-study-section" aria-labelledby={`case-study-${project.slug}`}>
             <header className="case-study-heading">
               <div>
-                <p>FLAGSHIP CASE STUDY</p>
-                <h2 id={`case-study-${project.slug}`}>How the work was made</h2>
+                <p>CASE STUDY</p>
+                <h2 id={`case-study-${project.slug}`}>Behind the work</h2>
               </div>
-              <p>A closer account of the decisions, constraints, shipped outcomes, and individual contribution behind the finished experience.</p>
+              <p>Decisions. Constraints. Results. What I built.</p>
             </header>
 
             <article className="case-study-problem">
@@ -191,10 +191,10 @@ export default async function ProjectPage({ params }: { params: Promise<{ slug: 
 
             <div className="case-study-evidence">
               {[
-                { number: "02", title: "Important technical decisions", items: project.caseStudy.decisions },
-                { number: "03", title: "Constraints & failures", items: project.caseStudy.constraints },
+                { number: "02", title: "Key decisions", items: project.caseStudy.decisions },
+                { number: "03", title: "Limits & misses", items: project.caseStudy.constraints },
                 { number: "04", title: "Results", items: project.caseStudy.results },
-                { number: "05", title: "What I personally built", items: project.caseStudy.built },
+                { number: "05", title: "What I built", items: project.caseStudy.built },
               ].map(({ number, title, items }) => (
                 <article key={title}>
                   <span>{number}</span>
