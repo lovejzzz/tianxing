@@ -41,6 +41,7 @@ test("renders a project detail route", async () => {
   const html = await response.text();
   assert.match(html, /Push\. Recover\. Come back stronger\./);
   assert.match(html, /View on the App Store/);
+  assert.match(html, /class="store-button"[\s\S]{0,500}class="app-icon icon-surge-method/);
   assert.match(html, /main-hi\.png/);
   assert.match(html, /How the work was made/);
   assert.match(html, /Independent project/);

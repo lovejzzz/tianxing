@@ -77,9 +77,12 @@ export default async function ProjectPage({ params }: { params: Promise<{ slug: 
             </div>
           </div>
           <a className="store-button" href={project.externalUrl} target="_blank" rel="noreferrer">
-            <small>VIEW PROJECT</small>
-            <strong>{project.externalLabel}</strong>
-            <span>↗</span>
+            <AppIcon project={project} />
+            <span className="store-button-copy">
+              <small>VIEW PROJECT</small>
+              <strong>{project.externalLabel}</strong>
+            </span>
+            <span className="store-button-arrow" aria-hidden="true">↗</span>
           </a>
         </section>
 
