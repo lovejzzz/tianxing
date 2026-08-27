@@ -1,14 +1,23 @@
 import type { Metadata, Viewport } from "next";
 import "./globals.css";
 
+// Only the home route mounts the 3D intro that clears this guard, so every
+// other document must clear it itself or it stays a black field forever.
+const basePath = process.env.NEXT_PUBLIC_BASE_PATH ?? "";
 const phoneIntroBootstrap = `
 try {
-  var desktopIntro = window.matchMedia('(min-width: 561px) and (prefers-reduced-motion: no-preference)').matches;
+  var base = ${JSON.stringify(basePath)};
+  var path = window.location.pathname;
+  if (base && path.indexOf(base) === 0) path = path.slice(base.length);
+  var isHome = path === '' || path === '/' || path === '/index.html';
+  var desktopIntro = isHome && window.matchMedia('(min-width: 561px) and (prefers-reduced-motion: no-preference)').matches;
   if (!desktopIntro) {
     delete document.documentElement.dataset.phoneIntro;
     document.documentElement.classList.remove('phone-intro-pending');
   }
-} catch (_) {}
+} catch (_) {
+  document.documentElement.classList.remove('phone-intro-pending');
+}
 `;
 
 export const metadata: Metadata = {
