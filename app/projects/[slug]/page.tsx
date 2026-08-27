@@ -69,7 +69,6 @@ export default async function ProjectPage({ params }: { params: Promise<{ slug: 
       <article>
         <section className="project-hero">
           <div className="project-identity">
-            <AppIcon project={project} large />
             <div>
               <p className="project-category">{project.category}</p>
               <h1>{project.title}</h1>
