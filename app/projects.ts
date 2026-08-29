@@ -343,7 +343,13 @@ export const projects: Project[] = [
     tagline: "The lab notebook is a movie channel.",
     description: "A public lab for filmmaking experiments. Lenses, light, motion, texture, edits, and unfinished questions leave the hard drive and become studies.",
     note: "Every experiment should teach the next shot.",
-    hero: { src: "/media/projects/here-we-go-sunset.jpg", alt: "For Rest: Sunset by Here We Go Film Studio", width: 1280, height: 720, position: "50% 50%" },
+    hero: {
+      src: "/media/projects/here-we-go-sunset-hero.jpg",
+      alt: "For Rest: Sunset by Here We Go Film Studio",
+      width: 2560,
+      height: 1440,
+      position: "50% 50%",
+    },
     featuredFilm: {
       title: "Sunset",
       format: "For Rest · Short film",
@@ -356,7 +362,14 @@ export const projects: Project[] = [
       { title: "Keep the process visible", body: "Questions and imperfections stay in the work." },
       { title: "Practice in public", body: "Technical curiosity becomes finished images and films." },
     ],
-    media: [{ type: "image", src: "/media/projects/here-we-go-sunset.jpg", alt: "For Rest: Sunset by Here We Go Film Studio", caption: "For Rest: Sunset.", width: 1280, height: 720 }],
+    media: [{
+      type: "image",
+      src: "/media/projects/here-we-go-sunset-hero.jpg",
+      alt: "For Rest: Sunset by Here We Go Film Studio",
+      caption: "For Rest: Sunset.",
+      width: 2560,
+      height: 1440,
+    }],
   },
 ];
 

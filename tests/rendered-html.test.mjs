@@ -149,6 +149,7 @@ test("features Sunset on the Here We Go Film Studio page", async () => {
   assert.match(html, /For Rest · Short film/);
   assert.match(html, /youtube-nocookie\.com\/embed\/XMCr7upIROA/);
   assert.match(html, /youtube\.com\/watch\?v=XMCr7upIROA/);
+  assert.match(html, /here-we-go-sunset-hero\.jpg/);
   assert.doesNotMatch(html, /Reference Image|Seedance 2\.5|509K8N368mg/);
   assert.ok(html.indexOf("Sunset") < html.indexOf("What it does"));
 });
