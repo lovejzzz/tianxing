@@ -369,6 +369,14 @@ export const projects: Project[] = [
       caption: "For Rest: Sunset.",
       width: 2560,
       height: 1440,
+    }, {
+      type: "image",
+      src: "/media/projects/channel-live.png",
+      alt: "Here We Go Film Studio YouTube channel showing the For Rest film series",
+      caption: "The channel. A public film lab.",
+      width: 1800,
+      height: 1125,
+      chrome: false,
     }],
   },
 ];
