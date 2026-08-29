@@ -22,7 +22,7 @@ export type Project = {
     repeatInGallery?: boolean;
   };
   leadMedia?: number[];
-  latestRelease?: {
+  featuredFilm?: {
     title: string;
     format: string;
     description: string;
@@ -343,20 +343,20 @@ export const projects: Project[] = [
     tagline: "The lab notebook is a movie channel.",
     description: "A public lab for filmmaking experiments. Lenses, light, motion, texture, edits, and unfinished questions leave the hard drive and become studies.",
     note: "Every experiment should teach the next shot.",
-    hero: { src: "/media/projects/channel-live.png", alt: "Here We Go Film Studio channel featuring Reference Image and recent film experiments", width: 1265, height: 712, position: "18% 72%" },
-    latestRelease: {
-      title: "Reference Image",
-      format: "Short film",
-      description: "Made with Seedance 2.5.",
-      youtubeId: "509K8N368mg",
-      url: "https://www.youtube.com/watch?v=509K8N368mg",
+    hero: { src: "/media/projects/here-we-go-sunset.jpg", alt: "For Rest: Sunset by Here We Go Film Studio", width: 1280, height: 720, position: "50% 50%" },
+    featuredFilm: {
+      title: "Sunset",
+      format: "For Rest · Short film",
+      description: "Fifty seconds at the edge of day.",
+      youtubeId: "XMCr7upIROA",
+      url: "https://www.youtube.com/watch?v=XMCr7upIROA",
     },
     features: [
       { title: "Camera as research", body: "Test exposure, movement, texture, and material by shooting." },
       { title: "Keep the process visible", body: "Questions and imperfections stay in the work." },
       { title: "Practice in public", body: "Technical curiosity becomes finished images and films." },
     ],
-    media: [{ type: "image", src: "/media/projects/channel-live.png", alt: "Here We Go Film Studio channel featuring Reference Image", caption: "The channel. The experiments. The work in motion.", width: 1265, height: 712 }],
+    media: [{ type: "image", src: "/media/projects/here-we-go-sunset.jpg", alt: "For Rest: Sunset by Here We Go Film Studio", caption: "For Rest: Sunset.", width: 1280, height: 720 }],
   },
 ];
 

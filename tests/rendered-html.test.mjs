@@ -140,16 +140,17 @@ test("reserves flagship case-study evidence for the three lead projects", async 
   assert.doesNotMatch(await nonFlagship.text(), /CASE STUDY/);
 });
 
-test("features the latest Here We Go Film Studio release", async () => {
+test("features Sunset on the Here We Go Film Studio page", async () => {
   const response = await render("/projects/here-we-go-film-studio");
   assert.equal(response.status, 200);
   const html = await response.text();
-  assert.match(html, /NEW RELEASE/);
-  assert.match(html, /Reference Image/);
-  assert.match(html, /Made with Seedance 2\.5\./);
-  assert.match(html, /youtube-nocookie\.com\/embed\/509K8N368mg/);
-  assert.match(html, /youtube\.com\/watch\?v=509K8N368mg/);
-  assert.ok(html.indexOf("Reference Image") < html.indexOf("What it does"));
+  assert.match(html, /FEATURED FILM/);
+  assert.match(html, />Sunset</);
+  assert.match(html, /For Rest · Short film/);
+  assert.match(html, /youtube-nocookie\.com\/embed\/XMCr7upIROA/);
+  assert.match(html, /youtube\.com\/watch\?v=XMCr7upIROA/);
+  assert.doesNotMatch(html, /Reference Image|Seedance 2\.5|509K8N368mg/);
+  assert.ok(html.indexOf("Sunset") < html.indexOf("What it does"));
 });
 
 test("keeps the iPhone interactive and time-aware", async () => {
