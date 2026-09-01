@@ -156,6 +156,21 @@ test("features Sunset on the Here We Go Film Studio page", async () => {
   assert.ok(html.indexOf("Sunset") < html.indexOf("What it does"));
 });
 
+test("shows both updated Texas Jack game modes", async () => {
+  const response = await render("/projects/texas-jack");
+  assert.equal(response.status, 200);
+  const html = await response.text();
+  assert.match(html, /Play Texas Jack here/);
+  assert.match(html, /Quick Duel/);
+  assert.match(html, /Four-Seat/);
+  assert.match(html, /Pressure matters/);
+  assert.match(html, /texas-jack-duel-live\.png/);
+  assert.match(html, /texas-jack-four-seat-live\.png/);
+  assert.match(html, /texas-jack-duel-live\.webp/);
+  assert.match(html, /texas-jack-four-seat-live\.webp/);
+  assert.doesNotMatch(html, /texas-jack-live\.png/);
+});
+
 test("keeps the iPhone interactive and time-aware", async () => {
   const source = await readFile(new URL("../app/components/PhoneExperience.tsx", import.meta.url), "utf8");
   const weatherEngineSource = await readFile(new URL("../app/components/WeatherCinemaEngine.tsx", import.meta.url), "utf8");
