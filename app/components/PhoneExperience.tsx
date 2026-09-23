@@ -397,8 +397,11 @@ export function PhoneExperience() {
       const stage = deviceStageRef.current;
       const before = stage?.getBoundingClientRect();
       const phone = stage?.querySelector<HTMLElement>(".phone")?.getBoundingClientRect();
-      if (before) {
-        setImmersiveShift(window.innerWidth / 2 - (before.left + before.width / 2));
+      if (before && stage) {
+        // Short laptop screens zoom the whole stage to fit; the shift is
+        // measured in screen pixels, so undo that zoom before applying it.
+        const zoom = Number.parseFloat(getComputedStyle(stage).zoom) || 1;
+        setImmersiveShift((window.innerWidth / 2 - (before.left + before.width / 2)) / zoom);
       }
       if (phone) {
         window.dispatchEvent(new CustomEvent("tian:immersive-home", {
@@ -415,6 +418,27 @@ export function PhoneExperience() {
       setLaunchFromIcon(false);
     }, mode === "folder" && (launchFromIcon || shouldReturnToFunIcon) ? 760 : 390);
   };
+
+  // A pane of glass catches the room light: the highlight drifts a little as
+  // the cursor crosses the phone. Pointer-driven only; touch never sees it.
+  const glareFrame = useRef<number | null>(null);
+  const moveGlare = (event: ReactPointerEvent<HTMLElement>) => {
+    if (event.pointerType !== "mouse") return;
+    const phone = event.currentTarget.querySelector<HTMLElement>(".phone");
+    if (!phone) return;
+    const rect = phone.getBoundingClientRect();
+    const x = ((event.clientX - rect.left) / Math.max(1, rect.width)) * 100;
+    const y = ((event.clientY - rect.top) / Math.max(1, rect.height)) * 100;
+    if (glareFrame.current) window.cancelAnimationFrame(glareFrame.current);
+    glareFrame.current = window.requestAnimationFrame(() => {
+      phone.style.setProperty("--glare-x", `${Math.max(-20, Math.min(120, x)).toFixed(1)}%`);
+      phone.style.setProperty("--glare-y", `${Math.max(-20, Math.min(120, y)).toFixed(1)}%`);
+    });
+  };
+
+  useEffect(() => () => {
+    if (glareFrame.current) window.cancelAnimationFrame(glareFrame.current);
+  }, []);
 
   const setPhysicalHomePressed = (pressed: boolean) => {
     if (homePressedRef.current === pressed) return;
@@ -433,6 +457,7 @@ export function PhoneExperience() {
         "--mobile-arrival-inspection-offset": `${-(arrivalInspectionMs ?? 0)}ms`,
       } as CSSProperties}
       aria-label="Interactive iPhone portfolio"
+      onPointerMove={moveGlare}
     >
       <Phone3DIntro productRef={phoneProductRef} />
       <div className="phone-product" ref={phoneProductRef}>
@@ -513,6 +538,8 @@ export function PhoneExperience() {
               </div>
             )}
           </div>
+
+          <span className="glass-glare" aria-hidden="true" />
 
           <button
             className={`home-button ${homePressed ? "is-pressed" : ""}`}
@@ -1589,8 +1616,9 @@ function WeatherApp() {
         />
       </div>
       <button className="weather-city-chip" onClick={() => { playSound("open"); setPickerOpen(true); }} aria-label="Choose weather location">
-        <span><strong>{weather?.place.name ?? place.name}</strong><small>{weather ? `${weatherLabel(weather.code)} · Open-Meteo` : "Finding the sky…"}</small></span>
-        <b>{loading && !weather ? "…" : `${Math.round(weather?.temperature ?? 0)}°`}</b><i>⌄</i>
+        <span><strong>{weather?.place.name ?? place.name}</strong><small>{weather ? `${weatherLabel(weather.code)} · Open-Meteo` : error && !loading ? "Forecast unavailable" : "Finding the sky…"}</small></span>
+        {/* Never invent a temperature: without a forecast the chip shows a dash. */}
+        <b>{weather ? `${Math.round(weather.temperature)}°` : loading ? "…" : "—°"}</b><i>⌄</i>
       </button>
       {error && <div className="weather-error weather-error-minimal" role="status">{error}</div>}
 

@@ -3,6 +3,8 @@ import type { CSSProperties } from "react";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { AppIcon } from "../../components/AppIcon";
+import { SiteFooter } from "../../components/SiteFooter";
+import { YouTubeFacade } from "../../components/YouTubeFacade";
 import { getProject, projects } from "../../projects";
 
 export function generateStaticParams() {
@@ -49,6 +51,11 @@ export default async function ProjectPage({ params }: { params: Promise<{ slug: 
     && !leadMediaIndexes.has(mediaIndex)
     && (project.hero.repeatInGallery || item.src !== project.hero.src)
   ));
+  const heroContain = project.hero.fit === "contain";
+  // Portrait app screenshots carry their own title text, which would fight the
+  // card's title; those projects lend their icon painting to the card instead.
+  const nextUsesArt = next.hero.fit === "contain";
+  const nextStill = nextUsesArt ? `/art/work-icons/optimized/${next.slug}.webp` : (next.hero.displaySrc ?? next.hero.src);
 
   const renderMediaGallery = (media: typeof project.media) => media.length > 0 && (
     <section className={`media-gallery ${media.some((item) => item.portrait) ? "portrait-gallery" : ""}`} aria-label={`${project.title} screenshots`}>
@@ -69,15 +76,15 @@ export default async function ProjectPage({ params }: { params: Promise<{ slug: 
                   {/* Raw screenshots keep their native aspect ratios and never render wider than their source pixels. */}
                   {/* eslint-disable-next-line @next/next/no-img-element */}
                   <img src={`${base}${item.displaySrc ?? item.src}`} alt={item.alt} width={item.width} height={item.height} loading={mediaIndex ? "lazy" : "eager"} decoding="async" />
-                  <span>FULL RESOLUTION ↗</span>
+                  <span>Full resolution ↗</span>
                 </a>
               )}
               {item.type === "video" && <video src={`${base}${item.src}`} aria-label={item.alt} controls muted loop playsInline preload="metadata" poster={item.poster ? `${base}${item.poster}` : undefined} />}
               {item.type === "youtube" && (
-                <iframe src={`https://www.youtube-nocookie.com/embed/${item.src}?rel=0`} title={item.alt} loading="lazy" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" allowFullScreen />
+                <YouTubeFacade id={item.src} title={item.alt} poster={item.poster ? `${base}${item.poster}` : undefined} label="Play video" />
               )}
             </div>
-            {item.caption && <figcaption><span>{String(mediaIndex + 1).padStart(2, "0")}</span>{item.caption}</figcaption>}
+            {item.caption && <figcaption>{item.caption}</figcaption>}
           </figure>
         );
       })}
@@ -88,41 +95,44 @@ export default async function ProjectPage({ params }: { params: Promise<{ slug: 
     <main className={`detail-page accent-${project.accent}`}>
       <a className="skip-link" href="#project-content">Skip to project content</a>
       <header className="detail-nav">
-        <Link className="back-button" href="/" aria-label="Back to all projects"><span>‹</span> Projects</Link>
-        <Link className="wordmark" href="/">TIAN XING <small>/ SELECTED WORK</small></Link>
+        <Link className="back-button" href="/" aria-label="Back to all projects"><span aria-hidden="true">‹</span> Projects</Link>
+        <Link className="wordmark" href="/">Tian Xing <small>Selected work</small></Link>
         <Link className="about-button" href="/about">About</Link>
       </header>
 
       <article id="project-content">
         <section className="project-hero">
           <div className="project-identity">
-            <div>
-              <p className="project-category">{project.category}</p>
-              <h1>{project.title}</h1>
-              <p className="project-tagline">{project.tagline}</p>
-            </div>
+            <p className="project-category">{project.category}</p>
+            <h1>{project.title}</h1>
+            <p className="project-tagline">{project.tagline}</p>
+            <a className="store-button" href={project.externalUrl} target="_blank" rel="noreferrer">
+              <AppIcon project={project} />
+              <span className="store-button-copy">
+                <strong>{project.externalLabel}</strong>
+              </span>
+              <span className="store-button-arrow" aria-hidden="true">↗</span>
+            </a>
           </div>
           <figure
-            className={`project-hero-visual ${project.hero.fit === "contain" ? "project-hero-contain" : ""}`}
-            style={{ "--hero-position": project.hero.position ?? "50% 50%" } as CSSProperties}
+            className={`project-hero-visual${heroContain ? " project-hero-contain" : ""}`}
+            style={{
+              "--hero-position": project.hero.position ?? "50% 50%",
+              "--hero-zoom": project.hero.zoom ?? 1,
+              ...(project.hero.aspect ? { "--hero-aspect": project.hero.aspect } : {}),
+            } as CSSProperties}
           >
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img src={`${base}${project.hero.displaySrc ?? project.hero.src}`} alt={project.hero.alt} width={project.hero.width} height={project.hero.height} fetchPriority="high" decoding="async" />
           </figure>
-          <a className="store-button" href={project.externalUrl} target="_blank" rel="noreferrer">
-            <AppIcon project={project} />
-            <span className="store-button-copy">
-              <strong>{project.externalLabel}</strong>
-            </span>
-            <span className="store-button-arrow" aria-hidden="true">↗</span>
-          </a>
         </section>
 
         <section className="project-overview">
-          <div className="project-meta">
-            <p><span>Year</span><strong>{project.year}</strong></p>
-            <p><span>Role</span><strong>{project.role}</strong></p>
-          </div>
+          <dl className="project-meta">
+            <div><dt>Year</dt><dd>{project.year}</dd></div>
+            <div><dt>Role</dt><dd>{project.role}</dd></div>
+            <div><dt>Field</dt><dd>{project.category}</dd></div>
+          </dl>
           <div className="project-copy">
             <p>{project.description}</p>
             <blockquote>{project.note}</blockquote>
@@ -132,21 +142,19 @@ export default async function ProjectPage({ params }: { params: Promise<{ slug: 
         {project.featuredFilm && (
           <section className="project-release" aria-labelledby={`release-${project.slug}`}>
             <div className="project-release-copy">
-              <p>FEATURED FILM</p>
-              <span>{project.featuredFilm.format}</span>
+              <p className="eyebrow">FEATURED FILM</p>
               <h2 id={`release-${project.slug}`}>{project.featuredFilm.title}</h2>
+              <span>{project.featuredFilm.format}</span>
               <p>{project.featuredFilm.description}</p>
               <a href={project.featuredFilm.url} target="_blank" rel="noreferrer">
                 Watch on YouTube <span aria-hidden="true">↗</span>
               </a>
             </div>
             <div className="project-release-film">
-              <iframe
-                src={`https://www.youtube-nocookie.com/embed/${project.featuredFilm.youtubeId}?rel=0`}
+              <YouTubeFacade
+                id={project.featuredFilm.youtubeId}
                 title={`${project.featuredFilm.title} — ${project.featuredFilm.format}`}
-                loading="lazy"
-                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
-                allowFullScreen
+                poster={project.featuredFilm.poster ? `${base}${project.featuredFilm.poster}` : undefined}
               />
             </div>
           </section>
@@ -156,16 +164,14 @@ export default async function ProjectPage({ params }: { params: Promise<{ slug: 
           <section className="model-section" aria-labelledby={`model-${project.slug}`}>
             <div className="model-heading">
               <div>
-                <p>{project.model.eyebrow}</p>
-                <span>{project.model.version}</span>
+                <p className="eyebrow">{project.model.eyebrow} <span>{project.model.version}</span></p>
                 <h2 id={`model-${project.slug}`}>{project.model.title}</h2>
               </div>
               <p>{project.model.description}</p>
             </div>
             <div className="model-principles">
-              {project.model.principles.map((principle, principleIndex) => (
+              {project.model.principles.map((principle) => (
                 <article key={principle.title}>
-                  <span>{String(principleIndex + 1).padStart(2, "0")}</span>
                   <h3>{principle.title}</h3>
                   <p>{principle.body}</p>
                 </article>
@@ -180,16 +186,16 @@ export default async function ProjectPage({ params }: { params: Promise<{ slug: 
           <section className="live-demo-section" aria-label={`${project.title} live demo`}>
             <div className="live-demo-heading">
               <div>
-                <p>LIVE DEMO</p>
+                <p className="eyebrow">LIVE DEMO</p>
                 <h2>{project.livePreview.label}</h2>
               </div>
               <p>{project.livePreview.note}</p>
             </div>
             <div className="live-demo-frame" style={{ "--demo-poster": `url(${base}${project.hero.displaySrc ?? project.hero.src})` } as CSSProperties}>
-              <div className="live-demo-bar" aria-hidden="true">
-                <span><i /><i /><i /></span>
+              <div className="live-demo-bar">
+                <span aria-hidden="true"><i /><i /><i /></span>
                 <b>{project.livePreview.url.replace(/^https?:\/\//, "").replace(/\/$/, "")}</b>
-                <a href={project.livePreview.url} target="_blank" rel="noreferrer" tabIndex={-1}>Open ↗</a>
+                <a href={project.livePreview.url} target="_blank" rel="noreferrer" aria-label={`Open ${project.title} in a new window`}>Open ↗</a>
               </div>
               <iframe
                 className="live-demo-embed"
@@ -201,18 +207,16 @@ export default async function ProjectPage({ params }: { params: Promise<{ slug: 
                 tabIndex={-1}
               />
             </div>
-            <a className="live-demo-fallback" href={project.livePreview.url} target="_blank" rel="noreferrer">Open the full project in a new window <span>↗</span></a>
           </section>
         )}
 
         {renderMediaGallery(galleryMedia)}
 
-        <section className="feature-section">
-          <div className="section-kicker"><span>What it does</span><i /></div>
+        <section className="feature-section" aria-labelledby={`features-${project.slug}`}>
+          <p className="eyebrow" id={`features-${project.slug}`}>What it does</p>
           <div className="feature-grid">
-            {project.features.map((feature, featureIndex) => (
+            {project.features.map((feature) => (
               <article key={feature.title}>
-                <span>{String(featureIndex + 1).padStart(2, "0")}</span>
                 <h2>{feature.title}</h2>
                 <p>{feature.body}</p>
               </article>
@@ -224,7 +228,7 @@ export default async function ProjectPage({ params }: { params: Promise<{ slug: 
           <section className="case-study-section" aria-labelledby={`case-study-${project.slug}`}>
             <header className="case-study-heading">
               <div>
-                <p>CASE STUDY</p>
+                <p className="eyebrow">CASE STUDY</p>
                 <h2 id={`case-study-${project.slug}`}>Behind the work</h2>
               </div>
               <p>{project.caseStudy.summary}</p>
@@ -254,8 +258,7 @@ export default async function ProjectPage({ params }: { params: Promise<{ slug: 
                 { number: "05", title: "What I built", items: project.caseStudy.built },
               ].map(({ number, title, items }) => (
                 <article key={title}>
-                  <span>{number}</span>
-                  <h3>{title}</h3>
+                  <h3><span>{number}</span>{title}</h3>
                   <ul>
                     {items.map((item) => <li key={item}>{item}</li>)}
                   </ul>
@@ -266,14 +269,18 @@ export default async function ProjectPage({ params }: { params: Promise<{ slug: 
         )}
       </article>
 
-      <footer className="next-project">
-        <p>Up next</p>
-        <Link href={`/projects/${next.slug}`}>
-          <AppIcon project={next} />
-          <span><small>{next.category}</small><strong>{next.title}</strong></span>
-          <b>→</b>
+      <nav className="next-project" aria-label="Next project">
+        <Link href={`/projects/${next.slug}`} className={nextUsesArt ? "is-art" : undefined} style={{ "--next-still": `url(${base}${nextStill})`, "--next-position": nextUsesArt ? "50% 50%" : (next.hero.position ?? "50% 50%") } as CSSProperties}>
+          <span className="next-project-label">Up next</span>
+          <span className="next-project-title">
+            <AppIcon project={next} />
+            <span><small>{next.category}</small><strong>{next.title}</strong></span>
+          </span>
+          <b aria-hidden="true">→</b>
         </Link>
-      </footer>
+      </nav>
+
+      <SiteFooter />
     </main>
   );
 }

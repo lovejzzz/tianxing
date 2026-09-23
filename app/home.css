@@ -1,0 +1,118 @@
+/* ------------------------------------------------------------------
+   Home: typography, light, and fit for the iPhone stage.
+   Loaded after globals.css; every rule here refines one it overrides.
+   ------------------------------------------------------------------ */
+
+/* The welcome line is a letter, so it is set like one. */
+.heart-note {
+  font-family: var(--serif);
+  font-size: clamp(40px, 4.3vw, 72px);
+  font-weight: 350;
+  line-height: 1.04;
+  letter-spacing: -0.022em;
+}
+.heart-line + .heart-line { color: #aab4c1; font-style: italic; }
+.heart-signature {
+  margin-top: 30px;
+  color: #79bde9;
+  font: 500 12px/1 var(--mono);
+  letter-spacing: 0.12em;
+  text-transform: none;
+}
+
+/* One cool light source above the phone, and the table it stands on.
+   The old magenta pool in the corner read as a smudge. */
+.ambient-two { display: none; }
+.home-shell .device-stage::before {
+  content: "";
+  position: absolute;
+  z-index: -2;
+  left: 50%;
+  bottom: -26px;
+  width: 118%;
+  height: 150px;
+  transform: translateX(-50%);
+  border-radius: 50%;
+  background: radial-gradient(ellipse at 50% 40%, rgba(96, 164, 222, 0.16), rgba(96, 164, 222, 0.05) 45%, transparent 70%);
+  filter: blur(8px);
+  pointer-events: none;
+}
+
+/* Fit the whole phone, Home button included, on short laptop screens. */
+@media (min-width: 561px) and (max-height: 820px) { .home-shell .device-stage, .about-stage { zoom: 0.95; } }
+@media (min-width: 561px) and (max-height: 780px) { .home-shell .device-stage, .about-stage { zoom: 0.9; } }
+@media (min-width: 561px) and (max-height: 740px) { .home-shell .device-stage, .about-stage { zoom: 0.85; } }
+@media (min-width: 561px) and (max-height: 700px) { .home-shell .device-stage, .about-stage { zoom: 0.8; } }
+@media (min-width: 561px) and (max-height: 660px) { .home-shell .device-stage, .about-stage { zoom: 0.75; } }
+@media (min-width: 561px) and (max-height: 620px) { .home-shell .device-stage, .about-stage { zoom: 0.7; } }
+
+/* Springboard: iOS 4 proportions — 57pt icons and 11pt labels on a 320pt
+   screen, scaled to this 388px glass. */
+@media (min-width: 561px) {
+  .system-page { gap: 22px 7px; }
+  .system-app { gap: 6px; }
+  .system-app-icon { width: 62px; height: 62px; flex-basis: 62px; border-radius: 14px; }
+  .desktop-dock .system-app-icon { width: 60px; height: 60px; flex-basis: 60px; }
+}
+.system-app > .system-app-label,
+.folder-screen .app-name,
+.app-name {
+  font-family: var(--ios);
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: -0.005em;
+  color: #fff;
+  text-shadow: 0 1px 1px rgba(0, 0, 0, 0.85), 0 0 4px rgba(0, 0, 0, 0.35);
+}
+
+/* The Fun folder opens onto linen, the way iOS 4 folders did: the projects
+   sit on a woven strip with a notch pointing back at the folder icon. */
+.folder-portal-body::after { background: linear-gradient(rgba(4, 10, 16, 0.28), rgba(4, 10, 16, 0.5)); }
+.folder-portal-body > .app-grid {
+  --linen: #474d54;
+  margin-top: 22px;
+  border-top: 1px solid rgba(0, 0, 0, 0.7);
+  border-bottom: 1px solid rgba(0, 0, 0, 0.7);
+  background-color: var(--linen);
+  background-image:
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='2' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 1 0 0 0 0 1 0 0 0 0 1 0 0 0 .09 0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E"),
+    repeating-linear-gradient(0deg, rgba(255, 255, 255, 0.035) 0 1px, transparent 1px 3px),
+    repeating-linear-gradient(90deg, rgba(0, 0, 0, 0.07) 0 1px, transparent 1px 3px);
+  box-shadow:
+    inset 0 12px 14px -8px rgba(0, 0, 0, 0.75),
+    inset 0 -12px 14px -8px rgba(0, 0, 0, 0.75),
+    0 1px rgba(255, 255, 255, 0.12),
+    0 -1px rgba(255, 255, 255, 0.08);
+}
+.folder-portal-body > .app-grid::before {
+  content: "";
+  position: absolute;
+  top: -12px;
+  right: calc(12.5% - 12px);
+  width: 24px;
+  height: 12px;
+  background: var(--linen);
+  clip-path: polygon(50% 0, 100% 100%, 0 100%);
+  filter: drop-shadow(0 -1px rgba(0, 0, 0, 0.7));
+}
+
+/* Glass: a soft highlight that drifts with the cursor. */
+.glass-glare {
+  position: absolute;
+  z-index: 35;
+  inset: 79px 16px 82px;
+  border-radius: 5px;
+  pointer-events: none;
+  opacity: 0;
+  background:
+    radial-gradient(circle at var(--glare-x, 30%) var(--glare-y, 20%), rgba(255, 255, 255, 0.11), transparent 42%),
+    linear-gradient(118deg, transparent 38%, rgba(255, 255, 255, 0.045) calc(var(--glare-x, 30%) * 0.4 + 30%), transparent 72%);
+  mix-blend-mode: screen;
+  transition: opacity 0.6s ease;
+}
+@media (hover: hover) and (pointer: fine) and (prefers-reduced-motion: no-preference) {
+  .device-stage:hover .glass-glare { opacity: 1; }
+}
+/* Never over the WebGL arrival, and never on the full-screen phone. */
+.phone-3d-ready:not(.phone-3d-complete) .glass-glare { display: none; }
+@media (max-width: 560px) { .glass-glare { display: none; } }

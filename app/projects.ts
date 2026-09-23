@@ -19,6 +19,10 @@ export type Project = {
     height: number;
     fit?: "cover" | "contain";
     position?: string;
+    /** Crop into the most telling part of a full-page screenshot. */
+    zoom?: number;
+    /** Frame shape for stills that are not 16:10, e.g. "2.39 / 1" for scope film. */
+    aspect?: string;
     repeatInGallery?: boolean;
   };
   leadMedia?: number[];
@@ -28,6 +32,7 @@ export type Project = {
     description: string;
     youtubeId: string;
     url: string;
+    poster?: string;
   };
   livePreview?: { url: string; label: string; note: string };
   caseStudy?: {
@@ -65,7 +70,7 @@ export const projects: Project[] = [
     tagline: "A course is a system. Build the whole thing.",
     description: "One course model. Ten connected deliverables. Course Mapper turns a syllabus into an editable system—then Scion checks the logic, evidence, and alignment.",
     note: "Built for instructors who need a course—not a wall of AI text.",
-    hero: { src: "/media/projects/edutool-live.png", alt: "EduTool course generator with the brief, course settings, and generation workflow visible", width: 1800, height: 1125, position: "50% 12%" },
+    hero: { src: "/media/projects/edutool-live.png", displaySrc: "/media/optimized/edutool-live.webp", alt: "EduTool course generator with the brief, course settings, and generation workflow visible", width: 1800, height: 1125, position: "50% 52%", zoom: 1.42 },
     livePreview: { url: "https://edutool.dev", label: "Build a course here", note: "Build, inspect, and edit a complete course in your browser." },
     caseStudy: {
       summary: "Generate broadly. Stay anchored to one brief.",
@@ -110,7 +115,7 @@ export const projects: Project[] = [
       { title: "Course-aware agent", body: "Inspect, explain, and revise the whole workspace in conversation." },
       { title: "Local-first Scion", body: "Private browser authoring with evidence-led compilation." },
     ],
-    media: [{ type: "image", src: "/media/projects/edutool-generation.png", alt: "EduTool generation workspace showing Scion, the quiz bank, quality report, and export status", caption: "Scion refining one connected course with evidence and review status in view.", width: 1275, height: 717 }],
+    media: [{ type: "image", src: "/media/projects/edutool-generation.png", displaySrc: "/media/optimized/edutool-generation.webp", alt: "EduTool generation workspace showing Scion, the quiz bank, quality report, and export status", caption: "Scion refining one connected course with evidence and review status in view.", width: 1275, height: 717 }],
   },
   {
     slug: "surge-method",
@@ -177,7 +182,7 @@ export const projects: Project[] = [
     tagline: "Learn the language of jazz with your hands.",
     description: "Build bebop lines by touch. Connect four-note pieces across a chord grid and hear every decision through a Rhodes-inspired instrument.",
     note: "6 chapters. 80 levels. Daily missions. Composer Mode. Printable board game.",
-    hero: { src: "/media/projects/bebop-live.png", alt: "Bebop Puzzle chord grid with melodic pieces ready to connect", width: 1800, height: 1125 },
+    hero: { src: "/media/projects/bebop-live.png", displaySrc: "/media/optimized/bebop-live.webp", alt: "Bebop Puzzle chord grid with melodic pieces ready to connect", width: 1800, height: 1125, position: "50% 40%", zoom: 1.5 },
     leadMedia: [0],
     livePreview: { url: "https://beboppuzzle.com", label: "Play Bebop Puzzle here", note: "Drag the pieces. Hear the line. Play the full campaign." },
     caseStudy: {
@@ -213,7 +218,7 @@ export const projects: Project[] = [
     ],
     media: [
       { type: "youtube", src: "uRz4HQILA_c", alt: "Bebop Puzzle project video", caption: "How Bebop Puzzle turns jazz into play." },
-      { type: "image", src: "/media/projects/bebop-live.png", alt: "Bebop Puzzle first level in play", caption: "Hear the line. Place the pieces. Make the changes connect.", width: 1800, height: 1125 },
+      { type: "image", src: "/media/projects/bebop-live.png", displaySrc: "/media/optimized/bebop-live.webp", alt: "Bebop Puzzle first level in play", caption: "Hear the line. Place the pieces. Make the changes connect.", width: 1800, height: 1125 },
     ],
   },
   {
@@ -229,14 +234,14 @@ export const projects: Project[] = [
     tagline: "A good resume should not fight you.",
     description: "Edit the resume—not a form. Write on the page, move the photo, tune the layout, check the fit, and export privately in your browser.",
     note: "Multiple resumes. Autosave. Offline. Letter or A4. PDF, PNG, or JPG.",
-    hero: { src: "/media/projects/quicky-live.png", alt: "Quicky Resume direct editing canvas and style controls", width: 1800, height: 1125, position: "50% 18%" },
+    hero: { src: "/media/projects/quicky-live.png", displaySrc: "/media/optimized/quicky-live.webp", alt: "Quicky Resume direct editing canvas and style controls", width: 1800, height: 1125, position: "30% 22%", zoom: 1.3 },
     livePreview: { url: "https://quickyresume.com", label: "Edit a resume here", note: "Write, style, review, and export on the page itself." },
     features: [
       { title: "Edit the page itself", body: "Words, sections, photos, type, and spacing—all in one canvas." },
       { title: "Private by default", body: "Resume data and job comparisons never leave the browser." },
       { title: "Ready for the final mile", body: "One-page checks, ATS preview, backups, and clean exports." },
     ],
-    media: [{ type: "image", src: "/media/projects/quicky-live.png", alt: "Quicky Resume style editor and resume preview", caption: "A real resume. Five layouts. Direct editing.", width: 1800, height: 1125 }],
+    media: [{ type: "image", src: "/media/projects/quicky-live.png", displaySrc: "/media/optimized/quicky-live.webp", alt: "Quicky Resume style editor and resume preview", caption: "A real resume. Five layouts. Direct editing.", width: 1800, height: 1125 }],
   },
   {
     slug: "5279-emulsion",
@@ -260,7 +265,7 @@ export const projects: Project[] = [
     ],
     media: [
       { type: "video", src: "/media/film/5279-motion.mp4", alt: "5279 V29 motion validation", caption: "V29 in motion. Projection view.", chrome: false },
-      { type: "image", src: "/media/projects/5279-live.png", alt: "5279 Emulsion Project live research site", caption: "V29 research and motion-validation baseline.", width: 1800, height: 1125, gallery: false },
+      { type: "image", src: "/media/projects/5279-live.png", displaySrc: "/media/optimized/5279-live.webp", alt: "5279 Emulsion Project live research site", caption: "V29 research and motion-validation baseline.", width: 1800, height: 1125, gallery: false },
       { type: "image", src: "/media/film/5279-projection-hi.jpg", displaySrc: "/media/optimized/5279-projection-hi.webp", alt: "5279 2383 projection result", caption: "2383 projection. 2560×1920 reference frame.", width: 2560, height: 1920, chrome: false },
       { type: "image", src: "/media/film/5279-scan-hi.jpg", displaySrc: "/media/optimized/5279-scan-hi.webp", alt: "5279 period scan result", caption: "Period 2K scan. 2560×1920 reference frame.", width: 2560, height: 1920, chrome: false },
     ],
@@ -278,13 +283,13 @@ export const projects: Project[] = [
     tagline: "Begin with what is already here.",
     description: "A short film about starting with what is already here: the place, the people, the feeling. Made at NYU through performance, rhythm, and practical production.",
     note: "Start before conditions are perfect.",
-    hero: { src: "/media/projects/start-where-you-are.jpg", alt: "Black-and-white still from Start Where You Are", width: 1280, height: 720, position: "50% 42%" },
+    hero: { src: "/media/projects/start-where-you-are-scope.jpg", displaySrc: "/media/optimized/start-where-you-are-scope.webp", alt: "Black-and-white still from Start Where You Are", width: 1280, height: 536, aspect: "2.39 / 1" },
     features: [
       { title: "Performance first", body: "Camera and edit serve presence—not spectacle." },
       { title: "Limits become language", body: "A small production turned constraint into style." },
       { title: "Finish the film", body: "Made, completed, released. The work starts there." },
     ],
-    media: [{ type: "youtube", src: "i0xL_qslx8A", alt: "Start Where You Are short film", caption: "Watch the complete film.", chrome: false }],
+    media: [{ type: "youtube", src: "i0xL_qslx8A", alt: "Start Where You Are short film", caption: "Watch the complete film.", chrome: false, poster: "/media/optimized/start-where-you-are-scope.webp" }],
   },
   {
     slug: "texas-jack",
@@ -324,14 +329,14 @@ export const projects: Project[] = [
     tagline: "A slot machine that deals you a tempo.",
     description: "Stop practicing at the same comfortable speed. Set a range, pull the lever, and Slotronome deals the tempo—then keeps time.",
     note: "Pixel cabinet. Brass trim. Reels. Motion. Machine sound. All HTML, CSS, and Web Audio.",
-    hero: { src: "/media/projects/slotronome-live.png", alt: "Slotronome pixel cabinet running at 86 BPM", width: 1800, height: 1125, position: "50% 40%" },
+    hero: { src: "/media/projects/slotronome-live.png", displaySrc: "/media/optimized/slotronome-live.webp", alt: "Slotronome pixel cabinet running at 86 BPM", width: 1800, height: 1125, position: "50% 22%", zoom: 1.22 },
     livePreview: { url: "https://lovejzzz.github.io/Slotronome/", label: "Pull the lever here", note: "Deal a tempo. Press start. Change the accents." },
     features: [
       { title: "Practice by chance", body: "Random or stepped tempos break the comfort-speed habit." },
       { title: "A real metronome", body: "Meters, accents, precise adjustment, bar counts, and keyboard control." },
       { title: "Tactile without images", body: "The cabinet is gradients, shadows, type, motion, and synthesized sound." },
     ],
-    media: [{ type: "image", src: "/media/projects/slotronome-live.png", alt: "Slotronome running at 86 BPM", caption: "86 BPM. First beat glowing.", width: 1800, height: 1125 }],
+    media: [{ type: "image", src: "/media/projects/slotronome-live.png", displaySrc: "/media/optimized/slotronome-live.webp", alt: "Slotronome running at 86 BPM", caption: "86 BPM. First beat glowing.", width: 1800, height: 1125 }],
   },
   {
     slug: "here-we-go-film-studio",
@@ -348,6 +353,7 @@ export const projects: Project[] = [
     note: "Every experiment should teach the next shot.",
     hero: {
       src: "/media/projects/here-we-go-sunset-hero.jpg",
+      displaySrc: "/media/optimized/here-we-go-sunset-hero.webp",
       alt: "For Rest: Sunset by Here We Go Film Studio",
       width: 2560,
       height: 1440,
@@ -359,6 +365,7 @@ export const projects: Project[] = [
       description: "Fifty seconds at the edge of day.",
       youtubeId: "XMCr7upIROA",
       url: "https://www.youtube.com/watch?v=XMCr7upIROA",
+      poster: "/media/optimized/here-we-go-sunset-hero.webp",
     },
     features: [
       { title: "Camera as research", body: "Test exposure, movement, texture, and material by shooting." },
@@ -368,6 +375,7 @@ export const projects: Project[] = [
     media: [{
       type: "image",
       src: "/media/projects/here-we-go-sunset-hero.jpg",
+      displaySrc: "/media/optimized/here-we-go-sunset-hero.webp",
       alt: "For Rest: Sunset by Here We Go Film Studio",
       caption: "For Rest: Sunset.",
       width: 2560,
@@ -375,6 +383,7 @@ export const projects: Project[] = [
     }, {
       type: "image",
       src: "/media/projects/channel-live.png",
+      displaySrc: "/media/optimized/channel-live.webp",
       alt: "Here We Go Film Studio YouTube channel showing the For Rest film series",
       caption: "The channel. A public film lab.",
       width: 1800,

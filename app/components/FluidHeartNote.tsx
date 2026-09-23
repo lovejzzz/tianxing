@@ -73,6 +73,8 @@ export function FluidHeartNote() {
         const rect = line.getBoundingClientRect();
         const style = getComputedStyle(line);
         source.font = `${style.fontStyle} ${style.fontWeight} ${style.fontSize} ${style.fontFamily}`;
+        // Match the DOM's tracking so the liquid copy lands on the set type.
+        if ("letterSpacing" in source) (source as CanvasRenderingContext2D & { letterSpacing: string }).letterSpacing = style.letterSpacing === "normal" ? "0px" : style.letterSpacing;
         source.textBaseline = "top";
         source.fillStyle = style.color;
         source.fillText(line.textContent ?? "", rect.left, rect.top - 1);

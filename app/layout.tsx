@@ -1,5 +1,8 @@
 import type { Metadata, Viewport } from "next";
 import "./globals.css";
+import "./home.css";
+import "./project.css";
+import "./about.css";
 
 const phoneIntroBootstrap = `
 try {
@@ -34,13 +37,13 @@ export const metadata: Metadata = {
     description:
       "Welcome to Tian Xing’s iPhone.",
     type: "website",
-    images: [{ url: "https://tian.fun/og.png", width: 1729, height: 910, alt: "Tian Xing’s iPhone" }],
+    images: [{ url: "https://tian.fun/og.jpg", width: 1729, height: 910, alt: "Tian Xing’s iPhone" }],
   },
   twitter: {
     card: "summary_large_image",
     title: "Tian Xing",
     description: "Welcome to Tian Xing’s iPhone.",
-    images: ["https://tian.fun/og.png"],
+    images: ["https://tian.fun/og.jpg"],
   },
   appleWebApp: {
     capable: true,
