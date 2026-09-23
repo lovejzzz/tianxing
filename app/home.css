@@ -65,37 +65,6 @@
   text-shadow: 0 1px 1px rgba(0, 0, 0, 0.85), 0 0 4px rgba(0, 0, 0, 0.35);
 }
 
-/* The Fun folder opens onto linen, the way iOS 4 folders did: the projects
-   sit on a woven strip with a notch pointing back at the folder icon. */
-.folder-portal-body::after { background: linear-gradient(rgba(4, 10, 16, 0.28), rgba(4, 10, 16, 0.5)); }
-.folder-portal-body > .app-grid {
-  --linen: #474d54;
-  margin-top: 22px;
-  border-top: 1px solid rgba(0, 0, 0, 0.7);
-  border-bottom: 1px solid rgba(0, 0, 0, 0.7);
-  background-color: var(--linen);
-  background-image:
-    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='2' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 1 0 0 0 0 1 0 0 0 0 1 0 0 0 .09 0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E"),
-    repeating-linear-gradient(0deg, rgba(255, 255, 255, 0.035) 0 1px, transparent 1px 3px),
-    repeating-linear-gradient(90deg, rgba(0, 0, 0, 0.07) 0 1px, transparent 1px 3px);
-  box-shadow:
-    inset 0 12px 14px -8px rgba(0, 0, 0, 0.75),
-    inset 0 -12px 14px -8px rgba(0, 0, 0, 0.75),
-    0 1px rgba(255, 255, 255, 0.12),
-    0 -1px rgba(255, 255, 255, 0.08);
-}
-.folder-portal-body > .app-grid::before {
-  content: "";
-  position: absolute;
-  top: -12px;
-  right: calc(12.5% - 12px);
-  width: 24px;
-  height: 12px;
-  background: var(--linen);
-  clip-path: polygon(50% 0, 100% 100%, 0 100%);
-  filter: drop-shadow(0 -1px rgba(0, 0, 0, 0.7));
-}
-
 /* Glass: a soft highlight that drifts with the cursor. */
 .glass-glare {
   position: absolute;
