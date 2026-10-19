@@ -110,7 +110,6 @@ export const projects: Project[] = [
       url: "https://youtu.be/nvdMP4tHG0I",
       poster: "/media/optimized/folio-map.webp",
     },
-    livePreview: { url: "https://folio.university", label: "Build a course here", note: "Describe your course, or open a sample course. No sign-up needed to start." },
     caseStudy: {
       summary: "Write the whole course. Show what was checked, and what is yours to check.",
       problem: "EduTool proved teachers want a whole course, not a wall of AI text. But its materials were written side by side, so one edit could leave the rest quietly out of date, and a single small model could only check so much.",

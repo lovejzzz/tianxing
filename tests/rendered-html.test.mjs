@@ -117,6 +117,8 @@ test("presents Folio with its film and EduTool as the first generation", async (
   assert.match(html, /What I built/);
   assert.match(html, /Live at folio\.university/);
   assert.match(html, /THE FIRST GENERATION/);
+  // folio.university sends frame-ancestors 'none', so an embed would only show an error.
+  assert.doesNotMatch(html, /live-demo-embed/);
   assert.match(html, /EduTool\.dev/);
   assert.match(html, /https:\/\/edutool\.dev/);
   assert.match(html, /edutool-generation\.webp/);
