@@ -140,6 +140,10 @@
 /* A soft pane of glass over the still: one highlight along the top edge. */
 .project-hero-visual::after { content: ""; position: absolute; inset: 0; pointer-events: none; border-radius: inherit; background: linear-gradient(168deg, rgba(255, 255, 255, 0.09), transparent 32%); box-shadow: inset 0 1px rgba(255, 255, 255, 0.18); }
 .project-hero-visual img { width: 100%; height: 100%; display: block; object-fit: cover; object-position: var(--hero-position); transform: scale(var(--hero-zoom, 1)); transform-origin: var(--hero-position); }
+.project-hero-link { display: block; width: 100%; height: 100%; overflow: hidden; border-radius: inherit; cursor: pointer; }
+.project-hero-link img { transition: filter 0.4s var(--ease, ease); }
+.project-hero-link:hover img { filter: brightness(1.04); }
+.project-hero-link:focus-visible { outline: 2px solid var(--accent); outline-offset: 4px; }
 
 .project-hero-contain { width: auto; height: clamp(420px, 40vw, 580px); aspect-ratio: 9 / 19.5; justify-self: center; padding: 7px; border: 1px solid #75808c; border-radius: 48px; background: linear-gradient(145deg, #77838e, #2b3037 18%, #07090c 38%, #343b43 82%, #9aa4ad); box-shadow: inset 0 0 0 2px #11151a, inset 0 0 0 5px #030405, 0 40px 80px rgba(0, 0, 0, 0.6), 0 0 40px color-mix(in srgb, var(--accent) 12%, transparent); }
 .project-hero-contain::before { content: ""; position: absolute; z-index: 4; left: 50%; top: 17px; width: 30%; height: 17px; border-radius: 99px; background: #010204; transform: translateX(-50%); }

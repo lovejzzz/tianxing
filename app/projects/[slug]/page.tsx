@@ -137,8 +137,15 @@ export default async function ProjectPage({ params }: { params: Promise<{ slug: 
               ...(project.hero.aspect ? { "--hero-aspect": project.hero.aspect } : {}),
             } as CSSProperties}
           >
-            {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img src={`${base}${project.hero.displaySrc ?? project.hero.src}`} alt={project.hero.alt} width={project.hero.width} height={project.hero.height} fetchPriority="high" decoding="async" />
+            {project.hero.href ? (
+              <a className="project-hero-link" href={project.hero.href} target="_blank" rel="noreferrer" aria-label={`${project.externalLabel}: ${project.hero.alt}`}>
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img src={`${base}${project.hero.displaySrc ?? project.hero.src}`} alt={project.hero.alt} width={project.hero.width} height={project.hero.height} fetchPriority="high" decoding="async" />
+              </a>
+            ) : (
+              /* eslint-disable-next-line @next/next/no-img-element */
+              <img src={`${base}${project.hero.displaySrc ?? project.hero.src}`} alt={project.hero.alt} width={project.hero.width} height={project.hero.height} fetchPriority="high" decoding="async" />
+            )}
           </figure>
         </section>
 

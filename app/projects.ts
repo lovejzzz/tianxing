@@ -28,6 +28,8 @@ export type Project = {
     /** Frame shape for stills that are not 16:10, e.g. "2.39 / 1" for scope film. */
     aspect?: string;
     repeatInGallery?: boolean;
+    /** Where a click on the hero goes, e.g. the live product it shows. */
+    href?: string;
   };
   leadMedia?: number[];
   featuredFilm?: {
@@ -101,7 +103,7 @@ export const projects: Project[] = [
     tagline: "Describe a course. Folio writes all of it.",
     description: "Say what you teach, in a line. Folio asks only what the line left out, outlines the course for you to change, then writes every material for every lesson, checked before it reaches you.",
     note: "Your course, bound together. No sign-up needed to start.",
-    hero: { src: "/media/projects/folio-home.png", displaySrc: "/media/optimized/folio-home.webp", alt: "Folio homepage asking “What do you want to teach?” with a four-lesson statistics brief typed in", width: 1440, height: 900, position: "50% 34%", zoom: 1.7 },
+    hero: { src: "/media/projects/folio-home.png", displaySrc: "/media/optimized/folio-home.webp", alt: "Folio homepage asking “What do you want to teach?” with a four-lesson statistics brief typed in", width: 1440, height: 900, position: "50% 34%", zoom: 1.7, href: "https://folio.university" },
     featuredFilm: {
       title: "Folio",
       format: "Product film · 1:56 · 4K",
@@ -157,10 +159,10 @@ export const projects: Project[] = [
       { title: "Ask for a change in words", body: "⌘K edits the whole course and shows what it will write, and what that costs, first." },
     ],
     media: [
-      { type: "image", src: "/media/projects/folio-map.png", displaySrc: "/media/optimized/folio-map.webp", alt: "Folio course map: four lessons as rows, materials as colour-tabbed columns", caption: "The map: every lesson against every material.", width: 1440, height: 900 },
-      { type: "image", src: "/media/projects/folio-lesson.png", displaySrc: "/media/optimized/folio-lesson.webp", alt: "A Folio lesson plan with key ideas and a timed warm-up, teach, and practice sequence with teacher notes", caption: "One lesson, in teaching order, planned to the minute.", width: 1440, height: 900 },
-      { type: "image", src: "/media/projects/folio-slides.png", displaySrc: "/media/optimized/folio-slides.webp", alt: "Folio slide deck with a filmstrip of slides, a title slide on stage, and speaker notes", caption: "Slides: filmstrip, stage, and speaker notes kept to the teacher copy.", width: 1440, height: 900 },
-      { type: "image", src: "/media/projects/folio-quiz-dark.png", displaySrc: "/media/optimized/folio-quiz-dark.webp", alt: "Folio quiz bank in dark mode with a multiple-choice question and its teacher-only explanation", caption: "The quiz bank, dark. Student copies never carry answers.", width: 1440, height: 900 },
+      { type: "image", src: "/media/projects/folio-map.png", displaySrc: "/media/optimized/folio-map.webp", alt: "Folio course map: four lessons as rows, materials as colour-tabbed columns", caption: "The map: every lesson against every material.", width: 1440, height: 900, href: "https://folio.university", linkLabel: "Open Folio" },
+      { type: "image", src: "/media/projects/folio-lesson.png", displaySrc: "/media/optimized/folio-lesson.webp", alt: "A Folio lesson plan with key ideas and a timed warm-up, teach, and practice sequence with teacher notes", caption: "One lesson, in teaching order, planned to the minute.", width: 1440, height: 900, href: "https://folio.university", linkLabel: "Open Folio" },
+      { type: "image", src: "/media/projects/folio-slides.png", displaySrc: "/media/optimized/folio-slides.webp", alt: "Folio slide deck with a filmstrip of slides, a title slide on stage, and speaker notes", caption: "Slides: filmstrip, stage, and speaker notes kept to the teacher copy.", width: 1440, height: 900, href: "https://folio.university", linkLabel: "Open Folio" },
+      { type: "image", src: "/media/projects/folio-quiz-dark.png", displaySrc: "/media/optimized/folio-quiz-dark.webp", alt: "Folio quiz bank in dark mode with a multiple-choice question and its teacher-only explanation", caption: "The quiz bank, dark. Student copies never carry answers.", width: 1440, height: 900, href: "https://folio.university", linkLabel: "Open Folio" },
     ],
     predecessor: {
       eyebrow: "THE FIRST GENERATION",
