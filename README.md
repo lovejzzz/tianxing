@@ -6,13 +6,15 @@ A personal portfolio for nine projects across software, games, cinema, music too
 
 - Folio (successor to EduTool.dev)
 - Surge Method
+- Here We Go Film Studio
+- Otto Was Right (available October 29)
 - Bebop Puzzle
-- Quicky Resume
 - 5279 Emulsion Project
 - Start Where You Are
 - Texas Jack
 - Slotronome
-- Here We Go Film Studio
+
+Quicky Resume is hidden (`hidden: true` in `app/projects.ts`): its page still renders, but it is off the iPhone, the "Up next" chain and the sitemap.
 
 ## Development
 

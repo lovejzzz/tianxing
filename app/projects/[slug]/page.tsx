@@ -5,7 +5,7 @@ import { notFound } from "next/navigation";
 import { AppIcon } from "../../components/AppIcon";
 import { SiteFooter } from "../../components/SiteFooter";
 import { YouTubeFacade } from "../../components/YouTubeFacade";
-import { getProject, projects } from "../../projects";
+import { getProject, projects, shownProjects } from "../../projects";
 
 export function generateStaticParams() {
   return projects.map(({ slug }) => ({ slug }));
@@ -41,8 +41,9 @@ export default async function ProjectPage({ params }: { params: Promise<{ slug: 
   const { slug } = await params;
   const project = getProject(slug);
   if (!project) notFound();
+  // A hidden project still points onward to the one after it.
   const index = projects.findIndex((item) => item.slug === project.slug);
-  const next = projects[(index + 1) % projects.length];
+  const next = projects.slice(index + 1).concat(projects.slice(0, index)).find((item) => !item.hidden) ?? shownProjects[0];
   const base = process.env.NEXT_PUBLIC_BASE_PATH ?? "";
   const leadMediaIndexes = new Set(project.leadMedia ?? []);
   const leadMedia = project.media.filter((_, mediaIndex) => leadMediaIndexes.has(mediaIndex));
@@ -105,6 +106,12 @@ export default async function ProjectPage({ params }: { params: Promise<{ slug: 
           <div className="project-identity">
             <p className="project-category">{project.category}</p>
             <h1>{project.title}</h1>
+            {project.badge && (
+              <p className="release-chip is-upcoming">
+                <i aria-hidden="true" />
+                <span>{`${project.badge.label} ${project.badge.value}`}</span>
+              </p>
+            )}
             {project.currentRelease && (
               <a className="release-chip" href={project.versions ? `#versions-${project.slug}` : project.externalUrl}>
                 <b>{project.currentRelease.version}</b>
@@ -146,9 +153,9 @@ export default async function ProjectPage({ params }: { params: Promise<{ slug: 
         </section>
 
         {project.featuredFilm && (
-          <section className="project-release" aria-labelledby={`release-${project.slug}`}>
+          <section className={`project-release${project.featuredFilm.portrait ? " project-release-portrait" : ""}`} aria-labelledby={`release-${project.slug}`}>
             <div className="project-release-copy">
-              <p className="eyebrow">FEATURED FILM</p>
+              <p className="eyebrow">{project.featuredFilm.portrait ? "APP PREVIEW" : "FEATURED FILM"}</p>
               <h2 id={`release-${project.slug}`}>{project.featuredFilm.title}</h2>
               <span>{project.featuredFilm.format}</span>
               <p>{project.featuredFilm.description}</p>

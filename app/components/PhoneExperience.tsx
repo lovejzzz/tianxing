@@ -5,7 +5,7 @@
 import Link from "next/link";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import type { CSSProperties, FocusEvent as ReactFocusEvent, FormEvent, KeyboardEvent as ReactKeyboardEvent, MouseEvent as ReactMouseEvent, PointerEvent as ReactPointerEvent } from "react";
-import { projects } from "../projects";
+import { shownProjects as projects } from "../projects";
 import { portfolioPhotos } from "../photoManifest";
 import { playSound, toggleRinger, useRinger } from "../sound";
 import { AppIcon } from "./AppIcon";
@@ -600,6 +600,11 @@ function FolderView({ onGoHome }: { onGoHome: () => void }) {
                 style={{ "--delay": `${index * 24}ms` } as CSSProperties}
               >
                 <AppIcon project={project} />
+                {project.badge && (
+                  <span className="release-badge" aria-label={`${project.badge.label} ${project.badge.value}`}>
+                    <small>{project.badge.label}</small><b>{project.badge.value}</b>
+                  </span>
+                )}
                 <span className="app-name">{project.shortTitle}</span>
               </Link>
             ))}

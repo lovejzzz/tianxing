@@ -6,6 +6,10 @@ export type Project = {
   year: string;
   role: string;
   accent: string;
+  /** Kept off the iPhone, the "Up next" chain and the sitemap; the page still renders. */
+  hidden?: boolean;
+  /** A notice on the app icon and in the hero, e.g. a release date. */
+  badge?: { label: string; value: string };
   externalUrl: string;
   externalLabel: string;
   tagline: string;
@@ -32,6 +36,8 @@ export type Project = {
     description: string;
     /** Either a YouTube film or a self-hosted file in /public. */
     youtubeId?: string;
+    /** A vertical film, shown in a phone frame. */
+    portrait?: boolean;
     src?: string;
     url: string;
     linkLabel?: string;
@@ -312,6 +318,87 @@ export const projects: Project[] = [
     }],
   },
   {
+    slug: "otto-was-right",
+    title: "Otto Was Right",
+    shortTitle: "Otto",
+    category: "iOS · Puzzle Game",
+    year: "2026",
+    role: "Game design, story, art & engineering",
+    accent: "aqua",
+    badge: { label: "Available In", value: "10/29!" },
+    externalUrl: "https://apps.apple.com/app/id6819539423",
+    externalLabel: "Coming to the App Store",
+    tagline: "He can’t turn left. Lay the road.",
+    description: "Unit 0770 cannot turn left any more. He is due to be scrapped at eight in the morning, and he cannot get to the desk by himself. So they have given him to you. Lay the road in front of him, one square at a time.",
+    note: "Free. No ads. No purchases. No account. English and 简体中文.",
+    hero: { src: "/media/otto/otto-fork.jpg", displaySrc: "/media/optimized/otto-fork.webp", alt: "A screenprint of Otto, a small round robot, at a fork: the left road orange and fading, the right road black, his shadow leaning right", width: 2560, height: 1440, position: "50% 30%" },
+    featuredFilm: {
+      title: "One night in Bo City",
+      format: "App preview · 0:28 · Vertical",
+      description: "A terminal line from dispatch, seventy-two orders, and a robot who only goes straight or right. Straight from the game, with no captions added.",
+      src: "/media/otto/otto-preview.mp4",
+      portrait: true,
+      url: "https://apps.apple.com/app/id6819539423",
+      linkLabel: "App Store page",
+      poster: "/media/optimized/otto-preview-poster.webp",
+    },
+    model: {
+      mark: "0770",
+      eyebrow: "THE ONE RULE",
+      title: "Straight, right, never left",
+      version: "UNIT 0770",
+      description: "That is all Otto knows. It is also all you need to send him anywhere in the city.",
+      principles: [
+        { title: "Straight if he can", body: "Where there is road ahead, he takes it. He never stops to think about it." },
+        { title: "Right if he cannot", body: "No road ahead, he turns right. He will circle a block to get where he is going." },
+        { title: "Never left", body: "His left steering failed. A road that asks him to turn left is a road he cannot take." },
+        { title: "You lay the road", body: "Tap to lay a tile or knock out a loose plank, then send him. Fewest tiles and fewest steps are not always the same plan." },
+      ],
+    },
+    caseStudy: {
+      summary: "A puzzle with one rule, and a story that hides inside it.",
+      problem: "Most path puzzles let you steer. Otto Was Right takes the steering away: the only thing you control is the road, and the robot obeys one rule you can read in a second. Seventy-two roads had to stay surprising under that rule without ever becoming a maze of guesswork.",
+      exactRole: "Game rules, level search, story and script, art direction, Unity engineering, Blender asset pipeline, sound, store materials, and release.",
+      collaboration: "Independent. Designed, built, and shipped solo.",
+      decisions: [
+        "One rule for the robot, so every puzzle is about the road, not the controls.",
+        "Every road was found by an offline search and proven by an exhaustive solver.",
+        "Three ticks per delivery: delivered, fewest tiles, fewest steps. The last two pull apart.",
+        "The story is told in the margins: order notes, a dispatcher’s lines, and a fork at the end.",
+      ],
+      constraints: [
+        "Roads a player could read at a glance were remade: 25 of them in one late pass.",
+        "The story stills, shell posters and music were made with AI tools from my prompts and direction.",
+        "Offline by design: no account, no ads, no data collected.",
+      ],
+      results: [
+        "Submitted to the App Store on October 19, 2026. Available October 29.",
+        "Twelve districts, seventy-two roads, two endings, and a weekly map on Game Center.",
+        "Forty-odd shells to earn by playing. Nothing to buy.",
+      ],
+      built: [
+        "The road rules, autopilot, level search and solver in pure C#.",
+        "Bo City in Unity 6: twelve districts built through a Blender pipeline, in the rain.",
+        "The film-titles interface, the sound set, the trailer, and every store asset.",
+      ],
+    },
+    features: [
+      { title: "Things that change", body: "Glass that breaks behind him. Belts that carry him, and buttons that turn them. Streets with no lamps, where you see only what his light has touched." },
+      { title: "A night in Bo City", body: "Twelve districts from eight in the evening to eight in the morning, in the rain. After the eleventh, the road forks." },
+      { title: "After the night", body: "A new map for everyone every Monday, a tower of roads against the clock, and shells for Otto, each with the poster of a film he never made." },
+    ],
+    media: [
+      { type: "image", src: "/media/otto/otto-title.png", displaySrc: "/media/optimized/otto-title.webp", alt: "Otto Was Right title screen: Otto on a small cross of tiles above the words OTTO was right and BEGIN THE NIGHT", caption: "Begin the night.", portrait: true, width: 1290, height: 2796 },
+      { type: "image", src: "/media/otto/otto-rooftops.png", displaySrc: "/media/optimized/otto-rooftops.webp", alt: "A road on the rooftops at 5:30 AM, with a coin beside Otto and tiles still to lay", caption: "Rooftops, 5:30 AM. A coin, a few steps out of the way.", portrait: true, width: 1290, height: 2796 },
+      { type: "image", src: "/media/otto/otto-delivery-note.png", displaySrc: "/media/optimized/otto-delivery-note.webp", alt: "A delivery note for order 0051, a knife, with three ticks: delivered, fewest tiles, fewest steps", caption: "Three ticks on every note.", portrait: true, width: 1290, height: 2796 },
+      { type: "image", src: "/media/otto/otto-dark-district.png", displaySrc: "/media/optimized/otto-dark-district.webp", alt: "A dark district where only the tiles Otto’s light has touched are visible", caption: "No lamps. Only what his light has touched.", portrait: true, width: 1290, height: 2796 },
+      { type: "image", src: "/media/otto/otto-shrine-hill.png", displaySrc: "/media/optimized/otto-shrine-hill.webp", alt: "Shrine Hill at 3:10 AM, with belts, buttons and glass on the road", caption: "Shrine Hill. Belts, and the buttons that turn them.", portrait: true, width: 1290, height: 2796 },
+      { type: "image", src: "/media/otto/otto-storm.png", displaySrc: "/media/optimized/otto-storm.webp", alt: "A road over the river at 6:50 AM in a storm", caption: "A storm on the river, near morning.", portrait: true, width: 1290, height: 2796 },
+      { type: "image", src: "/media/otto/otto-this-week.png", displaySrc: "/media/optimized/otto-this-week.webp", alt: "This Week: a large blueprint map with ways found and coins brought home", caption: "This week: one map for everyone.", portrait: true, width: 1290, height: 2796 },
+      { type: "image", src: "/media/otto/otto-shells.png", displaySrc: "/media/optimized/otto-shells.webp", alt: "The Tea House shell: a woodblock-style poster above Otto in a new livery", caption: "Shells, each with a film poster.", portrait: true, width: 1290, height: 2796 },
+    ],
+  },
+  {
     slug: "bebop-puzzle",
     title: "Bebop Puzzle",
     shortTitle: "Bebop",
@@ -371,6 +458,7 @@ export const projects: Project[] = [
     year: "2026",
     role: "Product, design & engineering",
     accent: "mint",
+    hidden: true,
     externalUrl: "https://quickyresume.com",
     externalLabel: "Make a resume",
     tagline: "A good resume should not fight you.",
@@ -481,6 +569,9 @@ export const projects: Project[] = [
     media: [{ type: "image", src: "/media/projects/slotronome-live.png", displaySrc: "/media/optimized/slotronome-live.webp", alt: "Slotronome running at 86 BPM", caption: "86 BPM. First beat glowing.", width: 1800, height: 1125 }],
   },
 ];
+
+/** What the iPhone, "Up next" and the sitemap show. */
+export const shownProjects = projects.filter((project) => !project.hidden);
 
 export function getProject(slug: string) {
   return projects.find((project) => project.slug === slug);

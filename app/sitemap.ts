@@ -1,5 +1,5 @@
 import type { MetadataRoute } from "next";
-import { projects } from "./projects";
+import { shownProjects } from "./projects";
 
 const origin = "https://tian.fun";
 
@@ -9,7 +9,7 @@ export default function sitemap(): MetadataRoute.Sitemap {
   return [
     { url: `${origin}/`, changeFrequency: "weekly", priority: 1 },
     { url: `${origin}/about/`, changeFrequency: "monthly", priority: 0.7 },
-    ...projects.map((project) => ({
+    ...shownProjects.map((project) => ({
       url: `${origin}/projects/${project.slug}/`,
       changeFrequency: "monthly" as const,
       priority: 0.8,

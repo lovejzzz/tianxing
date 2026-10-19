@@ -22,7 +22,9 @@ test("renders the finished portfolio home", async () => {
   assert.match(html, /water-drops\.webp/);
   assert.match(html, /work-icons\/thumbs\/folio\.webp/);
   const iconOrder = [...html.matchAll(/work-icons\/thumbs\/([a-z0-9-]+)\.webp/g)].map((match) => match[1]);
-  assert.deepEqual([...new Set(iconOrder)].slice(0, 3), ["folio", "surge-method", "here-we-go-film-studio"], "Here We Go sits third on the home screen");
+  assert.deepEqual([...new Set(iconOrder)].slice(0, 4), ["folio", "surge-method", "here-we-go-film-studio", "otto-was-right"], "Here We Go sits third and Otto fourth on the home screen");
+  assert.doesNotMatch(html, /work-icons\/thumbs\/quicky-resume\.webp|href="\/projects\/quicky-resume"/, "Quicky is hidden from the iPhone");
+  assert.match(html, /class="release-badge" aria-label="Available In 10\/29!"/);
   assert.match(html, /Welcome to my heart\.<\/span><span[^>]*>Have fun\./);
   assert.match(html, /— Tian Xing/);
   const introGuard = html.indexOf("html.phone-intro-pending{background:#020305!important}");
@@ -161,6 +163,29 @@ test("reserves flagship case-study evidence for the three lead projects", async 
   const nonFlagship = await render("/projects/quicky-resume");
   assert.equal(nonFlagship.status, 200);
   assert.doesNotMatch(await nonFlagship.text(), /CASE STUDY/);
+});
+
+test("presents Otto Was Right with its release date and vertical preview", async () => {
+  const response = await render("/projects/otto-was-right");
+  assert.equal(response.status, 200);
+  const html = await response.text();
+  assert.match(html, /He can’t turn left\. Lay the road\./);
+  assert.match(html, /class="release-chip is-upcoming"[\s\S]{0,120}Available In 10\/29!/);
+  assert.match(html, /Coming to the App Store/);
+  assert.match(html, /class="project-release project-release-portrait"/);
+  assert.match(html, /<video src="\/media\/otto\/otto-preview\.mp4"/);
+  assert.match(html, /Straight, right, never left/);
+  assert.match(html, /otto-delivery-note\.png/);
+  assert.match(html, /Available October 29/);
+});
+
+test("keeps hidden projects reachable but out of the sitemap and the Up next chain", async () => {
+  const sitemap = await (await render("/sitemap.xml")).text();
+  assert.match(sitemap, /projects\/otto-was-right\//);
+  assert.doesNotMatch(sitemap, /quicky-resume/);
+  const bebop = await (await render("/projects/bebop-puzzle")).text();
+  assert.doesNotMatch(bebop, /class="next-project"[\s\S]*href="\/projects\/quicky-resume"/);
+  assert.match(bebop, /class="next-project"[\s\S]{0,200}href="\/projects\/5279-emulsion"/);
 });
 
 test("features Sunset on the Here We Go Film Studio page", async () => {
