@@ -321,7 +321,7 @@ body:has(.home-shell){overflow:hidden}
 .app-icon-large > span:not(.icon-gloss) { transform:scale(1.77); transform-origin:0 0; }
 
 /* iOS 4-era icon art: tiny tangible objects under one glass highlight. */
-.icon-folio{background:linear-gradient(145deg,#2c8079,#145149 58%,#082d2a)}
+.icon-folio{background:linear-gradient(145deg,#3a4fa8,#232f78 58%,#10163d)}
 .course-art{position:absolute;left:8px;right:8px;top:10px;bottom:9px;border:4px solid #9b6132;border-radius:3px;background:linear-gradient(#153f39,#092d2a);box-shadow:inset 0 0 0 1px #d39554,inset 0 0 14px #071c1b,0 3px 4px #051c19;transform:perspective(80px) rotateX(-3deg)}
 .course-art::before{content:"";position:absolute;left:8px;top:12px;width:24px;height:15px;border-top:2px solid rgba(232,236,197,.72);border-bottom:2px solid rgba(232,236,197,.55);transform:rotate(-3deg)}
 .course-art i{position:absolute;width:18px;height:13px;border-radius:1px;background:linear-gradient(145deg,#fff9d7,#d8c991);border:1px solid #7b6336;box-shadow:0 2px 2px rgba(0,0,0,.5)}
