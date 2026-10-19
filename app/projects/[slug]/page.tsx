@@ -72,11 +72,11 @@ export default async function ProjectPage({ params }: { params: Promise<{ slug: 
                 <div className="media-chrome" aria-hidden="true"><i /><i /><i /><span>{project.title}</span></div>
               )}
               {item.type === "image" && (
-                <a className="media-image-link" href={`${base}${item.src}`} target="_blank" rel="noreferrer" aria-label={`View full resolution: ${item.alt}`}>
+                <a className="media-image-link" href={item.href ?? `${base}${item.src}`} target="_blank" rel="noreferrer" aria-label={item.href ? `${item.linkLabel ?? "Open"}: ${item.alt}` : `View full resolution: ${item.alt}`}>
                   {/* Raw screenshots keep their native aspect ratios and never render wider than their source pixels. */}
                   {/* eslint-disable-next-line @next/next/no-img-element */}
                   <img src={`${base}${item.displaySrc ?? item.src}`} alt={item.alt} width={item.width} height={item.height} loading={mediaIndex ? "lazy" : "eager"} decoding="async" />
-                  <span>Full resolution ↗</span>
+                  <span>{`${item.href ? (item.linkLabel ?? "Open") : "Full resolution"} ↗`}</span>
                 </a>
               )}
               {item.type === "video" && <video src={`${base}${item.src}`} aria-label={item.alt} controls muted loop playsInline preload="metadata" poster={item.poster ? `${base}${item.poster}` : undefined} />}

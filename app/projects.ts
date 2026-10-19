@@ -78,7 +78,7 @@ export type Project = {
     principles: { title: string; body: string }[];
   };
   features: { title: string; body: string }[];
-  media: { type: "image" | "video" | "youtube"; src: string; displaySrc?: string; alt: string; caption?: string; portrait?: boolean; width?: number; height?: number; chrome?: boolean; poster?: string; gallery?: boolean }[];
+  media: { type: "image" | "video" | "youtube"; src: string; displaySrc?: string; alt: string; caption?: string; portrait?: boolean; width?: number; height?: number; chrome?: boolean; poster?: string; gallery?: boolean; /** Where a click goes instead of the full-resolution file, e.g. the page the screenshot shows. */ href?: string; linkLabel?: string }[];
 };
 
 export const projects: Project[] = [
@@ -257,6 +257,61 @@ export const projects: Project[] = [
     ],
   },
   {
+    slug: "here-we-go-film-studio",
+    title: "Here We Go Film Studio",
+    shortTitle: "Here We Go",
+    category: "YouTube · Film Experiments",
+    year: "Ongoing",
+    role: "Direction, camera, edit & experiments",
+    accent: "pink",
+    externalUrl: "https://www.youtube.com/@HereWeGoFilmStudio",
+    externalLabel: "Visit the channel",
+    tagline: "The lab notebook is a movie channel.",
+    description: "A public lab for filmmaking experiments. Lenses, light, motion, texture, edits, and unfinished questions leave the hard drive and become studies.",
+    note: "Every experiment should teach the next shot.",
+    hero: {
+      src: "/media/projects/here-we-go-sunset-hero.jpg",
+      displaySrc: "/media/optimized/here-we-go-sunset-hero.webp",
+      alt: "For Rest: Sunset by Here We Go Film Studio",
+      width: 2560,
+      height: 1440,
+      position: "50% 50%",
+    },
+    featuredFilm: {
+      title: "Sunset",
+      format: "For Rest · Short film",
+      description: "Fifty seconds at the edge of day.",
+      youtubeId: "XMCr7upIROA",
+      url: "https://www.youtube.com/watch?v=XMCr7upIROA",
+      poster: "/media/optimized/here-we-go-sunset-hero.webp",
+    },
+    features: [
+      { title: "Camera as research", body: "Test exposure, movement, texture, and material by shooting." },
+      { title: "Keep the process visible", body: "Questions and imperfections stay in the work." },
+      { title: "Practice in public", body: "Technical curiosity becomes finished images and films." },
+    ],
+    media: [{
+      type: "image",
+      src: "/media/projects/here-we-go-sunset-hero.jpg",
+      displaySrc: "/media/optimized/here-we-go-sunset-hero.webp",
+      alt: "For Rest: Sunset by Here We Go Film Studio",
+      caption: "For Rest: Sunset.",
+      width: 2560,
+      height: 1440,
+    }, {
+      type: "image",
+      src: "/media/projects/channel-live.png",
+      displaySrc: "/media/optimized/channel-live.webp",
+      alt: "Here We Go Film Studio YouTube channel showing the For Rest film series",
+      caption: "The channel. A public film lab.",
+      width: 1800,
+      height: 1125,
+      chrome: false,
+      href: "https://www.youtube.com/@HereWeGoFilmStudio",
+      linkLabel: "Open the channel",
+    }],
+  },
+  {
     slug: "bebop-puzzle",
     title: "Bebop Puzzle",
     shortTitle: "Bebop",
@@ -424,59 +479,6 @@ export const projects: Project[] = [
       { title: "Tactile without images", body: "The cabinet is gradients, shadows, type, motion, and synthesized sound." },
     ],
     media: [{ type: "image", src: "/media/projects/slotronome-live.png", displaySrc: "/media/optimized/slotronome-live.webp", alt: "Slotronome running at 86 BPM", caption: "86 BPM. First beat glowing.", width: 1800, height: 1125 }],
-  },
-  {
-    slug: "here-we-go-film-studio",
-    title: "Here We Go Film Studio",
-    shortTitle: "Here We Go",
-    category: "YouTube · Film Experiments",
-    year: "Ongoing",
-    role: "Direction, camera, edit & experiments",
-    accent: "pink",
-    externalUrl: "https://www.youtube.com/@HereWeGoFilmStudio",
-    externalLabel: "Visit the channel",
-    tagline: "The lab notebook is a movie channel.",
-    description: "A public lab for filmmaking experiments. Lenses, light, motion, texture, edits, and unfinished questions leave the hard drive and become studies.",
-    note: "Every experiment should teach the next shot.",
-    hero: {
-      src: "/media/projects/here-we-go-sunset-hero.jpg",
-      displaySrc: "/media/optimized/here-we-go-sunset-hero.webp",
-      alt: "For Rest: Sunset by Here We Go Film Studio",
-      width: 2560,
-      height: 1440,
-      position: "50% 50%",
-    },
-    featuredFilm: {
-      title: "Sunset",
-      format: "For Rest · Short film",
-      description: "Fifty seconds at the edge of day.",
-      youtubeId: "XMCr7upIROA",
-      url: "https://www.youtube.com/watch?v=XMCr7upIROA",
-      poster: "/media/optimized/here-we-go-sunset-hero.webp",
-    },
-    features: [
-      { title: "Camera as research", body: "Test exposure, movement, texture, and material by shooting." },
-      { title: "Keep the process visible", body: "Questions and imperfections stay in the work." },
-      { title: "Practice in public", body: "Technical curiosity becomes finished images and films." },
-    ],
-    media: [{
-      type: "image",
-      src: "/media/projects/here-we-go-sunset-hero.jpg",
-      displaySrc: "/media/optimized/here-we-go-sunset-hero.webp",
-      alt: "For Rest: Sunset by Here We Go Film Studio",
-      caption: "For Rest: Sunset.",
-      width: 2560,
-      height: 1440,
-    }, {
-      type: "image",
-      src: "/media/projects/channel-live.png",
-      displaySrc: "/media/optimized/channel-live.webp",
-      alt: "Here We Go Film Studio YouTube channel showing the For Rest film series",
-      caption: "The channel. A public film lab.",
-      width: 1800,
-      height: 1125,
-      chrome: false,
-    }],
   },
 ];
 

@@ -21,6 +21,8 @@ test("renders the finished portfolio home", async () => {
   assert.match(html, /<h1[^>]*class="heart-copy"/);
   assert.match(html, /water-drops\.webp/);
   assert.match(html, /work-icons\/thumbs\/folio\.webp/);
+  const iconOrder = [...html.matchAll(/work-icons\/thumbs\/([a-z0-9-]+)\.webp/g)].map((match) => match[1]);
+  assert.deepEqual([...new Set(iconOrder)].slice(0, 3), ["folio", "surge-method", "here-we-go-film-studio"], "Here We Go sits third on the home screen");
   assert.match(html, /Welcome to my heart\.<\/span><span[^>]*>Have fun\./);
   assert.match(html, /— Tian Xing/);
   const introGuard = html.indexOf("html.phone-intro-pending{background:#020305!important}");
@@ -173,6 +175,8 @@ test("features Sunset on the Here We Go Film Studio page", async () => {
   assert.match(html, /here-we-go-sunset-hero\.jpg/);
   assert.match(html, /channel-live\.png/);
   assert.match(html, /The channel\. A public film lab\./);
+  assert.match(html, /class="media-image-link" href="https:\/\/www\.youtube\.com\/@HereWeGoFilmStudio"[^>]*aria-label="Open the channel:/, "the channel screenshot opens the channel, not the image");
+  assert.match(html, /Open the channel ↗/);
   assert.doesNotMatch(html, /Reference Image|Seedance 2\.5|509K8N368mg/);
   assert.ok(html.indexOf("Sunset") < html.indexOf("What it does"));
 });
