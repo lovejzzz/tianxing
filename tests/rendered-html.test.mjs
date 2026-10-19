@@ -86,10 +86,11 @@ test("presents Folio with its film and EduTool as the first generation", async (
   const response = await render("/projects/folio");
   assert.equal(response.status, 200);
   const html = await response.text();
-  assert.match(html, /Your course, bound together\./);
+  assert.match(html, /Describe a course\. Folio writes all of it\./);
   assert.match(html, /folio-map\.png/);
-  assert.match(html, /<video[^>]*src="\/media\/projects\/folio-film\.mp4"/);
-  assert.match(html, /One course document/);
+  assert.match(html, /youtube-nocookie\.com\/embed\/nvdMP4tHG0I/);
+  assert.match(html, /Watch on YouTube/);
+  assert.match(html, /Checked, then yours/);
   assert.match(html, /Key decisions/);
   assert.match(html, /What I built/);
   assert.match(html, /Live at folio\.university/);
