@@ -170,10 +170,11 @@ test("presents Otto Was Right with its release date and vertical preview", async
   assert.equal(response.status, 200);
   const html = await response.text();
   assert.match(html, /He can’t turn left\. Lay the road\./);
-  assert.match(html, /class="release-chip is-upcoming"[\s\S]{0,120}Available In 10\/29!/);
+  assert.match(html, /<h1>Otto Was Right<span class="title-badge" role="note" aria-label="Available In 10\/29!">/, "the release badge sits on the title");
   assert.match(html, /Coming to the App Store/);
   assert.match(html, /class="project-release project-release-portrait"/);
-  assert.match(html, /<video src="\/media\/otto\/otto-preview\.mp4"/);
+  assert.match(html, /class="yt-facade film-facade" data-src="\/media\/otto\/otto-preview\.mp4"[^>]*aria-label="Play preview:/, "the preview opens behind one large play button");
+  assert.match(html, /class="yt-facade-play"/);
   assert.match(html, /Straight, right, never left/);
   assert.match(html, /otto-delivery-note\.png/);
   assert.match(html, /Available October 29/);

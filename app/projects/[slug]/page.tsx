@@ -3,6 +3,7 @@ import type { CSSProperties } from "react";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { AppIcon } from "../../components/AppIcon";
+import { FilmPlayer } from "../../components/FilmPlayer";
 import { SiteFooter } from "../../components/SiteFooter";
 import { YouTubeFacade } from "../../components/YouTubeFacade";
 import { getProject, projects, shownProjects } from "../../projects";
@@ -105,13 +106,14 @@ export default async function ProjectPage({ params }: { params: Promise<{ slug: 
         <section className="project-hero">
           <div className="project-identity">
             <p className="project-category">{project.category}</p>
-            <h1>{project.title}</h1>
-            {project.badge && (
-              <p className="release-chip is-upcoming">
-                <i aria-hidden="true" />
-                <span>{`${project.badge.label} ${project.badge.value}`}</span>
-              </p>
-            )}
+            <h1>
+              {project.title}
+              {project.badge && (
+                <span className="title-badge" role="note" aria-label={`${project.badge.label} ${project.badge.value}`}>
+                  <small>{project.badge.label}</small><b>{project.badge.value}</b>
+                </span>
+              )}
+            </h1>
             {project.currentRelease && (
               <a className="release-chip" href={project.versions ? `#versions-${project.slug}` : project.externalUrl}>
                 <b>{project.currentRelease.version}</b>
@@ -165,13 +167,11 @@ export default async function ProjectPage({ params }: { params: Promise<{ slug: 
             </div>
             <div className="project-release-film">
               {project.featuredFilm.src ? (
-                <video
+                <FilmPlayer
                   src={`${base}${project.featuredFilm.src}`}
+                  title={`${project.featuredFilm.title} — ${project.featuredFilm.format}`}
                   poster={project.featuredFilm.poster ? `${base}${project.featuredFilm.poster}` : undefined}
-                  aria-label={`${project.featuredFilm.title} — ${project.featuredFilm.format}`}
-                  controls
-                  playsInline
-                  preload="none"
+                  label={project.featuredFilm.portrait ? "Play preview" : "Play film"}
                 />
               ) : project.featuredFilm.youtubeId && (
                 <YouTubeFacade
