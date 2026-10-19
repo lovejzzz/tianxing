@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import { whenPhoneIdle } from "../phoneSettled";
 
 type ImpactDetail = {
   phoneLeft: number;
@@ -44,9 +45,6 @@ export function FluidHeartNote() {
   const [fluidComplete, setFluidComplete] = useState(false);
 
   useEffect(() => {
-    let idleHandle: number | null = null;
-    let fallbackTimer: number | null = null;
-
     const prepareFluid = () => {
       const root = rootRef.current;
       const canvas = canvasRef.current;
@@ -61,12 +59,21 @@ export function FluidHeartNote() {
       canvas.style.height = `${height}px`;
 
       const target = canvas.getContext("2d");
+      // Sample the type from a canvas only as large as the type itself. A
+      // second full-viewport, read-back canvas cost tens of megabytes and a
+      // long task for pixels that were never read.
+      const bounds = root.getBoundingClientRect();
+      const left = Math.max(0, Math.floor((bounds.left - 8) * dpr));
+      const top = Math.max(0, Math.floor((bounds.top - 8) * dpr));
+      const right = Math.min(canvas.width, Math.ceil((bounds.right + 8) * dpr));
+      const bottom = Math.min(canvas.height, Math.ceil((bounds.bottom + 8) * dpr));
+      if (right <= left || bottom <= top) return;
       const offscreen = document.createElement("canvas");
-      offscreen.width = canvas.width;
-      offscreen.height = canvas.height;
+      offscreen.width = right - left;
+      offscreen.height = bottom - top;
       const source = offscreen.getContext("2d", { willReadFrequently: true });
       if (!source || !target) return;
-      source.scale(dpr, dpr);
+      source.setTransform(dpr, 0, 0, dpr, -left, -top);
 
       const lines = Array.from(root.querySelectorAll<HTMLElement>("[data-fluid-line]"));
       for (const line of lines) {
@@ -80,12 +87,7 @@ export function FluidHeartNote() {
         source.fillText(line.textContent ?? "", rect.left, rect.top - 1);
       }
 
-      const bounds = root.getBoundingClientRect();
-      const left = Math.max(0, Math.floor((bounds.left - 8) * dpr));
-      const top = Math.max(0, Math.floor((bounds.top - 8) * dpr));
-      const right = Math.min(offscreen.width, Math.ceil((bounds.right + 8) * dpr));
-      const bottom = Math.min(offscreen.height, Math.ceil((bounds.bottom + 8) * dpr));
-      const pixels = source.getImageData(left, top, right - left, bottom - top);
+      const pixels = source.getImageData(0, 0, offscreen.width, offscreen.height);
       const particles: FluidParticle[] = [];
       const step = Math.max(4, Math.round(4 * dpr));
       const textLeft = bounds.left;
@@ -118,19 +120,13 @@ export function FluidHeartNote() {
       preparedRef.current = { width, height, dpr, bounds, particles, target };
     };
 
+    // Wait for the opening turn to finish: this sampling is a long task, and
+    // inside the turn it dropped frames.
+    let cancelIdle: () => void = () => {};
     const schedulePreparation = () => {
-      if (idleHandle !== null && "cancelIdleCallback" in window) window.cancelIdleCallback(idleHandle);
-      if (fallbackTimer !== null) window.clearTimeout(fallbackTimer);
+      cancelIdle();
       preparedRef.current = null;
-      if ("requestIdleCallback" in window) {
-        idleHandle = window.requestIdleCallback(prepareFluid, { timeout: 3000 });
-      } else {
-        // `requestIdleCallback` is declared on modern DOM Window types, so
-        // TypeScript narrows `window` to `never` in this legacy-browser branch.
-        // The global timer keeps the runtime fallback without touching that
-        // over-narrowed value.
-        fallbackTimer = setTimeout(prepareFluid, 3700) as unknown as number;
-      }
+      cancelIdle = whenPhoneIdle(prepareFluid, 3000);
     };
 
     void document.fonts.ready.then(schedulePreparation);
@@ -139,6 +135,12 @@ export function FluidHeartNote() {
     const handleImpact = (event: Event) => {
       const detail = (event as CustomEvent<ImpactDetail>).detail;
       const copy = copyRef.current;
+      // A visitor quick enough to press Home before the idle callback ran
+      // still gets the effect; the sampling just happens now instead.
+      if (!preparedRef.current && window.innerWidth > 960) {
+        cancelIdle();
+        prepareFluid();
+      }
       const prepared = preparedRef.current;
       if (!copy || !prepared || prepared.width !== window.innerWidth || prepared.height !== window.innerHeight || window.innerWidth <= 960) {
         setFluidComplete(true);
@@ -199,6 +201,9 @@ export function FluidHeartNote() {
           }
         }
 
+        // Assigning a colour string makes the canvas parse it again, and nearly
+        // every particle shares one of three colours, so set it only on change.
+        let activeColor = "";
         for (const particle of particles) {
           particle.px = particle.x;
           particle.py = particle.y;
@@ -218,13 +223,16 @@ export function FluidHeartNote() {
 
           if (particle.alpha < .018) continue;
           target.globalAlpha = particle.alpha * Math.max(0, 1 - Math.max(0, progress - .86) / .14);
-          target.strokeStyle = particle.color;
+          if (particle.color !== activeColor) {
+            activeColor = particle.color;
+            target.strokeStyle = activeColor;
+            target.fillStyle = activeColor;
+          }
           target.lineWidth = particle.radius * 1.15;
           target.beginPath();
           target.moveTo(particle.px, particle.py);
           target.lineTo(particle.x, particle.y);
           target.stroke();
-          target.fillStyle = particle.color;
           target.beginPath();
           target.arc(particle.x, particle.y, particle.radius, 0, Math.PI * 2);
           target.fill();
@@ -246,8 +254,7 @@ export function FluidHeartNote() {
     return () => {
       window.removeEventListener(IMPACT_EVENT, handleImpact);
       window.removeEventListener("resize", schedulePreparation);
-      if (idleHandle !== null && "cancelIdleCallback" in window) window.cancelIdleCallback(idleHandle);
-      if (fallbackTimer !== null) window.clearTimeout(fallbackTimer);
+      cancelIdle();
       if (animationRef.current !== null) cancelAnimationFrame(animationRef.current);
     };
   }, []);

@@ -87,12 +87,12 @@ export function subscribeToRinger(listener: () => void) {
   return () => listeners.delete(listener);
 }
 
-function ensureContext() {
+function ensureContext(wake = true) {
   if (typeof window === "undefined") return null;
   if (context) {
     // Browsers park the context whenever the tab loses focus; a tap is always
     // a fresh gesture, so it is safe to wake it back up here.
-    if (context.state !== "running") void context.resume();
+    if (wake && context.state !== "running") void context.resume();
     return context;
   }
   const AudioContextClass = window.AudioContext
@@ -129,7 +129,7 @@ function ensureContext() {
   master.gain.value = .72;
   master.connect(body).connect(presence).connect(limiter).connect(context.destination);
 
-  if (context.state !== "running") void context.resume();
+  if (wake && context.state !== "running") void context.resume();
 
   noiseBuffer = context.createBuffer(1, Math.floor(context.sampleRate * NOISE_SECONDS), context.sampleRate);
   const channel = noiseBuffer.getChannelData(0);
@@ -359,6 +359,22 @@ const cueCooldownMs: Partial<Record<PhoneSound, number>> = {
  * Play a cue. Silent while the ringer switch is off, and rate-limited per cue so
  * a held key or a fast drag layers a texture instead of a wall of clicks.
  */
+/**
+ * Builds the audio engine ahead of the first cue. Creating an AudioContext and
+ * its voicing chain blocks the main thread for tens of milliseconds, which
+ * used to land on the first Home press as a visible hitch. The context starts
+ * suspended (browsers allow that without a gesture); the first real cue, which
+ * always comes from a gesture, wakes it.
+ */
+export function warmUpSound() {
+  if (typeof window === "undefined" || context || isSilenced()) return;
+  try {
+    ensureContext(false);
+  } catch {
+    // Warming up is an optimisation; the first cue will try again.
+  }
+}
+
 export function playSound(name: PhoneSound) {
   if (typeof window === "undefined" || isSilenced()) return;
   const now = performance.now();

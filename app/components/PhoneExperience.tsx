@@ -7,7 +7,8 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import type { CSSProperties, FocusEvent as ReactFocusEvent, FormEvent, KeyboardEvent as ReactKeyboardEvent, MouseEvent as ReactMouseEvent, PointerEvent as ReactPointerEvent } from "react";
 import { shownProjects as projects } from "../projects";
 import { portfolioPhotos } from "../photoManifest";
-import { playSound, toggleRinger, useRinger } from "../sound";
+import { playSound, toggleRinger, useRinger, warmUpSound } from "../sound";
+import { whenPhoneIdle } from "../phoneSettled";
 import { AppIcon } from "./AppIcon";
 import { Phone3DIntro } from "./Phone3DIntro";
 import { WeatherCinemaVideo } from "./WeatherCinemaVideo";
@@ -239,6 +240,16 @@ export function PhoneExperience() {
   const deviceStageRef = useRef<HTMLElement>(null);
   const transitionTimer = useRef<number | null>(null);
   const base = process.env.NEXT_PUBLIC_BASE_PATH ?? "";
+
+  // The first Home press used to pay for two first-times at once: building the
+  // audio engine, and decoding the home screen's icons, which stay hidden
+  // behind the Fun folder until then. Do both while nothing is moving.
+  useEffect(() => whenPhoneIdle(() => {
+    warmUpSound();
+    screenRef.current?.querySelectorAll<HTMLImageElement>(".phone-home-layer img").forEach((image) => {
+      image.decode().catch(() => {});
+    });
+  }), []);
 
   useEffect(() => {
     let mobileStartFrame = 0;

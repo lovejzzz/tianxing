@@ -540,12 +540,14 @@ export function Phone3DIntro({ productRef }: { productRef: RefObject<HTMLDivElem
       clearcoatRoughness: 0.72,
       envMapIntensity: 0.2,
     });
+    // Plain alpha rather than physical transmission: any transmissive material
+    // makes three.js render the whole scene a second time into a mipmapped
+    // target on every frame the back is visible. At 0.1 the refraction was
+    // invisible, but that extra pass was the heaviest cost of the turn.
     const frostedCaseMaterial = new THREE.MeshPhysicalMaterial({
       color: 0xd9e2e6,
       metalness: 0,
       roughness: 0.5,
-      transmission: 0.1,
-      thickness: 0.08,
       ior: 1.46,
       transparent: true,
       opacity: 0.72,
