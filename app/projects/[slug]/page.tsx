@@ -147,21 +147,32 @@ export default async function ProjectPage({ params }: { params: Promise<{ slug: 
               <span>{project.featuredFilm.format}</span>
               <p>{project.featuredFilm.description}</p>
               <a href={project.featuredFilm.url} target="_blank" rel="noreferrer">
-                Watch on YouTube <span aria-hidden="true">↗</span>
+                {project.featuredFilm.linkLabel ?? "Watch on YouTube"} <span aria-hidden="true">↗</span>
               </a>
             </div>
             <div className="project-release-film">
-              <YouTubeFacade
-                id={project.featuredFilm.youtubeId}
-                title={`${project.featuredFilm.title} — ${project.featuredFilm.format}`}
-                poster={project.featuredFilm.poster ? `${base}${project.featuredFilm.poster}` : undefined}
-              />
+              {project.featuredFilm.src ? (
+                <video
+                  src={`${base}${project.featuredFilm.src}`}
+                  poster={project.featuredFilm.poster ? `${base}${project.featuredFilm.poster}` : undefined}
+                  aria-label={`${project.featuredFilm.title} — ${project.featuredFilm.format}`}
+                  controls
+                  playsInline
+                  preload="none"
+                />
+              ) : project.featuredFilm.youtubeId && (
+                <YouTubeFacade
+                  id={project.featuredFilm.youtubeId}
+                  title={`${project.featuredFilm.title} — ${project.featuredFilm.format}`}
+                  poster={project.featuredFilm.poster ? `${base}${project.featuredFilm.poster}` : undefined}
+                />
+              )}
             </div>
           </section>
         )}
 
         {project.model && (
-          <section className="model-section" aria-labelledby={`model-${project.slug}`}>
+          <section className="model-section" data-mark={project.model.mark} aria-labelledby={`model-${project.slug}`}>
             <div className="model-heading">
               <div>
                 <p className="eyebrow">{project.model.eyebrow} <span>{project.model.version}</span></p>
@@ -223,6 +234,36 @@ export default async function ProjectPage({ params }: { params: Promise<{ slug: 
             ))}
           </div>
         </section>
+
+        {project.predecessor && (
+          <section className="predecessor-section" aria-labelledby={`predecessor-${project.slug}`}>
+            <div className="predecessor-heading">
+              <div>
+                <p className="eyebrow">{project.predecessor.eyebrow} <span>{project.predecessor.version}</span></p>
+                <h2 id={`predecessor-${project.slug}`}>{project.predecessor.title}</h2>
+              </div>
+              <p>{project.predecessor.description}</p>
+            </div>
+            <div className="predecessor-body">
+              <a className="predecessor-still" href={project.predecessor.url} target="_blank" rel="noreferrer" aria-label={`${project.predecessor.linkLabel}: ${project.predecessor.title}`}>
+                <span className="media-chrome" aria-hidden="true"><i /><i /><i /><span>{project.predecessor.url.replace(/^https?:\/\//, "")}</span></span>
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img src={`${base}${project.predecessor.image.displaySrc ?? project.predecessor.image.src}`} alt={project.predecessor.image.alt} width={project.predecessor.image.width} height={project.predecessor.image.height} loading="lazy" decoding="async" />
+              </a>
+              <div className="predecessor-lessons">
+                {project.predecessor.lessons.map((lesson) => (
+                  <article key={lesson.title}>
+                    <h3>{lesson.title}</h3>
+                    <p>{lesson.body}</p>
+                  </article>
+                ))}
+                <a className="predecessor-link" href={project.predecessor.url} target="_blank" rel="noreferrer">
+                  {project.predecessor.linkLabel} <span aria-hidden="true">↗</span>
+                </a>
+              </div>
+            </div>
+          </section>
+        )}
 
         {project.caseStudy && (
           <section className="case-study-section" aria-labelledby={`case-study-${project.slug}`}>

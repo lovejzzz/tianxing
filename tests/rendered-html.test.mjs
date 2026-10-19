@@ -15,12 +15,12 @@ test("renders the finished portfolio home", async () => {
   const response = await render();
   assert.equal(response.status, 200);
   const html = await response.text();
-  assert.match(html, /EduTool/);
+  assert.match(html, /Folio/);
   assert.match(html, /Slotronome/);
   assert.match(html, /Welcome to my heart\. Have fun\./);
   assert.match(html, /<h1[^>]*class="heart-copy"/);
   assert.match(html, /water-drops\.webp/);
-  assert.match(html, /work-icons\/thumbs\/edutool\.webp/);
+  assert.match(html, /work-icons\/thumbs\/folio\.webp/);
   assert.match(html, /Welcome to my heart\.<\/span><span[^>]*>Have fun\./);
   assert.match(html, /— Tian Xing/);
   const introGuard = html.indexOf("html.phone-intro-pending{background:#020305!important}");
@@ -58,7 +58,7 @@ test("publishes crawler and install metadata", async () => {
   const sitemapResponse = await render("/sitemap.xml");
   assert.equal(sitemapResponse.status, 200);
   const sitemap = await sitemapResponse.text();
-  assert.match(sitemap, /https:\/\/tian\.fun\/projects\/edutool\//);
+  assert.match(sitemap, /https:\/\/tian\.fun\/projects\/folio\//);
   assert.match(sitemap, /https:\/\/tian\.fun\/projects\/here-we-go-film-studio\//);
 
   const manifestResponse = await render("/manifest.webmanifest");
@@ -82,20 +82,22 @@ test("renders a project detail route", async () => {
   assert.match(html, /Released on the Apple App Store/);
 });
 
-test("shows the current EduTool generation workspace and Scion model", async () => {
-  const response = await render("/projects/edutool");
+test("presents Folio with its film and EduTool as the first generation", async () => {
+  const response = await render("/projects/folio");
   assert.equal(response.status, 200);
   const html = await response.text();
-  assert.match(html, /edutool-generation\.png/);
-  assert.match(html, /Meet Scion/);
-  assert.match(html, /Brief-anchored/);
-  assert.match(html, /Evidence-honest/);
+  assert.match(html, /Your course, bound together\./);
+  assert.match(html, /folio-map\.png/);
+  assert.match(html, /<video[^>]*src="\/media\/projects\/folio-film\.mp4"/);
+  assert.match(html, /One course document/);
   assert.match(html, /Key decisions/);
   assert.match(html, /What I built/);
-  assert.match(html, /One canonical model/);
-  assert.match(html, /Live at edutool\.dev/);
-  assert.match(html, /edutool-live\.png/);
-  assert.match(html, /property="og:image" content="https:\/\/tian\.fun\/media\/projects\/edutool-live\.png"/);
+  assert.match(html, /Live at folio\.university/);
+  assert.match(html, /THE FIRST GENERATION/);
+  assert.match(html, /EduTool\.dev/);
+  assert.match(html, /https:\/\/edutool\.dev/);
+  assert.match(html, /edutool-generation\.webp/);
+  assert.match(html, /property="og:image" content="https:\/\/tian\.fun\/media\/projects\/folio-home\.png"/);
 });
 
 test("embeds playable projects and full-resolution screenshots", async () => {
@@ -123,7 +125,7 @@ test("embeds playable projects and full-resolution screenshots", async () => {
 });
 
 test("reserves flagship case-study evidence for the three lead projects", async () => {
-  const flagshipPaths = ["/projects/edutool", "/projects/surge-method", "/projects/bebop-puzzle"];
+  const flagshipPaths = ["/projects/folio", "/projects/surge-method", "/projects/bebop-puzzle"];
   for (const path of flagshipPaths) {
     const response = await render(path);
     assert.equal(response.status, 200);
@@ -458,7 +460,7 @@ test("keeps the iPhone interactive and time-aware", async () => {
   const safariIcon = await readFile(new URL("../public/media/ios4/icons/safari.png", import.meta.url));
   assert.equal(safariIcon.readUInt32BE(16), 512);
   assert.equal(safariIcon.readUInt32BE(20), 512);
-  assert.match(projectSource, /slug: "edutool"[\s\S]{0,180}year: "2026"/);
+  assert.match(projectSource, /slug: "folio"[\s\S]{0,180}year: "2026"/);
   assert.match(projectSource, /slug: "start-where-you-are"[\s\S]{0,180}year: "2025"/);
   assert.match(projectSource, /slug: "texas-jack"[\s\S]{0,180}year: "2024"/);
   assert.match(projectSource, /slug: "slotronome"[\s\S]{0,180}year: "2025"/);

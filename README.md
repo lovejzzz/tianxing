@@ -4,7 +4,7 @@ A personal portfolio for nine projects across software, games, cinema, music too
 
 ## Projects
 
-- EduTool.dev / Course Mapper
+- Folio (successor to EduTool.dev)
 - Surge Method
 - Bebop Puzzle
 - Quicky Resume

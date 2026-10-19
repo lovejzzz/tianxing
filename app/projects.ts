@@ -30,11 +30,25 @@ export type Project = {
     title: string;
     format: string;
     description: string;
-    youtubeId: string;
+    /** Either a YouTube film or a self-hosted file in /public. */
+    youtubeId?: string;
+    src?: string;
     url: string;
+    linkLabel?: string;
     poster?: string;
   };
   livePreview?: { url: string; label: string; note: string };
+  /** An earlier generation of the same product, shown as its own chapter. */
+  predecessor?: {
+    eyebrow: string;
+    title: string;
+    version: string;
+    description: string;
+    url: string;
+    linkLabel: string;
+    image: { src: string; displaySrc?: string; alt: string; width: number; height: number };
+    lessons: { title: string; body: string }[];
+  };
   caseStudy?: {
     summary: string;
     problem: string;
@@ -46,6 +60,8 @@ export type Project = {
     built: string[];
   };
   model?: {
+    /** Oversized watermark word behind the section. */
+    mark?: string;
     eyebrow: string;
     title: string;
     version: string;
@@ -58,68 +74,95 @@ export type Project = {
 
 export const projects: Project[] = [
   {
-    slug: "edutool",
-    title: "EduTool.dev",
-    shortTitle: "EduTool",
+    slug: "folio",
+    title: "Folio",
+    shortTitle: "Folio",
     category: "AI · Education",
     year: "2026",
     role: "Product, design & engineering",
-    accent: "aqua",
-    externalUrl: "https://edutool.dev",
-    externalLabel: "Open EduTool.dev",
-    tagline: "A course is a system. Build the whole thing.",
-    description: "Describe a course once. EduTool builds ten linked materials, from the course map to the quiz bank, and Scion checks them against what you gave it. Free, and it runs in your browser.",
-    note: "Built for teachers who need a course—not a wall of AI text.",
-    hero: { src: "/media/projects/edutool-live.png", displaySrc: "/media/optimized/edutool-live.webp", alt: "EduTool homepage asking “What do you want to teach?” with a music theory course description typed in", width: 1800, height: 1125, position: "50% 49%", zoom: 2.2 },
-    livePreview: { url: "https://edutool.dev", label: "Build a course here", note: "Describe a course, set lessons and minutes, then edit every material in your browser. Free, no account needed." },
+    accent: "indigo",
+    externalUrl: "https://folio.university",
+    externalLabel: "Open Folio",
+    tagline: "Your course, bound together.",
+    description: "Describe a course in a paragraph. Folio drafts an outline you agree on first, then builds ten linked, editable materials from one course document. Change an objective once and everything built from it knows.",
+    note: "The second generation of EduTool, rebuilt from one course document outward.",
+    hero: { src: "/media/projects/folio-home.png", displaySrc: "/media/optimized/folio-home.webp", alt: "Folio homepage asking “What do you want to teach?” with a four-lesson statistics brief typed in", width: 1440, height: 900, position: "50% 34%", zoom: 1.7 },
+    featuredFilm: {
+      title: "Folio",
+      format: "Product film · 4K",
+      description: "One paragraph in, a whole course out: outline, map, lessons, slides, and the quiz bank, bound together.",
+      src: "/media/projects/folio-film.mp4",
+      poster: "/media/optimized/folio-map.webp",
+      url: "https://folio.university",
+      linkLabel: "Open folio.university",
+    },
+    livePreview: { url: "https://folio.university", label: "Build a course here", note: "Type a brief, or open the sample course to edit, undo, export, and print straight away." },
     caseStudy: {
-      summary: "Generate broadly. Stay anchored to one brief.",
-      problem: "AI can generate pages of course content and still fail to build a course. Objectives drift. Assessments disconnect. Evidence gets overstated.",
-      exactRole: "Product strategy, UX, system architecture, AI workflows, front-end, and release.",
+      summary: "One course document. Every material is a view of it.",
+      problem: "EduTool proved a teacher wants the whole course, not a wall of AI text. But its materials were generated side by side, so one edit could leave the rest quietly out of date.",
+      exactRole: "Product strategy, UX, design system, architecture, AI pipeline, front-end, and release.",
       collaboration: "Independent. Designed and built end to end.",
       decisions: [
-        "One canonical model drives every deliverable.",
-        "The teacher’s own poems, dialogues, and data stay verbatim; calculation answers are computed in code.",
-        "Say each thing once: one description box, one setup page, one full-width workspace.",
+        "One Zod-validated course document; every relationship is an ID, never a position.",
+        "Agree on the outline before anything is built.",
+        "Every change, typed or proposed by the model, is a command you can undo.",
+        "An update never overwrites text the teacher wrote.",
       ],
       constraints: [
-        "Early artifacts contradicted one another.",
-        "Local generation can still misattribute sources, so shared tasks may need teacher review.",
-        "Passing software checks is not proof of classroom readiness—and the site says so.",
+        "Generation needs a model: bring a Claude, OpenAI, or Gemini key, or run one locally.",
+        "Fields are edited as plain text; rich text such as maths is not supported yet.",
+        "Accounts, sync, and a free hosted tier are not built yet.",
       ],
       results: [
-        "Live at edutool.dev, free, in any browser.",
-        "v0.20.08 builds all ten materials from one course description, in English or Chinese.",
-        "Exports to Word, PDF, PowerPoint, Google Docs, Sheets, and Slides, or one course ZIP.",
+        "Live at folio.university.",
+        "Ten linked materials, in English and 简体中文, light and dark.",
+        "Exports to Word, PDF, PowerPoint, a quiz spreadsheet, a ZIP, or a .folio backup.",
+        "335 unit tests and 63 end-to-end tests with axe (WCAG 2.2 AA).",
       ],
       built: [
-        "Course schema, source compiler, generation pipeline, and cross-material checks.",
-        "Scion assistant, ten material editors, PDF renderer, and exports.",
-        "UX writing, interaction system, visual design, and release.",
+        "Course schema, commands and undo, ripple, projections, and checks.",
+        "Schema-first AI jobs with validation and one repair call, across four providers.",
+        "The “paper and ink” design system, every screen, and the exporters.",
       ],
     },
     model: {
-      eyebrow: "THE COURSE INTELLIGENCE LAYER",
-      title: "Meet Scion",
-      version: "V0.20.08",
-      description: "Scion runs privately in your browser. It writes, checks, and repairs the course as one connected system, anchored to your description and your material.",
+      mark: "Ripple",
+      eyebrow: "HOW IT HOLDS TOGETHER",
+      title: "One course document",
+      version: "FOLIO",
+      description: "Every section records what it was built from. When a lesson, objective, or source changes, Folio names what fell out of date and why.",
       principles: [
-        { title: "Brief-anchored", body: "Your course description stays in force through every generation and revision." },
-        { title: "System-aware", body: "Every artifact is reasoned about as part of the same course." },
-        { title: "Evidence-honest", body: "Sources, gaps, and review needs stay visible. Nothing is invented to fill them." },
-        { title: "Human-editable", body: "Inspect one item. Repair the system. Edit everything." },
+        { title: "One source of truth", body: "Lesson count, minutes, and quiz size are fields in the document, never words in a prompt." },
+        { title: "Ripple, not rewrite", body: "Out-of-date sections say why. Update, keep yours, or compare the two." },
+        { title: "Checked, not trusted", body: "Answers must be among the choices, arithmetic is recomputed, and minutes must add up." },
+        { title: "Yours, locally", body: "Saved in the browser as you type. Keys go straight to the provider." },
       ],
     },
     features: [
-      { title: "Ten linked materials", body: "Course map, syllabus, lesson plans, slides, assignments, rubrics, discussions, quizzes, study guides, and FAQ stay in sync." },
-      { title: "Quizzes from your material", body: "Paste a poem, a dialogue, or your data; the questions use it. Calculation answers are computed, not guessed." },
-      { title: "Free and private", body: "Scion runs in your browser after a one-time download. Public-source research only when you switch it on." },
+      { title: "Plan, then build", body: "The first call returns only an outline. Rename, reorder, set minutes and quiz size, then build." },
+      { title: "Ten linked materials", body: "Course map, syllabus, lesson plans, slides, assignments, rubrics, discussions, quiz bank, study guides, and FAQ." },
+      { title: "Edit in place", body: "Rewrite, simplify, or translate a selection inline. ⌘K turns a request into a plan you preview first." },
     ],
     media: [
-      { type: "image", src: "/media/projects/edutool-setup.png", displaySrc: "/media/optimized/edutool-setup.webp", alt: "EduTool setup page with lesson, minute, and quiz steppers above the material checklist", caption: "One setup page: lessons, minutes, and quiz size, then the materials.", width: 1080, height: 720 },
-      { type: "image", src: "/media/projects/edutool-generation.png", displaySrc: "/media/optimized/edutool-generation.webp", alt: "EduTool workspace showing a lesson plan with objectives, source evidence, a timed warm-up, and the session outline", caption: "A full-width workspace. Assistant and Export open as drawers only when needed.", width: 1800, height: 1125 },
-      { type: "image", src: "/media/projects/edutool-slides.png", displaySrc: "/media/optimized/edutool-slides.webp", alt: "EduTool slide deck built from the same lesson, with theme choices and slide thumbnails", caption: "Slides built from the same lessons, in five themes, ready to present or export.", width: 1800, height: 1125 },
+      { type: "image", src: "/media/projects/folio-map.png", displaySrc: "/media/optimized/folio-map.webp", alt: "Folio course map: four lessons as rows, materials as colour-tabbed columns", caption: "The map: every lesson against every material.", width: 1440, height: 900 },
+      { type: "image", src: "/media/projects/folio-lesson.png", displaySrc: "/media/optimized/folio-lesson.webp", alt: "A Folio lesson plan with key ideas and a timed warm-up, teach, and practice sequence with teacher notes", caption: "One lesson, in teaching order, minutes planned to the minute.", width: 1440, height: 900 },
+      { type: "image", src: "/media/projects/folio-slides.png", displaySrc: "/media/optimized/folio-slides.webp", alt: "Folio slide deck with a filmstrip of slides, a title slide on stage, and speaker notes", caption: "Slides: filmstrip, stage, and speaker notes kept to the teacher copy.", width: 1440, height: 900 },
+      { type: "image", src: "/media/projects/folio-quiz-dark.png", displaySrc: "/media/optimized/folio-quiz-dark.webp", alt: "Folio quiz bank in dark mode with a multiple-choice question and its teacher-only explanation", caption: "The quiz bank in “chalkboard”. Student copies never carry answers.", width: 1440, height: 900 },
     ],
+    predecessor: {
+      eyebrow: "THE FIRST GENERATION",
+      title: "EduTool.dev",
+      version: "V0.20.08",
+      description: "Folio began as EduTool: one description in, ten linked materials out, checked by Scion, a model that ran privately in the browser.",
+      url: "https://edutool.dev",
+      linkLabel: "Visit EduTool.dev",
+      image: { src: "/media/projects/edutool-generation.png", displaySrc: "/media/optimized/edutool-generation.webp", alt: "EduTool workspace showing a lesson plan with objectives, source evidence, a timed warm-up, and the session outline", width: 1800, height: 1125 },
+      lessons: [
+        { title: "What it proved", body: "Teachers want a whole course, not a wall of AI text, and their own poems, dialogues, and data must stay verbatim." },
+        { title: "What it taught", body: "Materials generated side by side drift apart. Folio makes them views of one document instead." },
+        { title: "What carried over", body: "Ten materials, one brief, computed answers, and honesty about what still needs a teacher’s review." },
+      ],
+    },
   },
   {
     slug: "surge-method",
