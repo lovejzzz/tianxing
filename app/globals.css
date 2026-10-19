@@ -310,9 +310,13 @@ body:has(.home-shell){overflow:hidden}
 .app-grid { position:relative; z-index:2; display:grid; grid-template-columns:repeat(3,1fr); gap:19px 16px; padding:23px 18px 10px; }
 .app-link { position:relative; min-width:0; display:flex; flex-direction:column; align-items:center; gap:6px; }
 /* iOS 6 notification badge, stretched to carry a date: glossy red, white rim, over the icon's top-right corner. */
-.release-badge { position:absolute; z-index:12; top:-9px; left:calc(50% + 12px); min-width:44px; padding:3px 7px 4px; display:flex; flex-direction:column; align-items:center; gap:1px; border:2px solid #fff; border-radius:11px; background:linear-gradient(180deg,#ff7b6e 0%,#e32a1c 48%,#c4130a 52%,#a50d06 100%); box-shadow:0 2px 4px rgba(0,0,0,.65),inset 0 1px rgba(255,255,255,.55); color:#fff; text-align:center; text-shadow:0 -1px rgba(0,0,0,.4); line-height:1; white-space:nowrap; pointer-events:none; transform:rotate(4deg); }
+.release-badge { position:absolute; z-index:12; top:-9px; left:calc(50% + 12px); min-width:44px; padding:3px 7px 4px; display:flex; flex-direction:column; align-items:center; gap:1px; border:2px solid #fff; border-radius:11px; background:linear-gradient(180deg,#ff7b6e 0%,#e32a1c 48%,#c4130a 52%,#a50d06 100%); box-shadow:0 2px 4px rgba(0,0,0,.65),inset 0 1px rgba(255,255,255,.55); color:#fff; text-align:center; text-shadow:0 -1px rgba(0,0,0,.4); line-height:1; white-space:nowrap; pointer-events:none; transform:rotate(4deg); transition:transform 280ms cubic-bezier(.2,1.3,.4,1); }
 .release-badge small { font-size:6.5px; font-weight:700; letter-spacing:.02em; text-transform:uppercase; opacity:.92; }
 .release-badge b { font-size:11px; font-weight:800; letter-spacing:-.02em; }
+/* The badge rides with its icon: the same lift on hover, the same press on tap. The icon grows from its
+   centre, so its top-right corner (where the badge sits) also moves out a little. */
+.app-link:hover .release-badge { transform:translate(2px,-6px) rotate(4deg) scale(1.05); }
+.app-link:active .release-badge { transform:translate(-2px,3px) rotate(4deg) scale(.94); transition-duration:80ms; }
 .app-link:focus-visible { outline:2px solid #fff; outline-offset:6px; border-radius:14px; }
 .app-link:hover .app-icon { transform:translateY(-4px) scale(1.05); filter:saturate(1.13) brightness(1.06); }
 .app-link:active .app-icon { transform:translateY(1px) scale(.94); transition-duration:80ms; }
@@ -372,7 +376,7 @@ body:has(.home-shell){overflow:hidden}
 @media (max-width: 560px){
   .home-shell{display:block;min-height:100svh;padding:0;background:#07090d}.home-shell::before,.ambient,.home-intro,.home-footer,.heart-note,.device,.phone-edge,.device-stage::after{display:none}.device-stage{width:100%;min-height:100svh;filter:none}.phone{width:100%;height:100svh;min-height:640px;border:0;border-radius:0;padding:0;background:#000}.phone::after,.phone-top,.home-button{display:none}.screen{border-radius:0;box-shadow:none}.status-bar{height:26px;padding-inline:12px;font-size:10px}.screen-titlebar{height:58px;padding-inline:14px}.app-grid{padding:clamp(24px,5.5vh,42px) 20px 12px;gap:clamp(21px,4.5vh,35px) 12px}.app-icon{width:min(21vw,88px);height:min(21vw,88px);border-radius:min(5vw,20px)}.app-name{font-size:11px}.phone-dock{height:84px;bottom:13px;padding-inline:22vw}.dock-link>span:first-child{width:55px;height:55px}.app-icon-large{width:90px;height:90px;border-radius:21px}.app-icon-large>span:not(.icon-gloss){transform:scale(1.2)}
 }
-@media (prefers-reduced-motion:reduce){html{scroll-behavior:auto}.home-intro,.phone-product,.phone::before,.app-link{animation:none}.phone-3d-intro{display:none}.app-icon,.store-button,.next-project b{transition:none}}
+@media (prefers-reduced-motion:reduce){html{scroll-behavior:auto}.home-intro,.phone-product,.phone::before,.app-link{animation:none}.phone-3d-intro{display:none}.app-icon,.release-badge,.store-button,.next-project b{transition:none}}
 
 /* Interactive iPhone */
 .phone-mode-home,
