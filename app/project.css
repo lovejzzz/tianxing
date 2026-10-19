@@ -231,8 +231,13 @@
 .predecessor-body { max-width: var(--measure); margin: 0 auto; display: grid; grid-template-columns: minmax(0, 1.35fr) minmax(260px, 0.65fr); align-items: start; gap: clamp(36px, 5vw, 88px); }
 .predecessor-still { overflow: hidden; display: block; border-radius: 12px; border: 1px solid rgba(255, 255, 255, 0.1); background: #000; box-shadow: 0 30px 70px rgba(0, 0, 0, 0.5); }
 .predecessor-still img { width: 100%; height: auto; display: block; filter: saturate(0.72) brightness(0.9); transition: filter 0.5s var(--ease, ease); }
+.predecessor-still { position: relative; }
 .predecessor-still:hover img,
 .predecessor-still:focus-visible img { filter: none; }
+/* Same hover label as gallery screenshots, so the old product reads as a link too. */
+.predecessor-still-label { position: absolute; right: 14px; bottom: 14px; padding: 8px 11px; border: 1px solid rgba(255, 255, 255, 0.2); border-radius: 8px; background: rgba(5, 7, 10, 0.7); backdrop-filter: blur(10px); color: var(--on-ink); font: 500 11px/1 var(--mono); letter-spacing: 0.06em; opacity: 0; transform: translateY(4px); transition: opacity 0.2s, transform 0.2s; }
+.predecessor-still:hover .predecessor-still-label,
+.predecessor-still:focus-visible .predecessor-still-label { opacity: 1; transform: none; }
 .predecessor-lessons { display: grid; gap: 28px; }
 .predecessor-lessons article { padding-top: 20px; border-top: 1px solid rgba(255, 255, 255, 0.18); }
 .predecessor-lessons h3 { margin: 0 0 10px; font-size: 19px; font-weight: 550; letter-spacing: -0.02em; }
@@ -438,6 +443,7 @@
   .versions-track > li { padding-left: 80px; }
   .versions-bar { width: calc(10px + 40px * var(--release-rise)); }
   .predecessor-still { border-radius: 10px; }
+  .predecessor-still-label { opacity: 1; transform: none; right: 8px; bottom: 8px; }
   .live-demo-section { padding-inline: 12px; }
   .live-demo-heading { padding-inline: 8px; }
   .live-demo-frame { border-radius: 10px; }

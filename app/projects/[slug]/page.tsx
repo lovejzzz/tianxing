@@ -303,6 +303,7 @@ export default async function ProjectPage({ params }: { params: Promise<{ slug: 
                 <span className="media-chrome" aria-hidden="true"><i /><i /><i /><span>{project.predecessor.url.replace(/^https?:\/\//, "")}</span></span>
                 {/* eslint-disable-next-line @next/next/no-img-element */}
                 <img src={`${base}${project.predecessor.image.displaySrc ?? project.predecessor.image.src}`} alt={project.predecessor.image.alt} width={project.predecessor.image.width} height={project.predecessor.image.height} loading="lazy" decoding="async" />
+                <span className="predecessor-still-label" aria-hidden="true">{`${project.predecessor.linkLabel} ↗`}</span>
               </a>
               <div className="predecessor-lessons">
                 {project.predecessor.lessons.map((lesson) => (

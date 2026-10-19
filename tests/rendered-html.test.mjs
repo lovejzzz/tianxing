@@ -122,7 +122,8 @@ test("presents Folio with its film and EduTool as the first generation", async (
   // folio.university sends frame-ancestors 'none', so an embed would only show an error.
   assert.doesNotMatch(html, /live-demo-embed/);
   assert.match(html, /EduTool\.dev/);
-  assert.match(html, /https:\/\/edutool\.dev/);
+  assert.match(html, /class="predecessor-still" href="https:\/\/edutool\.dev"/);
+  assert.match(html, /Visit EduTool\.dev ↗/);
   assert.match(html, /edutool-generation\.webp/);
   assert.match(html, /property="og:image" content="https:\/\/tian\.fun\/media\/projects\/folio-home\.png"/);
 });
