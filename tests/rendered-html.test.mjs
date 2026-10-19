@@ -70,16 +70,34 @@ test("renders a project detail route", async () => {
   const response = await render("/projects/surge-method");
   assert.equal(response.status, 200);
   const html = await response.text();
-  assert.match(html, /Push\. Recover\. Come back stronger\./);
+  assert.match(html, /More reps\. Less burnout\./);
   assert.match(html, /View on the App Store/);
   assert.match(html, /class="store-button"[\s\S]{0,500}class="app-icon icon-surge-method/);
   assert.doesNotMatch(html, /VIEW PROJECT/);
   assert.doesNotMatch(html, /app-icon-large/);
   assert.match(html, /class="project-hero-visual project-hero-contain"/);
-  assert.match(html, /main-hi\.png/);
+  assert.match(html, /surge-fire\.webp/);
+  assert.match(html, /property="og:image" content="https:\/\/tian\.fun\/media\/surge\/surge-fire\.png"/);
+  assert.doesNotMatch(html, /main-hi\.(png|webp)/, "the 1.0 screenshots are retired");
+  assert.match(html, /class="release-chip" href="#versions-surge-method"[\s\S]{0,120}1\.4/);
+  assert.match(html, /A wave, or a climb/);
+  assert.match(html, /surge-holds-setup\.png/);
   assert.match(html, /Behind the work/);
   assert.match(html, /Designed, built, and shipped solo/);
-  assert.match(html, /Released on the Apple App Store/);
+  assert.match(html, /On the App Store, at version 1\.4/);
+});
+
+test("renders Surge's version history from 1.0 to 1.4, oldest first", async () => {
+  const response = await render("/projects/surge-method");
+  const html = await response.text();
+  assert.match(html, /id="versions-surge-method"/);
+  assert.match(html, /From a wave to a climb/);
+  const versions = [...html.matchAll(/<h3><span>v<\/span>(1\.\d)<\/h3>/g)].map((match) => match[1]);
+  assert.deepEqual(versions, ["1.0", "1.1", "1.2", "1.3", "1.4"]);
+  assert.equal((html.match(/aria-current="step"/g) ?? []).length, 1, "only the shipping version is current");
+  assert.match(html, /aria-current="step"[\s\S]{0,400}1\.4/);
+  assert.ok(html.indexOf("What it does") < html.indexOf("VERSION HISTORY"), "the timeline follows the features");
+  assert.ok(html.indexOf("VERSION HISTORY") < html.indexOf("CASE STUDY"), "the timeline leads into the case study");
 });
 
 test("presents Folio with its film and EduTool as the first generation", async () => {

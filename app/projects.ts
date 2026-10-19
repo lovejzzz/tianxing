@@ -49,6 +49,15 @@ export type Project = {
     image: { src: string; displaySrc?: string; alt: string; width: number; height: number };
     lessons: { title: string; body: string }[];
   };
+  /** The shipping version, shown as a chip in the hero that jumps to the timeline. */
+  currentRelease?: { version: string; headline: string };
+  /** Every shipped version, oldest first, rendered as a timeline. */
+  versions?: {
+    eyebrow: string;
+    title: string;
+    description: string;
+    releases: { version: string; date: string; title: string; highlights: string[] }[];
+  };
   caseStudy?: {
     summary: string;
     problem: string;
@@ -173,46 +182,78 @@ export const projects: Project[] = [
     accent: "blue",
     externalUrl: "https://apps.apple.com/us/app/surge-method/id6758555101",
     externalLabel: "View on the App Store",
-    tagline: "Push. Recover. Come back stronger.",
-    description: "Turn one target into a training wave. Surge alternates harder push sets with active recovery so every session builds, peaks, and finishes clear.",
+    tagline: "More reps. Less burnout.",
+    description: "Two ways to train anything you can count or hold. SURGE is a wave: push sets climb, recovery sets drop, all the way to your peak. CLIMB starts with your biggest set, steps down, and grows session by session.",
     note: "No account. No internet. No data collection. History stays on-device.",
-    hero: { src: "/media/surge/main-hi.png", displaySrc: "/media/optimized/main-hi.webp", alt: "Surge Method setup screen showing a progressive training wave", width: 1197, height: 2600, fit: "contain", repeatInGallery: true },
+    currentRelease: { version: "1.4", headline: "CLIMB for holds" },
+    hero: { src: "/media/surge/surge-fire.png", displaySrc: "/media/optimized/surge-fire.webp", alt: "Surge Method 1.4: the last set of a push-up CLIMB, six reps past the goal, the ring on fire", width: 1320, height: 2868, fit: "contain" },
+    model: {
+      mark: "1.4",
+      eyebrow: "TWO METHODS",
+      title: "A wave, or a climb",
+      version: "V1.4",
+      description: "Pick the method per activity, in REPS or TIME. Surge remembers each one’s plan and your peak.",
+      principles: [
+        { title: "SURGE", body: "Warm up, then push sets climb while recovery sets drop, up to one peak set. More total work without burning out." },
+        { title: "CLIMB", body: "Five descending sets with timed rest. Rate it Easy, Good, or Hard and the plan adapts. Each block ends in a test." },
+        { title: "Reps or holds", body: "Push-ups and squats, or planks, hangs, and wall sits. Since 1.4, both methods work for both." },
+        { title: "Past the goal", body: "Beat the last set’s target and the ring catches fire. Every extra rep or second feeds it." },
+      ],
+    },
+    versions: {
+      eyebrow: "VERSION HISTORY",
+      title: "From a wave to a climb",
+      description: "Five releases in nine months, each on the App Store. One wave grew into a plan that keeps climbing.",
+      releases: [
+        { version: "1.0", date: "Jan 2026", title: "The Surge wave", highlights: ["Push sets climb, recovery sets drop, up to your peak.", "Reps or time, from one target.", "A private log for every activity."] },
+        { version: "1.1", date: "May 2026", title: "Juicier motion", highlights: ["Springy sets, wave bars, and transitions.", "A boss entrance for the peak set.", "A 3·2·1 count-in for timed sets."] },
+        { version: "1.2", date: "Sep 2026", title: "CLIMB arrives", highlights: ["Descending sets that adapt to Easy, Good, or Hard.", "Find your max in one all-out set.", "Hands-free push-ups, counted by the front camera."] },
+        { version: "1.3", date: "Oct 2026", title: "Beyond the app", highlights: ["Rest on the Lock Screen and in the Dynamic Island.", "A Home Screen widget for the next session.", "Share cards, a rest dial, and a spoken 3, 2, 1."] },
+        { version: "1.4", date: "Oct 2026", title: "CLIMB for holds", highlights: ["TIME gets CLIMB: planks, hangs, wall sits.", "Past the goal, the ring catches fire.", "Push-ups count a little deeper."] },
+      ],
+    },
     caseStudy: {
-      summary: "Make progression obvious while the user is moving.",
-      problem: "Most workout timers prescribe or count. Surge had to turn one personal target into a progressive session anyone could follow mid-set.",
-      exactRole: "Concept, training system, UX, visual design, iOS, testing, and release.",
+      summary: "Make progress obvious while you are moving, and keep it growing after day one.",
+      problem: "Most workout apps either prescribe a flat plan or just count. Surge 1.0 turned one target into a wave anyone could follow mid-set, but a wave doesn’t tell you what to do next week. The app had to keep you climbing without ever needing an account.",
+      exactRole: "Concept, training system, UX, visual design, sound, iOS engineering, testing, App Store assets, and release.",
       collaboration: "Independent. Designed, built, and shipped solo.",
       decisions: [
-        "Build sessions as push-and-recovery waves—not flat ladders.",
-        "Use one planning system for reps and time.",
-        "Make motion, sound, and haptics carry workout state.",
+        "Two methods, not one: the SURGE wave for a single session, CLIMB for a plan that grows.",
+        "One deterministic engine for reps and holds, tested from a baseline of 3 to 150.",
+        "Sound, haptics, and the press ball carry state, so you never read the screen mid-rep.",
+        "Missed sessions never step you back; a week off just holds the plan.",
       ],
       constraints: [
-        "One planner had to fit radically different activities.",
-        "The interface had to read at a glance under exertion.",
-        "Offline privacy ruled out accounts and cloud planning.",
+        "Camera counting needs TrueDepth hardware, so it is offered only for push-ups.",
+        "The first sound of a session hissed on device; the audio graph was rebuilt twice.",
+        "Offline privacy ruled out accounts, sync, and cloud planning.",
       ],
       results: [
-        "Released on the Apple App Store.",
-        "Ships rep and timed modes, wave planning, guided sessions, and private history.",
-        "Runs without accounts, internet, or personal-data collection.",
+        "On the App Store, at version 1.4.",
+        "Five releases from January to October 2026.",
+        "SURGE and CLIMB in both REPS and TIME, with a widget, Live Activity, and share cards.",
+        "284 automated tests; App Privacy stays “Data Not Collected”.",
       ],
       built: [
-        "Wave planner, rep and timed engines, setup, and live sessions.",
-        "Local history, progress views, haptics, sound, and completion flow.",
-        "The full iOS product, store assets, testing, and release.",
+        "The wave planner, the CLIMB engine, and the rep, hold, tap, and camera counters.",
+        "Every screen, the press ball and fire ring, and the synthesized sound.",
+        "Widgets, Live Activities, store screenshots, privacy policy, and each release.",
       ],
     },
     features: [
-      { title: "Two training modes", body: "Rep waves for strength. Timed waves for endurance, skill, or focus." },
-      { title: "Smart wave planning", body: "Set one target. Get the warmup, recovery, climb, and peak." },
-      { title: "Built to feel alive", body: "Haptics, motion, sound, progress, and a boss-set finish." },
+      { title: "Hands-free push-ups", body: "Put the phone under your face. The front camera counts every rep. Nothing is recorded." },
+      { title: "Rest you can see", body: "Turn the dial to change it. It counts down on the Lock Screen too." },
+      { title: "Share your wins", body: "A card for every workout: each set, your total, and how far you’ve climbed." },
     ],
     media: [
-      { type: "image", src: "/media/surge/main-hi.png", displaySrc: "/media/optimized/main-hi.webp", alt: "Surge Method setup screen", caption: "Set the target. See the wave.", portrait: true, width: 1197, height: 2600 },
-      { type: "image", src: "/media/surge/push-hi.png", displaySrc: "/media/optimized/push-hi.webp", alt: "Surge Method push set", caption: "Push toward the peak.", portrait: true, width: 1197, height: 2600 },
-      { type: "image", src: "/media/surge/recovery-hi.png", displaySrc: "/media/optimized/recovery-hi.webp", alt: "Surge Method recovery set", caption: "Recover without stopping.", portrait: true, width: 1197, height: 2600 },
-      { type: "image", src: "/media/surge/complete-hi.png", displaySrc: "/media/optimized/complete-hi.webp", alt: "Surge Method workout complete screen", caption: "Finish with a clear record.", portrait: true, width: 1197, height: 2600 },
+      { type: "image", src: "/media/surge/surge-wave-setup.png", displaySrc: "/media/optimized/surge-wave-setup.webp", alt: "Surge Method setup: SURGE in REPS, peak set 12, the wave of twelve sets previewed", caption: "SURGE: set a peak. See the wave.", portrait: true, width: 1320, height: 2868 },
+      { type: "image", src: "/media/surge/surge-push-set.png", displaySrc: "/media/optimized/surge-push-set.webp", alt: "A Surge push set of 7 reps, set 2 of 12, with the wave below", caption: "Every set has a job.", portrait: true, width: 1320, height: 2868 },
+      { type: "image", src: "/media/surge/surge-holds-setup.png", displaySrc: "/media/optimized/surge-holds-setup.webp", alt: "TIME · CLIMB setup for Plank: five descending holds, step 6 of 12", caption: "New in 1.4: CLIMB for holds.", portrait: true, width: 1320, height: 2868 },
+      { type: "image", src: "/media/surge/surge-hold.png", displaySrc: "/media/optimized/surge-hold.webp", alt: "A plank hold at 0:36, set 1 of 5", caption: "Holds close themselves.", portrait: true, width: 1320, height: 2868 },
+      { type: "image", src: "/media/surge/surge-rest-dial.png", displaySrc: "/media/optimized/surge-rest-dial.webp", alt: "Rest dial counting down from 1:24 with set 2 coming up", caption: "Turn the ring to change your rest.", portrait: true, width: 1320, height: 2868 },
+      { type: "image", src: "/media/surge/surge-holds-complete.png", displaySrc: "/media/optimized/surge-holds-complete.webp", alt: "Plank CLIMB complete, rated Good, with the next session previewed", caption: "Rate it. The plan adapts.", portrait: true, width: 1320, height: 2868 },
+      { type: "image", src: "/media/surge/surge-stats.png", displaySrc: "/media/optimized/surge-stats.webp", alt: "Push-up activity stats: baseline 27, goal 41, a chart of tests and session volume", caption: "Watch your baseline climb.", portrait: true, width: 1320, height: 2868 },
+      { type: "image", src: "/media/surge/surge-share-card.png", displaySrc: "/media/optimized/surge-share-card.webp", alt: "A share card: new best, 55 push-ups over five sets", caption: "A card for every win.", portrait: true, width: 1320, height: 2868 },
     ],
   },
   {

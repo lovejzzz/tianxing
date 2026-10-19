@@ -105,6 +105,12 @@ export default async function ProjectPage({ params }: { params: Promise<{ slug: 
           <div className="project-identity">
             <p className="project-category">{project.category}</p>
             <h1>{project.title}</h1>
+            {project.currentRelease && (
+              <a className="release-chip" href={project.versions ? `#versions-${project.slug}` : project.externalUrl}>
+                <b>{project.currentRelease.version}</b>
+                <span>New · {project.currentRelease.headline}</span>
+              </a>
+            )}
             <p className="project-tagline">{project.tagline}</p>
             <a className="store-button" href={project.externalUrl} target="_blank" rel="noreferrer">
               <AppIcon project={project} />
@@ -234,6 +240,40 @@ export default async function ProjectPage({ params }: { params: Promise<{ slug: 
             ))}
           </div>
         </section>
+
+        {project.versions && (
+          <section className="versions-section" id={`versions-${project.slug}`} aria-labelledby={`versions-title-${project.slug}`}>
+            <div className="versions-heading">
+              <div>
+                <p className="eyebrow">{project.versions.eyebrow} <span>{project.versions.releases[0].version} → {project.versions.releases.at(-1)?.version}</span></p>
+                <h2 id={`versions-title-${project.slug}`}>{project.versions.title}</h2>
+              </div>
+              <p>{project.versions.description}</p>
+            </div>
+            <ol className="versions-track" style={{ "--release-count": project.versions.releases.length } as CSSProperties}>
+              {project.versions.releases.map((release, releaseIndex, releases) => {
+                const current = releaseIndex === releases.length - 1;
+                return (
+                  <li
+                    key={release.version}
+                    className={current ? "is-current" : undefined}
+                    aria-current={current ? "step" : undefined}
+                    style={{ "--release-rise": (releaseIndex + 1) / releases.length } as CSSProperties}
+                  >
+                    <span className="versions-bar" aria-hidden="true" />
+                    <span className="versions-node" aria-hidden="true" />
+                    <p className="versions-meta"><time>{release.date}</time>{current && <em>Current</em>}</p>
+                    <h3><span>v</span>{release.version}</h3>
+                    <p className="versions-title">{release.title}</p>
+                    <ul>
+                      {release.highlights.map((highlight) => <li key={highlight}>{highlight}</li>)}
+                    </ul>
+                  </li>
+                );
+              })}
+            </ol>
+          </section>
+        )}
 
         {project.predecessor && (
           <section className="predecessor-section" aria-labelledby={`predecessor-${project.slug}`}>
