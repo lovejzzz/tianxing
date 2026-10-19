@@ -419,27 +419,6 @@ export function PhoneExperience() {
     }, mode === "folder" && (launchFromIcon || shouldReturnToFunIcon) ? 760 : 390);
   };
 
-  // A pane of glass catches the room light: the highlight drifts a little as
-  // the cursor crosses the phone. Pointer-driven only; touch never sees it.
-  const glareFrame = useRef<number | null>(null);
-  const moveGlare = (event: ReactPointerEvent<HTMLElement>) => {
-    if (event.pointerType !== "mouse") return;
-    const phone = event.currentTarget.querySelector<HTMLElement>(".phone");
-    if (!phone) return;
-    const rect = phone.getBoundingClientRect();
-    const x = ((event.clientX - rect.left) / Math.max(1, rect.width)) * 100;
-    const y = ((event.clientY - rect.top) / Math.max(1, rect.height)) * 100;
-    if (glareFrame.current) window.cancelAnimationFrame(glareFrame.current);
-    glareFrame.current = window.requestAnimationFrame(() => {
-      phone.style.setProperty("--glare-x", `${Math.max(-20, Math.min(120, x)).toFixed(1)}%`);
-      phone.style.setProperty("--glare-y", `${Math.max(-20, Math.min(120, y)).toFixed(1)}%`);
-    });
-  };
-
-  useEffect(() => () => {
-    if (glareFrame.current) window.cancelAnimationFrame(glareFrame.current);
-  }, []);
-
   const setPhysicalHomePressed = (pressed: boolean) => {
     if (homePressedRef.current === pressed) return;
     homePressedRef.current = pressed;
@@ -457,7 +436,6 @@ export function PhoneExperience() {
         "--mobile-arrival-inspection-offset": `${-(arrivalInspectionMs ?? 0)}ms`,
       } as CSSProperties}
       aria-label="Interactive iPhone portfolio"
-      onPointerMove={moveGlare}
     >
       <Phone3DIntro productRef={phoneProductRef} />
       <div className="phone-product" ref={phoneProductRef}>
@@ -538,8 +516,6 @@ export function PhoneExperience() {
               </div>
             )}
           </div>
-
-          <span className="glass-glare" aria-hidden="true" />
 
           <button
             className={`home-button ${homePressed ? "is-pressed" : ""}`}

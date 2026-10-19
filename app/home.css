@@ -65,23 +65,3 @@
   text-shadow: 0 1px 1px rgba(0, 0, 0, 0.85), 0 0 4px rgba(0, 0, 0, 0.35);
 }
 
-/* Glass: a soft highlight that drifts with the cursor. */
-.glass-glare {
-  position: absolute;
-  z-index: 35;
-  inset: 79px 16px 82px;
-  border-radius: 5px;
-  pointer-events: none;
-  opacity: 0;
-  background:
-    radial-gradient(circle at var(--glare-x, 30%) var(--glare-y, 20%), rgba(255, 255, 255, 0.11), transparent 42%),
-    linear-gradient(118deg, transparent 38%, rgba(255, 255, 255, 0.045) calc(var(--glare-x, 30%) * 0.4 + 30%), transparent 72%);
-  mix-blend-mode: screen;
-  transition: opacity 0.6s ease;
-}
-@media (hover: hover) and (pointer: fine) and (prefers-reduced-motion: no-preference) {
-  .device-stage:hover .glass-glare { opacity: 1; }
-}
-/* Never over the WebGL arrival, and never on the full-screen phone. */
-.phone-3d-ready:not(.phone-3d-complete) .glass-glare { display: none; }
-@media (max-width: 560px) { .glass-glare { display: none; } }
