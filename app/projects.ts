@@ -202,6 +202,14 @@ export const projects: Project[] = [
     note: "No account. No internet. No data collection. History stays on-device.",
     currentRelease: { version: "1.4", headline: "CLIMB for holds" },
     hero: { src: "/media/surge/surge-fire.png", displaySrc: "/media/optimized/surge-fire.webp", alt: "Surge Method 1.4: the last set of a push-up CLIMB, six reps past the goal, the ring on fire", width: 1320, height: 2868, fit: "contain" },
+    featuredFilm: {
+      title: "The wave, in motion",
+      format: "Introducing Surge Method · 0:33",
+      description: "The method in thirty-three seconds: a warm-up, push sets that climb, recovery sets that drop, and one peak.",
+      youtubeId: "5CNQjKtFJy0",
+      url: "https://youtu.be/5CNQjKtFJy0",
+      poster: "/media/optimized/surge-film-poster.webp",
+    },
     model: {
       mark: "1.4",
       eyebrow: "TWO METHODS",

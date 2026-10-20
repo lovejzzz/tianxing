@@ -88,6 +88,9 @@ test("renders a project detail route", async () => {
   assert.doesNotMatch(html, /main-hi\.(png|webp)/, "the 1.0 screenshots are retired");
   assert.match(html, /class="release-chip" href="#versions-surge-method"[\s\S]{0,120}1\.4/);
   assert.match(html, /A wave, or a climb/);
+  assert.match(html, /FEATURED FILM[\s\S]{0,300}The wave, in motion[\s\S]{0,200}Introducing Surge Method · 0:33/);
+  assert.match(html, /youtube-nocookie\.com\/embed\/5CNQjKtFJy0/);
+  assert.match(html, /surge-film-poster\.webp/);
   assert.match(html, /surge-holds-setup\.png/);
   assert.match(html, /Behind the work/);
   assert.match(html, /Designed, built, and shipped solo/);
