@@ -109,8 +109,8 @@ export default async function ProjectPage({ params }: { params: Promise<{ slug: 
             <h1>
               {project.title}
               {project.badge && (
-                <span className="title-badge" role="note" aria-label={`${project.badge.label} ${project.badge.value}`}>
-                  <small>{project.badge.label}</small><b>{project.badge.value}</b>
+                <span className={`title-badge${project.badge.label ? "" : " is-single"}`} role="note" aria-label={[project.badge.label, project.badge.value].filter(Boolean).join(" ")}>
+                  {project.badge.label && <small>{project.badge.label}</small>}<b>{project.badge.value}</b>
                 </span>
               )}
             </h1>
@@ -208,6 +208,34 @@ export default async function ProjectPage({ params }: { params: Promise<{ slug: 
                 </article>
               ))}
             </div>
+          </section>
+        )}
+
+        {project.cast && (
+          <section className="cast-section" aria-labelledby={`cast-${project.slug}`}>
+            <div className="cast-heading">
+              <div>
+                <p className="eyebrow">{project.cast.eyebrow}</p>
+                <h2 id={`cast-${project.slug}`}>{project.cast.title}</h2>
+              </div>
+              <p>{project.cast.description}</p>
+            </div>
+            <ol className="cast-cards">
+              {project.cast.members.map((member, memberIndex) => (
+                <li key={member.name}>
+                  <p className="cast-rung">Rung {memberIndex + 1} of {project.cast!.members.length}</p>
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img src={`${base}${member.image}`} alt={`${member.name}, ${member.role}`} width={480} height={480} loading="lazy" decoding="async" />
+                  <h3>{member.name}<span>{member.role}</span></h3>
+                  <p className="cast-quote">{member.quote}</p>
+                  <dl>
+                    {member.facts.map((fact) => (
+                      <div key={fact.label}><dt>{fact.label}</dt><dd>{fact.value}</dd></div>
+                    ))}
+                  </dl>
+                </li>
+              ))}
+            </ol>
           </section>
         )}
 

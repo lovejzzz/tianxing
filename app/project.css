@@ -159,6 +159,8 @@
 .title-badge { display: inline-flex; flex-direction: column; align-items: center; gap: 2px; margin-left: 0.18em; padding: 7px 14px 8px; border: 3px solid #fff; border-radius: 18px; background: linear-gradient(180deg, #ff7b6e 0%, #e32a1c 48%, #c4130a 52%, #a50d06 100%); box-shadow: 0 8px 18px rgba(0, 0, 0, 0.5), inset 0 1px rgba(255, 255, 255, 0.55); color: #fff; font-family: var(--sans); line-height: 1; letter-spacing: 0; text-shadow: 0 -1px rgba(0, 0, 0, 0.35); white-space: nowrap; vertical-align: 0.55em; transform: rotate(5deg); }
 .title-badge small { font-size: 11px; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; opacity: 0.92; }
 .title-badge b { font-size: 24px; font-weight: 800; letter-spacing: -0.02em; }
+.title-badge.is-single { padding: 9px 16px 10px; }
+.title-badge.is-single b { font-size: 20px; }
 
 /* Overview (paper) --------------------------------------------------- */
 .project-overview {
@@ -182,9 +184,10 @@
 .live-demo-section,
 .media-gallery,
 .feature-section,
+.cast-section,
 .versions-section,
 .predecessor-section { position: relative; padding: var(--section) var(--gutter); background: var(--ink); }
-:is(.project-release, .model-section, .live-demo-section, .media-gallery, .feature-section) + :is(.project-release, .model-section, .live-demo-section, .media-gallery, .feature-section) { padding-top: 0; }
+:is(.project-release, .model-section, .cast-section, .live-demo-section, .media-gallery, .feature-section) + :is(.project-release, .model-section, .cast-section, .live-demo-section, .media-gallery, .feature-section) { padding-top: 0; }
 
 .detail-page h2 { font-weight: 600; letter-spacing: -0.04em; }
 
@@ -270,6 +273,27 @@
 .versions-track > li.is-current .versions-node { background: var(--peak); box-shadow: 0 0 0 1px var(--peak), 0 0 14px var(--peak); }
 .versions-track > li.is-current h3 { color: var(--peak); }
 .versions-track > li.is-current h3 span { color: color-mix(in srgb, var(--peak) 60%, transparent); }
+
+/* Cast: each rival on a wanted poster, the way the game introduces them */
+.cast-heading { max-width: var(--measure); margin: 0 auto 56px; display: grid; grid-template-columns: minmax(0, 1.1fr) minmax(0, 1fr); align-items: end; gap: clamp(40px, 8vw, 140px); }
+.cast-heading h2 { margin: 0; font-size: clamp(48px, 5.6vw, 88px); line-height: 0.94; }
+.cast-heading > p { margin: 0; max-width: 34ch; color: var(--on-ink-2); font: 400 clamp(20px, 1.8vw, 26px)/1.4 var(--serif); }
+.cast-cards { max-width: var(--measure); margin: 0 auto; padding: 0; list-style: none; display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: clamp(20px, 2.6vw, 40px); }
+.cast-cards > li { position: relative; padding: 30px clamp(20px, 2vw, 30px) 26px; display: flex; flex-direction: column; align-items: center; text-align: center; border-radius: 4px; background: radial-gradient(ellipse at 50% 0%, #e6d7b4, #cdb98e 62%, #b49f73); color: #2a1d0e; box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.35), inset 0 0 40px rgba(90, 60, 20, 0.35), 0 30px 60px rgba(0, 0, 0, 0.5); transition: transform 0.4s var(--ease); }
+.cast-cards > li:nth-child(1) { transform: rotate(-1.2deg); }
+.cast-cards > li:nth-child(3) { transform: rotate(1deg); }
+.cast-cards > li:hover { transform: translateY(-6px) rotate(0deg); }
+.cast-cards > li::before { content: "WANTED"; display: block; margin-bottom: 18px; font: 700 clamp(34px, 3.2vw, 46px)/1 var(--serif); letter-spacing: 0.06em; }
+.cast-rung { order: -1; margin: 0 0 10px; color: #6b5532; font: 500 10.5px/1.2 var(--mono); letter-spacing: 0.16em; text-transform: uppercase; }
+.cast-cards img { width: min(64%, 200px); height: auto; aspect-ratio: 1; border-radius: 50%; border: 4px solid #f3dc9c; object-fit: cover; box-shadow: 0 0 0 2px #6b4a14, 0 12px 26px rgba(40, 20, 0, 0.45); }
+.cast-cards h3 { margin: 20px 0 0; font: 700 clamp(28px, 2.4vw, 34px)/1 var(--serif); letter-spacing: -0.01em; }
+.cast-cards h3 span { display: block; margin-top: 8px; color: #6b5532; font: 500 11px/1 var(--mono); letter-spacing: 0.16em; text-transform: uppercase; }
+.cast-quote { margin: 16px 0 0; max-width: 30ch; color: #4a3820; font: italic 400 17px/1.45 var(--serif); }
+.cast-cards dl { width: 100%; margin: 22px 0 0; display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); border-top: 1px solid rgba(60, 40, 15, 0.45); border-bottom: 1px solid rgba(60, 40, 15, 0.45); }
+.cast-cards dl div { padding: 10px 4px; }
+.cast-cards dl div + div { border-left: 1px solid rgba(60, 40, 15, 0.3); }
+.cast-cards dt { color: #6b5532; font: 500 8.5px/1.2 var(--mono); letter-spacing: 0.1em; text-transform: uppercase; }
+.cast-cards dd { margin: 6px 0 0; font: 700 14px/1.2 var(--serif); }
 
 /* Live demo */
 .live-demo-heading { max-width: var(--measure); margin: 0 auto 32px; display: grid; grid-template-columns: 1fr minmax(260px, 420px); align-items: end; gap: 48px; }
@@ -403,6 +427,8 @@
   .predecessor-heading,
   .predecessor-body { grid-template-columns: 1fr; align-items: start; gap: 28px; }
   .feature-grid { grid-template-columns: 1fr; gap: 36px; }
+  .cast-heading { grid-template-columns: 1fr; align-items: start; gap: 24px; margin-bottom: 40px; }
+  .cast-cards { grid-template-columns: minmax(0, 420px); justify-content: center; gap: 36px; }
   .versions-heading { grid-template-columns: 1fr; align-items: start; gap: 24px; margin-bottom: 48px; }
   /* The wave turns on its side: a rail down the left, bars reaching right. */
   .versions-track { grid-template-columns: 1fr; gap: 0; }
@@ -429,6 +455,8 @@
   .title-badge { padding: 5px 10px 6px; border-width: 2px; border-radius: 13px; }
   .title-badge small { font-size: 8.5px; }
   .title-badge b { font-size: 17px; }
+  .title-badge.is-single b { font-size: 14px; }
+  .cast-heading h2 { font-size: 46px; }
   .project-tagline { font-size: 20px; }
   .store-button { margin-top: 30px; }
   .project-hero-visual { border-radius: 12px; }
@@ -474,5 +502,6 @@
   .next-project b,
   .yt-facade img,
   .yt-facade-play,
-  .predecessor-still img { transition: none; }
+  .predecessor-still img,
+  .cast-cards > li { transition: none; }
 }

@@ -612,8 +612,8 @@ function FolderView({ onGoHome }: { onGoHome: () => void }) {
               >
                 <AppIcon project={project} />
                 {project.badge && (
-                  <span className="release-badge" aria-label={`${project.badge.label} ${project.badge.value}`}>
-                    <small>{project.badge.label}</small><b>{project.badge.value}</b>
+                  <span className={`release-badge${project.badge.label ? "" : " is-single"}`} aria-label={[project.badge.label, project.badge.value].filter(Boolean).join(" ")}>
+                    {project.badge.label && <small>{project.badge.label}</small>}<b>{project.badge.value}</b>
                   </span>
                 )}
                 <span className="app-name">{project.shortTitle}</span>

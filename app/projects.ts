@@ -8,8 +8,8 @@ export type Project = {
   accent: string;
   /** Kept off the iPhone, the "Up next" chain and the sitemap; the page still renders. */
   hidden?: boolean;
-  /** A notice on the app icon and in the hero, e.g. a release date. */
-  badge?: { label: string; value: string };
+  /** A notice on the app icon and on the page title: a release date, or a one-line "New Version!". */
+  badge?: { label?: string; value: string };
   externalUrl: string;
   externalLabel: string;
   tagline: string;
@@ -65,6 +65,13 @@ export type Project = {
     title: string;
     description: string;
     releases: { version: string; date: string; title: string; highlights: string[] }[];
+  };
+  /** The characters of a game, shown as a row of cards. */
+  cast?: {
+    eyebrow: string;
+    title: string;
+    description: string;
+    members: { name: string; role: string; image: string; quote: string; facts: { label: string; value: string }[] }[];
   };
   caseStudy?: {
     summary: string;
@@ -187,6 +194,7 @@ export const projects: Project[] = [
     year: "2026",
     role: "Concept, product, design & iOS",
     accent: "blue",
+    badge: { value: "New Version!" },
     externalUrl: "https://apps.apple.com/us/app/surge-method/id6758555101",
     externalLabel: "View on the App Store",
     tagline: "More reps. Less burnout.",
@@ -271,6 +279,7 @@ export const projects: Project[] = [
     year: "Ongoing",
     role: "Direction, camera, edit & experiments",
     accent: "pink",
+    badge: { value: "New Film!" },
     externalUrl: "https://www.youtube.com/@HereWeGoFilmStudio",
     externalLabel: "Visit the channel",
     tagline: "The lab notebook is a movie channel.",
@@ -527,24 +536,76 @@ export const projects: Project[] = [
     title: "Texas Jack",
     shortTitle: "Texas Jack",
     category: "Game · Cards",
-    year: "2024",
-    role: "Game design & engineering",
-    accent: "green",
+    year: "2024—2026",
+    role: "Game design, AI & engineering",
+    accent: "amber",
+    badge: { value: "New Version!" },
     externalUrl: "https://lovejzzz.github.io/TexasJack/",
     externalLabel: "Play Texas Jack",
-    tagline: "Blackjack meets Texas Hold’em.",
-    description: "Race to 21 on a shared board. Duel an adaptive dealer—or read three rivals around one pot.",
-    note: "Every card changes more than one hand.",
-    hero: { src: "/media/projects/texas-jack-duel-live.png", displaySrc: "/media/projects/texas-jack-duel-live.webp", alt: "Texas Jack Quick Duel with shared cards, Pressure, and Scout controls", width: 1800, height: 1125, position: "50% 58%" },
-    livePreview: { url: "https://lovejzzz.github.io/TexasJack/", label: "Play Texas Jack here", note: "Choose Quick Duel or Four-Seat. Deal immediately." },
+    tagline: "Blackjack’s race to 21, on a Hold’em board.",
+    description: "You and the dealer each hold a private hand, but the cards in the middle count for both. The card you ask for might be the one that saves the dealer. Bet on what you can read, climb past three house dealers, or take a seat at a four-handed table.",
+    note: "Rebuilt in October 2026: Western Noir, real betting, the Saloon Ladder.",
+    hero: { src: "/media/texas-jack/tj-verdict.png", displaySrc: "/media/optimized/tj-verdict.webp", alt: "Texas Jack Quick Duel against Mara: a shared five and king break her at 24 while your 19 stands", width: 1800, height: 1125, position: "50% 48%", zoom: 1.24 },
+    livePreview: { url: "https://lovejzzz.github.io/TexasJack/", label: "Take a seat here", note: "Mara’s wanted poster, then two guided hands. No sign-up, nothing to install." },
+    model: {
+      mark: "21",
+      eyebrow: "THE SHARED BOARD",
+      title: "Every card counts twice",
+      version: "BOARD OR HAND",
+      description: "The community row counts toward both totals. Where each card lands is the whole game.",
+      principles: [
+        { title: "Board", body: "Send the card to the middle. It counts for you and for the dealer. Free, as often as you like." },
+        { title: "Hand", body: "Keep the card for yourself. Two per hand, so spend them when the board would help the dealer." },
+        { title: "Read the range", body: "The dealer’s hole card is hidden, the board is not. The game shows what the dealer could hold: “Dealer 10–19”." },
+        { title: "A pat dealer stands aside", body: "Once the dealer is on 17 or more, board cards count for you alone. You can break a drawing dealer, never a standing one." },
+      ],
+    },
+    cast: {
+      eyebrow: "THE SALOON LADDER",
+      title: "Three dealers, three lessons",
+      description: "Quick Duel is a climb. Each rival is a short match of your stake against their purse; break it, collect the bounty, and move up.",
+      members: [
+        { name: "Mara", role: "The Rock", image: "/media/optimized/tj-rival-mara.webp", quote: "Folds what can’t win and never bluffs. A raise means a real hand.", facts: [{ label: "House rule", value: "Never bluffs" }, { label: "Purse", value: "$250" }, { label: "Bounty", value: "$100" }, { label: "Teaches", value: "Bluff Mara" }] },
+        { name: "Vex", role: "The Shark", image: "/media/optimized/tj-rival-vex.webp", quote: "Bluffs about one bet in five. Watch the bet, not the smile.", facts: [{ label: "House rule", value: "Two raises a round" }, { label: "Purse", value: "$500" }, { label: "Bounty", value: "$200" }, { label: "Teaches", value: "Catch Vex" }] },
+        { name: "Sol", role: "The Spark", image: "/media/optimized/tj-rival-sol.webp", quote: "Calls almost anything, and draws to 18.", facts: [{ label: "House rule", value: "Draws to 18" }, { label: "Purse", value: "$800" }, { label: "Bounty", value: "$400" }, { label: "Teaches", value: "Value-bet Sol" }] },
+      ],
+    },
+    caseStudy: {
+      summary: "A rules mashup became a card game with real reads.",
+      problem: "Texas Jack started as a rule: blackjack on a shared board. The remake had to turn that rule into decisions about reading another player, with a dealer that bets like a person but never cheats.",
+      exactRole: "Game rules, economy and balance, dealer AI, art direction, interface, sound, testing, and release.",
+      collaboration: "Independent. Designed, built, and shipped solo.",
+      decisions: [
+        "One choice per card, Board or Hand, instead of a menu of special moves.",
+        "Fixed-limit betting, so no single hand can shove a whole purse.",
+        "The dealer estimates its odds by sampling only the cards it cannot see. It never peeks at yours, or at the shoe.",
+        "Three rivals with one house rule each, so every rung teaches one skill.",
+      ],
+      constraints: [
+        "Press, Scout, Counter and table goals were cut: one clear choice beat five clever ones.",
+        "Balance is tuned by simulating the real dealer AI against fixed player policies.",
+        "Tested in Chromium only; Safari and iOS are not yet checked.",
+      ],
+      results: [
+        "Live at lovejzzz.github.io/TexasJack, rebuilt in October 2026.",
+        "A thinking player wins about 69% / 60% / 60% of matches against Mara, Vex and Sol. Betting every hand loses to all three.",
+        "Hundreds of simulated hands per change: chips conserved, no stuck states, no errors.",
+      ],
+      built: [
+        "Quick Duel, the Saloon Ladder, and the Four-Seat table, with a hand log and rival memory.",
+        "The Western Noir look: walnut rail, lamplit baize, brass, wanted posters, a sheriff-star deck.",
+        "Synthesised table sounds, self-hosted type, and a duel simulator for tuning.",
+      ],
+    },
     features: [
-      { title: "Quick Duel", body: "Share the board with an adaptive dealer. Press your read or Scout the next card." },
-      { title: "Four-Seat", body: "Route cards to the Board or your Hand, then Lock before the table turns." },
-      { title: "Pressure matters", body: "Raise, call, or fold against three readable rivals. Highest live total wins the pot." },
+      { title: "A real betting duel", body: "Check or bet; facing a bet, call, raise or fold. A fold ends the hand unseen, so a bluff stays a mystery." },
+      { title: "Rivals who remember", body: "Fold to them too often and they call lighter. Get caught bluffing and they stop believing your bets." },
+      { title: "Four seats, one pot", body: "Call the board, draw a private card, or lock your total. Everyone else decides blind: ride the card, or lock before it lands." },
     ],
     media: [
-      { type: "image", src: "/media/projects/texas-jack-duel-live.png", displaySrc: "/media/projects/texas-jack-duel-live.webp", alt: "Texas Jack Quick Duel in progress", caption: "Quick Duel. Shared cards feed both sides; Pressure wakes the Counter.", width: 1800, height: 1125 },
-      { type: "image", src: "/media/projects/texas-jack-four-seat-live.png", displaySrc: "/media/projects/texas-jack-four-seat-live.webp", alt: "Texas Jack Four-Seat table with three AI rivals", caption: "Four seats. One shared board. Route the next card—or lock your total.", width: 1800, height: 1125 },
+      { type: "image", src: "/media/texas-jack/tj-first-hand.png", displaySrc: "/media/optimized/tj-first-hand.webp", alt: "The guided first hand: you on 9 against Mara’s 7–16 range, with a coach note to check", caption: "Two guided hands teach the shared board, then the bet.", width: 1800, height: 1125 },
+      { type: "image", src: "/media/texas-jack/tj-winner.png", displaySrc: "/media/optimized/tj-winner.webp", alt: "A rubber-stamp WINNER splash: the board read paid off and your shared card broke the dealer", caption: "The board read paid off: your shared card broke the dealer.", width: 1800, height: 1125 },
+      { type: "image", src: "/media/texas-jack/tj-four-seat.png", displaySrc: "/media/optimized/tj-four-seat.webp", alt: "The four-seat table at the Turn: Mara, Vex and Sol across the baize, a $200 pot, and Bet, Call the Final Board, Hand and Lock", caption: "Four-Seat: one pot, three rivals, and the same betting words.", width: 1800, height: 1125 },
     ],
   },
   {

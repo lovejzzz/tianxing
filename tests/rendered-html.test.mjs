@@ -25,6 +25,9 @@ test("renders the finished portfolio home", async () => {
   assert.deepEqual([...new Set(iconOrder)].slice(0, 4), ["folio", "surge-method", "here-we-go-film-studio", "otto-was-right"], "Here We Go sits third and Otto fourth on the home screen");
   assert.doesNotMatch(html, /work-icons\/thumbs\/quicky-resume\.webp|href="\/projects\/quicky-resume"/, "Quicky is hidden from the iPhone");
   assert.match(html, /class="release-badge" aria-label="Available In 10\/29!"/);
+  for (const [slug, text] of [["surge-method", "New Version!"], ["here-we-go-film-studio", "New Film!"], ["texas-jack", "New Version!"]]) {
+    assert.match(html, new RegExp(`href="/projects/${slug}"[\\s\\S]{0,600}class="release-badge is-single" aria-label="${text}"`), `${slug} carries "${text}"`);
+  }
   assert.match(html, /Welcome to my heart\.<\/span><span[^>]*>Have fun\./);
   assert.match(html, /— Tian Xing/);
   const introGuard = html.indexOf("html.phone-intro-pending{background:#020305!important}");
@@ -212,19 +215,22 @@ test("features Sunset on the Here We Go Film Studio page", async () => {
   assert.ok(html.indexOf("Sunset") < html.indexOf("What it does"));
 });
 
-test("shows both updated Texas Jack game modes", async () => {
+test("presents the rebuilt Texas Jack: shared board, Saloon Ladder, both tables", async () => {
   const response = await render("/projects/texas-jack");
   assert.equal(response.status, 200);
   const html = await response.text();
-  assert.match(html, /Play Texas Jack here/);
-  assert.match(html, /Quick Duel/);
-  assert.match(html, /Four-Seat/);
-  assert.match(html, /Pressure matters/);
-  assert.match(html, /texas-jack-duel-live\.png/);
-  assert.match(html, /texas-jack-four-seat-live\.png/);
-  assert.match(html, /texas-jack-duel-live\.webp/);
-  assert.match(html, /texas-jack-four-seat-live\.webp/);
-  assert.doesNotMatch(html, /texas-jack-live\.png/);
+  assert.match(html, /Blackjack’s race to 21, on a Hold’em board\./);
+  assert.match(html, /<h1>Texas Jack<span class="title-badge is-single" role="note" aria-label="New Version!">/);
+  assert.match(html, /Every card counts twice/);
+  assert.match(html, /THE SALOON LADDER/);
+  const rivals = [...html.matchAll(/<h3>(Mara|Vex|Sol)<span>/g)].map((match) => match[1]);
+  assert.deepEqual(rivals, ["Mara", "Vex", "Sol"], "the three dealers, in ladder order");
+  assert.match(html, /tj-rival-mara\.webp/);
+  assert.match(html, /Take a seat here/);
+  assert.match(html, /tj-four-seat\.png/);
+  assert.match(html, /tj-verdict\.webp/);
+  assert.doesNotMatch(html, /texas-jack-duel-live|Pressure matters/, "the pre-remake screens and copy are gone");
+  assert.ok(html.indexOf("THE SALOON LADDER") < html.indexOf("LIVE DEMO"), "meet the dealers before taking a seat");
 });
 
 test("keeps the iPhone interactive and time-aware", async () => {
@@ -522,7 +528,7 @@ test("keeps the iPhone interactive and time-aware", async () => {
   assert.equal(safariIcon.readUInt32BE(20), 512);
   assert.match(projectSource, /slug: "folio"[\s\S]{0,180}year: "2026"/);
   assert.match(projectSource, /slug: "start-where-you-are"[\s\S]{0,180}year: "2025"/);
-  assert.match(projectSource, /slug: "texas-jack"[\s\S]{0,180}year: "2024"/);
+  assert.match(projectSource, /slug: "texas-jack"[\s\S]{0,180}year: "2024—2026"/);
   assert.match(projectSource, /slug: "slotronome"[\s\S]{0,180}year: "2025"/);
   assert.match(source, /open\.spotify\.com\/embed\/playlist\/6hYj1RoYJ85hj8c1kaDFJ2/);
   assert.doesNotMatch(source, /appstore|youtube:|id: "about"/i);
