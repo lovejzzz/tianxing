@@ -708,11 +708,22 @@ export function Phone3DIntro({ productRef }: { productRef: RefObject<HTMLDivElem
 
     let currentPose = poseAt(0);
     let pixelsPerUnit = 1;
+    const domScreen = product.querySelector<HTMLElement>(":scope > .phone");
+    let domScreenFacing: boolean | null = null;
     const applyPose = (pose: PhonePose) => {
       phone.rotation.set(pose.rotateX, pose.rotateY, pose.rotateZ, "XYZ");
       phone.position.set(pose.x, pose.y, pose.z);
       phone.scale.setScalar(pose.scale);
-      rearGroup.visible = Math.cos(pose.rotateY) < 0;
+      const facingFront = Math.cos(pose.rotateY) >= 0;
+      rearGroup.visible = !facingFront;
+      // The DOM screen is drawn (and rasterized) throughout, nearly
+      // transparent while the back faces the camera, and switches on in the
+      // same frame the rear glass is culled. Only write on change: an inline
+      // style write still invalidates style.
+      if (domScreen && facingFront !== domScreenFacing) {
+        domScreenFacing = facingFront;
+        domScreen.style.opacity = facingFront ? "" : "0.001";
+      }
       // The turn presents the left button rail. The far-side SIM seam is
       // physically hidden by the handset; without a solid display slab it can
       // otherwise project through the transparent screen aperture.
@@ -729,9 +740,6 @@ export function Phone3DIntro({ productRef }: { productRef: RefObject<HTMLDivElem
       const screenDepth = SCREEN_COMPOSITE_Z * pixelsPerUnit;
       const depthCompensation = 1 - SCREEN_COMPOSITE_Z / CAMERA_Z;
       product.style.transform = `translate3d(${x}px, ${y}px, ${z}px) rotateX(${-pose.rotateX}rad) rotateY(${pose.rotateY}rad) rotateZ(${-pose.rotateZ}rad) scale(${pose.scale}) translateZ(${screenDepth}px) scale(${depthCompensation})`;
-      // The DOM front has backface-visibility:hidden, so it naturally disappears
-      // while the 3D rear glass faces the camera and becomes the real display as
-      // soon as the phone turns through profile.
       product.style.visibility = "visible";
     };
 
@@ -852,6 +860,7 @@ export function Phone3DIntro({ productRef }: { productRef: RefObject<HTMLDivElem
       observer.disconnect();
       product.style.removeProperty("transform");
       product.style.removeProperty("visibility");
+      domScreen?.style.removeProperty("opacity");
       stage.style.removeProperty("--phone-perspective");
       document.documentElement.classList.remove("phone-3d-ready");
       document.documentElement.classList.remove("phone-3d-complete");

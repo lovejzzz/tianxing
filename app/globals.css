@@ -237,11 +237,20 @@ body:has(.home-shell){overflow:hidden}
 .phone-product { position:relative; z-index:3; width:432px; height:776px; display:grid; place-items:center; transform-style:preserve-3d; transform-origin:50% 50%; opacity:1; filter:drop-shadow(0 45px 70px rgba(0,0,0,.55)); }
 .phone-intro-pending { background:#020305; }
 .phone-intro-pending body { visibility:hidden; }
-.phone-3d-ready .phone-product { z-index:10; will-change:transform; transition:filter 700ms ease; }
+.phone-3d-ready .phone-product { z-index:10; will-change:transform; }
+.phone-3d-complete .phone-product { transition:filter 700ms ease; }
 /* A 70px blurred drop shadow on an element whose 3D transform changes every
    frame is re-blurred every frame. The WebGL phone is lit on its own during
    the turn, so the DOM shadow waits and fades in once the phone has landed. */
-.phone-3d-ready:not(.phone-3d-complete) .phone-product { filter:none; }
+.phone-3d-ready:not(.phone-3d-complete) .phone-product { filter:none; transition:none; }
+/* Without that flattening filter, Chrome skips a back-facing screen entirely
+   and first rasterizes it at the side of the turn, its fastest moment. Keep
+   the screen drawn from the first frame, nearly transparent, so it is ready
+   before the turn starts; the intro switches it on (inline opacity) on the
+   same frame the WebGL back glass switches off. */
+.phone-3d-ready .phone-product>.phone { will-change:opacity; }
+.phone-3d-ready:not(.phone-3d-complete) .phone-product>.phone,
+.phone-3d-ready:not(.phone-3d-complete) .phone-product .screen { backface-visibility:visible; -webkit-backface-visibility:visible; }
 .phone-3d-ready:not(.phone-3d-complete) .phone-product { pointer-events:none; }
 .phone-3d-ready .phone-product>.device,
 .phone-3d-ready .phone-product>.phone-back { display:none; }
@@ -278,6 +287,7 @@ body:has(.home-shell){overflow:hidden}
 }
 .phone-3d-ready .phone-product .home-button {
   opacity:0;
+  transition:none;
   background:transparent;
   border-color:transparent;
   box-shadow:none;

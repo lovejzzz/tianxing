@@ -429,7 +429,13 @@ test("keeps the iPhone interactive and time-aware", async () => {
   assert.doesNotMatch(phone3dSource, /introDisplayMaterial/);
   assert.doesNotMatch(phone3dSource, /domHandoff/);
   assert.match(phone3dSource, /product\.style\.visibility = "visible"/);
-  assert.match(phone3dSource, /DOM front has backface-visibility:hidden/);
+  // The DOM screen is rasterized before the turn and switches on in the same
+  // frame the WebGL rear glass is culled, so nothing new paints mid-turn.
+  assert.match(phone3dSource, /rearGroup\.visible = !facingFront/);
+  assert.match(phone3dSource, /domScreen\.style\.opacity = facingFront \? "" : "0\.001"/);
+  // The drop shadow switches off instantly for the turn and only fades back in.
+  assert.match(styles, /\.phone-3d-ready:not\(\.phone-3d-complete\) \.phone-product \{ filter:none; transition:none; \}/);
+  assert.match(styles, /\.phone-3d-complete \.phone-product \{ transition:filter 700ms ease; \}/);
   assert.match(phone3dSource, /new THREE\.ShapeGeometry\(faceShape/);
   assert.match(phone3dSource, /faceShape\.holes/);
   assert.match(phone3dSource, /SCREEN_COMPOSITE_Z = GLASS_Z \+ 0\.004/);
