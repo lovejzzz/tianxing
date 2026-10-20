@@ -200,6 +200,12 @@ test("keeps hidden projects reachable but out of the sitemap and the Up next cha
   assert.match(bebop, /class="next-project"[\s\S]{0,200}href="\/projects\/5279-emulsion"/);
 });
 
+test("shows the 5279 research without the retired motion video", async () => {
+  const html = await (await render("/projects/5279-emulsion")).text();
+  assert.match(html, /5279-projection-hi\.webp/);
+  assert.doesNotMatch(html, /5279-motion\.mp4|<video/);
+});
+
 test("features Sunset on the Here We Go Film Studio page", async () => {
   const response = await render("/projects/here-we-go-film-studio");
   assert.equal(response.status, 200);
