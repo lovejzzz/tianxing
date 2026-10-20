@@ -155,12 +155,12 @@
 .release-chip b { min-width: 40px; height: 28px; padding: 0 10px; display: grid; place-items: center; border-radius: 999px; background: var(--accent); color: #06121d; font: 600 12px/1 var(--mono); letter-spacing: 0.02em; }
 .release-chip:hover { border-color: var(--accent); background: color-mix(in srgb, var(--accent) 16%, transparent); color: var(--on-ink); }
 .release-chip + .project-tagline { margin-top: 26px; }
-/* Not out yet: the iPhone's red notification badge, stuck to the end of the title. */
-.title-badge { display: inline-flex; flex-direction: column; align-items: center; gap: 2px; margin-left: 0.18em; padding: 7px 14px 8px; border: 3px solid #fff; border-radius: 18px; background: linear-gradient(180deg, #ff7b6e 0%, #e32a1c 48%, #c4130a 52%, #a50d06 100%); box-shadow: 0 8px 18px rgba(0, 0, 0, 0.5), inset 0 1px rgba(255, 255, 255, 0.55); color: #fff; font-family: var(--sans); line-height: 1; letter-spacing: 0; text-shadow: 0 -1px rgba(0, 0, 0, 0.35); white-space: nowrap; vertical-align: 0.55em; transform: rotate(5deg); }
-.title-badge small { font-size: 11px; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; opacity: 0.92; }
-.title-badge b { font-size: 24px; font-weight: 800; letter-spacing: -0.02em; }
-.title-badge.is-single { padding: 9px 16px 10px; }
-.title-badge.is-single b { font-size: 20px; }
+/* The phone's corner ribbon, as a banner at the end of the title: red satin, gold edges, notched ends. */
+.title-badge { display: inline-flex; flex-direction: column; align-items: center; gap: 3px; margin-left: 0.22em; padding: 9px 26px 10px; border-top: 2px solid #ffd27a; border-bottom: 2px solid #ffd27a; background: linear-gradient(180deg, #ff6a5c, #d61f12 55%, #a80f07); clip-path: polygon(0 0, 100% 0, calc(100% - 12px) 50%, 100% 100%, 0 100%, 12px 50%); color: #fff; font-family: var(--sans); line-height: 1; letter-spacing: 0; text-shadow: 0 -1px rgba(0, 0, 0, 0.35); white-space: nowrap; vertical-align: 0.5em; transform: rotate(-4deg); }
+.title-badge small { font-size: 10px; font-weight: 700; letter-spacing: 0.14em; text-transform: uppercase; opacity: 0.9; }
+.title-badge b { font-size: 22px; font-weight: 800; letter-spacing: 0.02em; text-transform: uppercase; }
+.title-badge.is-single { padding: 11px 26px 12px; }
+.title-badge.is-single b { font-size: 15px; letter-spacing: 0.1em; }
 
 /* Overview (paper) --------------------------------------------------- */
 .project-overview {
@@ -452,10 +452,11 @@
   .wordmark small { display: none; }
   .project-hero { padding-top: 44px; padding-bottom: 56px; gap: 36px; }
   .project-identity h1 { font-size: clamp(42px, 12vw, 56px); }
-  .title-badge { padding: 5px 10px 6px; border-width: 2px; border-radius: 13px; }
-  .title-badge small { font-size: 8.5px; }
-  .title-badge b { font-size: 17px; }
-  .title-badge.is-single b { font-size: 14px; }
+  .title-badge { padding: 6px 18px 7px; }
+  .title-badge small { font-size: 8px; }
+  .title-badge b { font-size: 16px; }
+  .title-badge.is-single { padding: 8px 18px 9px; }
+  .title-badge.is-single b { font-size: 11px; }
   .cast-heading h2 { font-size: 46px; }
   .project-tagline { font-size: 20px; }
   .store-button { margin-top: 30px; }

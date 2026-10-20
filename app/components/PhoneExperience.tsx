@@ -610,12 +610,14 @@ function FolderView({ onGoHome }: { onGoHome: () => void }) {
                 onClick={() => playSound("open")}
                 style={{ "--delay": `${index * 24}ms` } as CSSProperties}
               >
-                <AppIcon project={project} />
-                {project.badge && (
-                  <span className={`release-badge${project.badge.label ? "" : " is-single"}`} aria-label={[project.badge.label, project.badge.value].filter(Boolean).join(" ")}>
-                    {project.badge.label && <small>{project.badge.label}</small>}<b>{project.badge.value}</b>
-                  </span>
-                )}
+                <span className={`app-icon-wrap${project.badge ? " has-badge" : ""}`}>
+                  <AppIcon project={project} />
+                  {project.badge && (
+                    <span className={`release-badge${project.badge.label ? "" : " is-single"}`} aria-label={[project.badge.label, project.badge.value].filter(Boolean).join(" ")}>
+                      {project.badge.label && <small>{project.badge.label}</small>}<b>{project.badge.value}</b>
+                    </span>
+                  )}
+                </span>
                 <span className="app-name">{project.shortTitle}</span>
               </Link>
             ))}
