@@ -7,7 +7,7 @@ A personal portfolio for nine projects across software, games, cinema, music too
 - Folio (successor to EduTool.dev)
 - Surge Method
 - Here We Go Film Studio
-- Otto Was Right (available October 29)
+- Otto Was Right
 - Bebop Puzzle
 - 5279 Emulsion Project
 - Start Where You Are

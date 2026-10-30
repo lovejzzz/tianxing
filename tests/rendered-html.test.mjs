@@ -24,7 +24,7 @@ test("renders the finished portfolio home", async () => {
   const iconOrder = [...html.matchAll(/work-icons\/thumbs\/([a-z0-9-]+)\.webp/g)].map((match) => match[1]);
   assert.deepEqual([...new Set(iconOrder)].slice(0, 4), ["folio", "surge-method", "here-we-go-film-studio", "otto-was-right"], "Here We Go sits third and Otto fourth on the home screen");
   assert.doesNotMatch(html, /work-icons\/thumbs\/quicky-resume\.webp|href="\/projects\/quicky-resume"/, "Quicky is hidden from the iPhone");
-  assert.match(html, /class="release-badge" aria-label="Available In 10\/29!"/);
+  assert.match(html, /class="release-badge is-single is-long" aria-label="Available Now!"/);
   for (const [slug, text] of [["surge-method", "New Version!"], ["here-we-go-film-studio", "New Film!"], ["texas-jack", "New Version!"]]) {
     assert.match(html, new RegExp(`href="/projects/${slug}"[\\s\\S]{0,600}class="release-badge is-single" aria-label="${text}"`), `${slug} carries "${text}"`);
   }
@@ -176,19 +176,21 @@ test("reserves flagship case-study evidence for the three lead projects", async 
   assert.doesNotMatch(await nonFlagship.text(), /CASE STUDY/);
 });
 
-test("presents Otto Was Right with its release date and vertical preview", async () => {
+test("presents Otto Was Right as released, with its store link and vertical preview", async () => {
   const response = await render("/projects/otto-was-right");
   assert.equal(response.status, 200);
   const html = await response.text();
   assert.match(html, /He can’t turn left\. Lay the road\./);
-  assert.match(html, /<h1>Otto Was Right<span class="title-badge" role="note" aria-label="Available In 10\/29!">/, "the release badge sits on the title");
-  assert.match(html, /Coming to the App Store/);
+  assert.match(html, /<h1>Otto Was Right<span class="title-badge is-single" role="note" aria-label="Available Now!">/, "the release badge sits on the title");
+  assert.match(html, /class="store-button" href="https:\/\/apps\.apple\.com\/us\/app\/otto-was-right\/id6819539423"/);
+  assert.match(html, /View on the App Store/);
+  assert.doesNotMatch(html, /Coming to the App Store|Available In/);
   assert.match(html, /class="project-release project-release-portrait"/);
   assert.match(html, /class="yt-facade film-facade" data-src="\/media\/otto\/otto-preview\.mp4"[^>]*aria-label="Play preview:/, "the preview opens behind one large play button");
   assert.match(html, /class="yt-facade-play"/);
   assert.match(html, /Straight, right, never left/);
   assert.match(html, /otto-delivery-note\.png/);
-  assert.match(html, /Available October 29/);
+  assert.match(html, /Released on the App Store on October 29, 2026\./);
 });
 
 test("keeps hidden projects reachable but out of the sitemap and the Up next chain", async () => {
