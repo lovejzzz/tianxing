@@ -399,7 +399,7 @@ export const projects: Project[] = [
       ],
     },
     featuredFilm: {
-      title: "One night in Bo City",
+      title: "Otto Was Right",
       format: "App preview · 0:28 · Vertical",
       description: "A terminal line from dispatch, seventy-two orders, and a robot who only goes straight or right. Straight from the game, with no captions added.",
       src: "/media/otto/otto-preview.mp4",

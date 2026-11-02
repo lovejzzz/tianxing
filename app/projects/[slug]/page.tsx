@@ -100,7 +100,8 @@ export default async function ProjectPage({ params }: { params: Promise<{ slug: 
   const filmSection = project.featuredFilm && (
     <section className={`project-release${project.featuredFilm.portrait ? " project-release-portrait" : ""}`} aria-labelledby={`release-${project.slug}`}>
       <div className="project-release-copy">
-        <p className="eyebrow">{project.featuredFilm.portrait ? "APP PREVIEW" : "FEATURED FILM"}</p>
+        {/* Opening the page, the film's format line under the title already says what it is. */}
+        {!filmLeads && <p className="eyebrow">{project.featuredFilm.portrait ? "APP PREVIEW" : "FEATURED FILM"}</p>}
         <FilmHeading id={`release-${project.slug}`}>
         {project.featuredFilm.title}
         {filmLeads && project.badge && (

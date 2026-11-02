@@ -182,8 +182,9 @@ test("opens Otto Was Right on its preview film, with 1.1 and its store link", as
   const html = await response.text();
   // The preview film opens the page; there is no separate hero.
   assert.doesNotMatch(html, /class="project-hero/);
+  assert.equal((html.match(/>APP PREVIEW</g) ?? []).length, 0, "no eyebrow repeating the format line");
   assert.ok(html.indexOf('class="project-release project-release-portrait"') < html.indexOf('class="project-overview"'), "the film comes first");
-  assert.match(html, /<h1 id="release-otto-was-right">One night in Bo City<span class="title-badge is-single" role="note" aria-label="New Version!">/, "the release badge sits on the film title");
+  assert.match(html, /<h1 id="release-otto-was-right">Otto Was Right<span class="title-badge is-single" role="note" aria-label="New Version!">/, "the release badge sits on the film title");
   assert.match(html, /id="whats-new-otto-was-right"/);
   for (const headliner of ["Night Two", "The cheetah", "Rampage", "Choose again"]) assert.match(html, new RegExp(`</span>${headliner}</h3>`));
   assert.match(html, /\/media\/otto\/v1\.1\/night2\.webp/);
