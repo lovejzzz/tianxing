@@ -370,7 +370,7 @@ export const projects: Project[] = [
     updates: [
       {
         version: "1.2",
-        date: "November 2026",
+        date: "November 2, 2026",
         title: "Tin Pallet",
         description: "A new way to play in Rush, a wilder Rampage, two small boards to learn on, and new headphones.",
         headliners: [
@@ -494,7 +494,7 @@ export const projects: Project[] = [
         "Offline by design: no account, no ads, no data collected.",
       ],
       results: [
-        "Released on the App Store on October 29, 2026. Versions 1.1 and 1.2 followed in November.",
+        "Released on the App Store on October 29, 2026. Version 1.1 followed in November, and 1.2 on November 2.",
         "Two nights: seventy-two roads in the first, twelve more districts in the second, four endings, and a weekly map on Game Center.",
         "Forty-odd shells to earn by playing. Nothing to buy.",
       ],
