@@ -61,16 +61,20 @@ export type Project = {
   };
   /** The shipping version, shown as a chip in the hero that jumps to the timeline. */
   currentRelease?: { version: string; headline: string };
-  /** One release told in full: headline changes with pictures, a shelf, and the smaller changes. */
-  update?: {
+  /**
+   * Releases told in full, newest first. The newest gets headline cards with
+   * pictures, shelves of posters and the smaller changes; earlier ones are
+   * shown compactly beneath it.
+   */
+  updates?: {
     version: string;
     date: string;
     title: string;
     description: string;
     headliners: { title: string; body: string; image: string; alt: string }[];
-    shelf?: { title: string; description: string; items: { name: string; group: string; image: string }[] };
+    shelves?: { title: string; description: string; items: { name: string; group: string; image: string; width?: number; height?: number }[] }[];
     more: string[];
-  };
+  }[];
   /** Every shipped version, oldest first, rendered as a timeline. */
   versions?: {
     eyebrow: string;
@@ -356,48 +360,99 @@ export const projects: Project[] = [
     role: "Game design, story, art & engineering",
     accent: "aqua",
     badge: { value: "New Version!" },
-    currentRelease: { version: "1.1", headline: "Night Two" },
+    currentRelease: { version: "1.2", headline: "Tin Pallet" },
     externalUrl: "https://apps.apple.com/us/app/otto-was-right/id6819539423",
     externalLabel: "View on the App Store",
     tagline: "He can’t turn left. Lay the road.",
     description: "Unit 0770 cannot turn left any more.",
     note: "Free. No ads. No purchases. No account. English and 简体中文.",
     hero: { src: "/media/otto/otto-fork.jpg", displaySrc: "/media/optimized/otto-fork.webp", alt: "A screenprint of Otto, a small round robot, at a fork: the left road orange and fading, the right road black, his shadow leaning right", width: 2560, height: 1440, position: "50% 30%" },
-    update: {
-      version: "1.1",
-      date: "November 2026",
-      title: "Night Two",
-      description: "A second night in the rain, a cheetah loose on the roads, and a new way to play Rush.",
-      headliners: [
-        { title: "Night Two", body: "A second night in the rain: twelve new districts under neon, its own story, its own fork and two new endings.", image: "/media/otto/v1.1/night2.webp", alt: "A street of Bo City at night under neon signs and paper lanterns" },
-        { title: "The cheetah", body: "A security unit on four fast legs, let out of its cage to bring him in. It hunts the roads of the sixth district: keep out of its way. Where it goes after that is in the story.", image: "/media/otto/v1.1/hound.webp", alt: "A glowing spotted security cheetah standing on a lit road at night" },
-        { title: "Rampage", body: "A new way in Rush. He walks until he hits a wall; you have one red button. Opens at 72 stars.", image: "/media/otto/v1.1/rampage.webp", alt: "A control panel with a big red right-turn button, a green button and a gauge" },
-        { title: "Choose again", body: "Once a night has had its ending, go back into its twelfth district and send him the other way. No need to play the night again.", image: "/media/otto/v1.1/fork.webp", alt: "A snapshot of the city skyline at dusk in a yellow frame" },
-      ],
-      shelf: {
-        title: "Nine new shells",
-        description: "Each with the poster of a film he never made.",
-        items: [
-          { name: "Foody", group: "Store", image: "/media/otto/v1.1/skin_foody.webp" },
-          { name: "The noodle stand", group: "Store", image: "/media/otto/v1.1/skin_noodle.webp" },
-          { name: "The photographer", group: "Store", image: "/media/otto/v1.1/skin_photographer.webp" },
-          { name: "The stunt double", group: "Store", image: "/media/otto/v1.1/skin_stunt.webp" },
-          { name: "Keep Rolling", group: "The star and his double", image: "/media/otto/v1.1/bundle_rolling.webp" },
-          { name: "Spotted collar", group: "A Night Two ending", image: "/media/otto/v1.1/skin_dogtag.webp" },
-          { name: "Unboxed", group: "A Night Two ending", image: "/media/otto/v1.1/skin_unboxed.webp" },
-          { name: "The Survivalist", group: "Earned with stars", image: "/media/otto/v1.1/skin_survivalist.webp" },
-          { name: "The Perfectionist", group: "Earned with stars", image: "/media/otto/v1.1/skin_perfectionist.webp" },
+    updates: [
+      {
+        version: "1.2",
+        date: "November 2026",
+        title: "Tin Pallet",
+        description: "A new way to play in Rush, a wilder Rampage, two small boards to learn on, and new headphones.",
+        headliners: [
+          { title: "Tin Pallet", body: "A new way to play in Rush. A steel board on a tray, held in two hands; the wooden tiles slide when you tip it, the steel and the glass stay put. Make him a road, press the green button, and he goes. Tilt the phone, or use the stick. Your best time is kept. Opens at 108 stars.", image: "/media/otto/v1.2/tinpallet.webp", alt: "Two hands holding a steel board of tiles, the wooden ones slid to one side" },
+          { title: "Rampage, wilder", body: "A red portal and a blue one: in at one, out of the other, still going the same way. After forty seconds, a duck with a bomb on its back and ten seconds on the clock: push it into the water and the ground around it is patched, the crates there are yours; leave it, and it takes the floor with it. And you can ride any duck now, the mother too. It runs twice as fast, and goes red, and smokes.", image: "/media/otto/v1.2/rampage2.webp", alt: "A Rampage floor with a red portal, a blue portal and a duck carrying a bomb with nine seconds left" },
+          { title: "How to play", body: "Now at the top of Options: two small boards to lay and send him down yourself, with a finger showing where. The boards also come back after every 8:00, and SKIP asks before it goes.", image: "/media/otto/v1.2/howto.webp", alt: "A small practice board with a finger pointing at the empty square to lay" },
+          { title: "New headphones", body: "The headphones before the title are made again. The old pair (left) has made way for a 1970s hi-fi pair: stitched leather, brushed aluminium, a coiled cord, an amber lamp that breathes. Finish the first night, and the next time you open the game Otto’s own pair is waiting (right).", image: "/media/otto/v1.2/headphones.webp", alt: "Three pairs of headphones on black: the old pair, a 1970s hi-fi pair with a coiled cord, and Otto’s own" },
+        ],
+        shelves: [{
+          title: "Eight new shells",
+          description: "Five in the store, two new sets, and one for the 21st floor.",
+          items: [
+              { name: "The Street Performer", group: "Store", image: "/media/otto/v1.2/skin_busker.webp" },
+              { name: "VHS", group: "Store", image: "/media/otto/v1.2/skin_vhs.webp" },
+              { name: "Best Dad", group: "Store", image: "/media/otto/v1.2/skin_dad.webp" },
+              { name: "Best Mom", group: "Store", image: "/media/otto/v1.2/skin_mom.webp" },
+              { name: "Best Daughter", group: "Store", image: "/media/otto/v1.2/skin_daughter.webp" },
+              { name: "Family", group: "A family on a sitcom set", image: "/media/otto/v1.2/bundle_family.webp" },
+              { name: "Super Late", group: "The late shift", image: "/media/otto/v1.2/bundle_superlate.webp", width: 360, height: 367 },
+              { name: "Calisthenics", group: "21st floor of Burn Out", image: "/media/otto/v1.2/skin_calisthenics.webp" },
+          ],
+        }, {
+          title: "New posters",
+          description: "Five shells from before, in new posters.",
+          items: [
+              { name: "Clockwork", group: "New poster", image: "/media/otto/v1.2/skin_clockwork.webp" },
+              { name: "Night Mail", group: "New poster", image: "/media/otto/v1.2/skin_post.webp", width: 360, height: 329 },
+              { name: "Night Cab", group: "New poster", image: "/media/otto/v1.2/skin_taxi.webp", width: 360, height: 356 },
+              { name: "Last Tram", group: "New poster", image: "/media/otto/v1.2/skin_tram.webp" },
+              { name: "Bomberman", group: "New poster", image: "/media/otto/v1.2/skin_bomber.webp" },
+          ],
+        }],
+        more: [
+          "A shell you earn now shows itself: its poster comes up and catches the light. Touch it to see its page; go back, and you play on where you were.",
+          "Night Mail and Night Cab are now 5 coins each, or both together as Super Late.",
+          "SEND HIM goes grey when the road is laid the same way it already failed. You can still press it.",
+          "A plank you knock out breaks and sinks. Put it back, and the same pieces come up out of the water.",
+          "On every road of the first district, the line showing where he will go turns green once it gets him home. The district’s last road is new, and harder.",
+          "At 8:00 the finger is always there, and draws back slowly when you send him.",
+          "Tap your coins in the store to see where coins come from; your coins and what they went on are now shown as pictures, with how each shell was earned.",
+          "Every question now dims the screen, softens it, and puts the sound under water.",
+          "Open a shell from this page and go back: you land here again, where you were.",
+          "And one shell that only comes to those who keep trying.",
+          "A new icon, printed in four inks.",
         ],
       },
-      more: [
-        "One Shot now opens at 36 stars.",
-        "A banner tells you whenever something opens, wherever you are.",
-        "At 8:10 you see the way he will go before he sets off.",
-        "The last road of every district made again, with its coin back at the end.",
-        "Fireworks over the city once the first night is done, and a bigger flag on the goal.",
-        "New posters for Foody, Action Star and The Stunt Double, and a new icon.",
-      ],
-    },
+      {
+        version: "1.1",
+        date: "November 2026",
+        title: "Night Two",
+        description: "A second night in the rain, a cheetah loose on the roads, and a new way to play Rush.",
+        headliners: [
+          { title: "Night Two", body: "A second night in the rain: twelve new districts under neon, its own story, its own fork and two new endings.", image: "/media/otto/v1.1/night2.webp", alt: "A street of Bo City at night under neon signs and paper lanterns" },
+          { title: "The cheetah", body: "A security unit on four fast legs, let out of its cage to bring him in. It hunts the roads of the sixth district: keep out of its way. Where it goes after that is in the story.", image: "/media/otto/v1.1/hound.webp", alt: "A glowing spotted security cheetah standing on a lit road at night" },
+          { title: "Rampage", body: "A new way in Rush. He walks until he hits a wall; you have one red button. Opens at 72 stars.", image: "/media/otto/v1.1/rampage.webp", alt: "A control panel with a big red right-turn button, a green button and a gauge" },
+          { title: "Choose again", body: "Once a night has had its ending, go back into its twelfth district and send him the other way. No need to play the night again.", image: "/media/otto/v1.1/fork.webp", alt: "A snapshot of the city skyline at dusk in a yellow frame" },
+        ],
+        shelves: [{
+          title: "Nine new shells",
+          description: "Each with the poster of a film he never made.",
+          items: [
+            { name: "Foody", group: "Store", image: "/media/otto/v1.1/skin_foody.webp" },
+            { name: "The noodle stand", group: "Store", image: "/media/otto/v1.1/skin_noodle.webp" },
+            { name: "The photographer", group: "Store", image: "/media/otto/v1.1/skin_photographer.webp" },
+            { name: "The stunt double", group: "Store", image: "/media/otto/v1.1/skin_stunt.webp" },
+            { name: "Keep Rolling", group: "The star and his double", image: "/media/otto/v1.1/bundle_rolling.webp" },
+            { name: "Spotted collar", group: "A Night Two ending", image: "/media/otto/v1.1/skin_dogtag.webp" },
+            { name: "Unboxed", group: "A Night Two ending", image: "/media/otto/v1.1/skin_unboxed.webp" },
+            { name: "The Survivalist", group: "Earned with stars", image: "/media/otto/v1.1/skin_survivalist.webp" },
+            { name: "The Perfectionist", group: "Earned with stars", image: "/media/otto/v1.1/skin_perfectionist.webp" },
+          ],
+        }],
+        more: [
+          "One Shot now opens at 36 stars.",
+          "A banner tells you whenever something opens, wherever you are.",
+          "At 8:10 you see the way he will go before he sets off.",
+          "The last road of every district made again, with its coin back at the end.",
+          "Fireworks over the city once the first night is done, and a bigger flag on the goal.",
+          "New posters for Foody, Action Star and The Stunt Double, and a new icon.",
+        ],
+      },
+    ],
     featuredFilm: {
       title: "Otto Was Right",
       format: "App preview · 0:28 · Vertical",
@@ -439,7 +494,7 @@ export const projects: Project[] = [
         "Offline by design: no account, no ads, no data collected.",
       ],
       results: [
-        "Released on the App Store on October 29, 2026. Version 1.1 followed in November.",
+        "Released on the App Store on October 29, 2026. Versions 1.1 and 1.2 followed in November.",
         "Two nights: seventy-two roads in the first, twelve more districts in the second, four endings, and a weekly map on Game Center.",
         "Forty-odd shells to earn by playing. Nothing to buy.",
       ],
