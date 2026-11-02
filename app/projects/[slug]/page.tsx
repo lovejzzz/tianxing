@@ -111,9 +111,17 @@ export default async function ProjectPage({ params }: { params: Promise<{ slug: 
       </FilmHeading>
         <span>{project.featuredFilm.format}</span>
         <p>{project.featuredFilm.description}</p>
-        <a href={project.featuredFilm.url} target="_blank" rel="noreferrer">
-          {project.featuredFilm.linkLabel ?? "Watch on YouTube"} <span aria-hidden="true">↗</span>
-        </a>
+        {/* An App Store link uses Apple's own badge, unmodified, as their guidelines ask. */}
+        {project.featuredFilm.url.startsWith("https://apps.apple.com/") ? (
+          <a className="app-store-badge" href={project.featuredFilm.url} target="_blank" rel="noreferrer">
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img src={`${base}/art/app-store-badge.svg`} alt="Download on the App Store" width={168} height={56} />
+          </a>
+        ) : (
+          <a href={project.featuredFilm.url} target="_blank" rel="noreferrer">
+            {project.featuredFilm.linkLabel ?? "Watch on YouTube"} <span aria-hidden="true">↗</span>
+          </a>
+        )}
       </div>
       <div className="project-release-film">
         {project.featuredFilm.src ? (

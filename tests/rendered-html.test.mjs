@@ -189,7 +189,7 @@ test("opens Otto Was Right on its preview film, with 1.1 and its store link", as
   assert.match(html, /\/media\/otto\/v1\.1\/night2\.webp/);
   assert.equal((html.match(/alt="Film poster for the /g) ?? []).length, 9, "nine new shells on the shelf");
   assert.match(html, /One Shot now opens at 36 stars\./);
-  assert.match(html, /href="https:\/\/apps\.apple\.com\/us\/app\/otto-was-right\/id6819539423"[^>]*>App Store page/);
+  assert.match(html, /class="app-store-badge" href="https:\/\/apps\.apple\.com\/us\/app\/otto-was-right\/id6819539423"[^>]*><img src="\/art\/app-store-badge\.svg" alt="Download on the App Store"/, "the store link is Apple's badge");
   assert.doesNotMatch(html, /Coming to the App Store|Available In/);
   assert.match(html, /class="project-release project-release-portrait"/);
   assert.match(html, /class="yt-facade film-facade" data-src="\/media\/otto\/otto-preview\.mp4"[^>]*aria-label="Play preview:/, "the preview opens behind one large play button");
