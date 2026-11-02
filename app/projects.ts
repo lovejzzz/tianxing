@@ -358,7 +358,7 @@ export const projects: Project[] = [
     externalUrl: "https://apps.apple.com/us/app/otto-was-right/id6819539423",
     externalLabel: "View on the App Store",
     tagline: "He can’t turn left. Lay the road.",
-    description: "Unit 0770 cannot turn left any more. He is due to be scrapped at eight in the morning, and he cannot get to the desk by himself. So they have given him to you. Lay the road in front of him, one square at a time.",
+    description: "Unit 0770 cannot turn left any more.",
     note: "Free. No ads. No purchases. No account. English and 简体中文.",
     hero: { src: "/media/otto/otto-fork.jpg", displaySrc: "/media/optimized/otto-fork.webp", alt: "A screenprint of Otto, a small round robot, at a fork: the left road orange and fading, the right road black, his shadow leaning right", width: 2560, height: 1440, position: "50% 30%" },
     update: {

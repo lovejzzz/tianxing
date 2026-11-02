@@ -161,52 +161,6 @@ export default async function ProjectPage({ params }: { params: Promise<{ slug: 
           </div>
         </section>
 
-        {project.update && (
-          <section className="update-section" id={`whats-new-${project.slug}`} aria-labelledby={`whats-new-title-${project.slug}`}>
-            <div className="update-heading">
-              <div>
-                <p className="eyebrow">WHAT’S NEW <span>{project.update.version} · {project.update.date}</span></p>
-                <h2 id={`whats-new-title-${project.slug}`}>{project.update.title}</h2>
-              </div>
-              <p>{project.update.description}</p>
-            </div>
-            <div className="update-headliners">
-              {project.update.headliners.map((item, index) => (
-                <article key={item.title}>
-                  {/* eslint-disable-next-line @next/next/no-img-element */}
-                  <img src={`${base}${item.image}`} alt={item.alt} width={800} height={416} loading="lazy" decoding="async" />
-                  <h3><span>{String(index + 1).padStart(2, "0")}</span>{item.title}</h3>
-                  <p>{item.body}</p>
-                </article>
-              ))}
-            </div>
-            {project.update.shelf && (
-              <div className="update-shelf">
-                <header>
-                  <h3>{project.update.shelf.title}</h3>
-                  <p>{project.update.shelf.description}</p>
-                </header>
-                <ul>
-                  {project.update.shelf.items.map((item) => (
-                    <li key={item.name}>
-                      {/* eslint-disable-next-line @next/next/no-img-element */}
-                      <img src={`${base}${item.image}`} alt={`Film poster for the ${item.name} shell`} width={360} height={540} loading="lazy" decoding="async" />
-                      <strong>{item.name}</strong>
-                      <small>{item.group}</small>
-                    </li>
-                  ))}
-                </ul>
-              </div>
-            )}
-            <div className="update-more">
-              <h3>Also in {project.update.version}</h3>
-              <ul>
-                {project.update.more.map((line) => <li key={line}>{line}</li>)}
-              </ul>
-            </div>
-          </section>
-        )}
-
         {project.featuredFilm && (
           <section className={`project-release${project.featuredFilm.portrait ? " project-release-portrait" : ""}`} aria-labelledby={`release-${project.slug}`}>
             <div className="project-release-copy">
@@ -390,6 +344,52 @@ export default async function ProjectPage({ params }: { params: Promise<{ slug: 
                   {project.predecessor.linkLabel} <span aria-hidden="true">↗</span>
                 </a>
               </div>
+            </div>
+          </section>
+        )}
+
+        {project.update && (
+          <section className="update-section" id={`whats-new-${project.slug}`} aria-labelledby={`whats-new-title-${project.slug}`}>
+            <div className="update-heading">
+              <div>
+                <p className="eyebrow">WHAT’S NEW <span>{project.update.version} · {project.update.date}</span></p>
+                <h2 id={`whats-new-title-${project.slug}`}>{project.update.title}</h2>
+              </div>
+              <p>{project.update.description}</p>
+            </div>
+            <div className="update-headliners">
+              {project.update.headliners.map((item, index) => (
+                <article key={item.title}>
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img src={`${base}${item.image}`} alt={item.alt} width={800} height={416} loading="lazy" decoding="async" />
+                  <h3><span>{String(index + 1).padStart(2, "0")}</span>{item.title}</h3>
+                  <p>{item.body}</p>
+                </article>
+              ))}
+            </div>
+            {project.update.shelf && (
+              <div className="update-shelf">
+                <header>
+                  <h3>{project.update.shelf.title}</h3>
+                  <p>{project.update.shelf.description}</p>
+                </header>
+                <ul>
+                  {project.update.shelf.items.map((item) => (
+                    <li key={item.name}>
+                      {/* eslint-disable-next-line @next/next/no-img-element */}
+                      <img src={`${base}${item.image}`} alt={`Film poster for the ${item.name} shell`} width={360} height={540} loading="lazy" decoding="async" />
+                      <strong>{item.name}</strong>
+                      <small>{item.group}</small>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            )}
+            <div className="update-more">
+              <h3>Also in {project.update.version}</h3>
+              <ul>
+                {project.update.more.map((line) => <li key={line}>{line}</li>)}
+              </ul>
             </div>
           </section>
         )}
