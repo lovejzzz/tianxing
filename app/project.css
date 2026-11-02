@@ -195,7 +195,7 @@
 /* Featured film */
 .project-release { overflow: hidden; display: grid; grid-template-columns: minmax(260px, 0.62fr) minmax(0, 1.38fr); align-items: end; gap: clamp(40px, 6vw, 110px); background: radial-gradient(ellipse 50% 60% at 6% 10%, color-mix(in srgb, var(--accent) 16%, transparent), transparent 70%), var(--ink); }
 .project-release-copy { position: relative; z-index: 1; }
-.project-release-copy h2 { margin: 0; font-size: clamp(60px, 7vw, 112px); line-height: 0.92; }
+.project-release-copy :is(h1, h2) { margin: 0; font-size: clamp(60px, 7vw, 112px); font-weight: 600; line-height: 0.92; letter-spacing: -0.04em; }
 .project-release-copy > span { display: block; margin-top: 18px; color: var(--on-ink-3); font: 500 11px/1.2 var(--mono); letter-spacing: 0.14em; text-transform: uppercase; }
 .project-release-copy > p:not(.eyebrow) { margin: 24px 0 0; color: var(--on-ink-2); font: 400 clamp(20px, 1.7vw, 24px)/1.4 var(--serif); }
 .project-release-copy > a { margin-top: 34px; min-height: 48px; padding: 0 20px; display: inline-flex; align-items: center; gap: 14px; border: 1px solid rgba(255, 255, 255, 0.16); border-radius: 999px; color: var(--on-ink); font-size: 14px; font-weight: 500; transition: border-color 0.2s, background 0.2s; }
@@ -497,7 +497,7 @@
   .project-hero-contain { height: 440px; border-radius: 40px; }
   .project-hero-contain img { border-radius: 33px; }
   .project-copy > p { font-size: 27px; }
-  .project-release-copy h2 { font-size: 60px; }
+  .project-release-copy :is(h1, h2) { font-size: 60px; }
   .model-heading h2 { font-size: 52px; }
   .model-principles { grid-template-columns: 1fr; }
   .predecessor-heading h2 { font-size: 48px; }

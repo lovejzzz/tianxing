@@ -176,20 +176,20 @@ test("reserves flagship case-study evidence for the three lead projects", async 
   assert.doesNotMatch(await nonFlagship.text(), /CASE STUDY/);
 });
 
-test("presents Otto Was Right 1.1 with its store link, what is new, and vertical preview", async () => {
+test("opens Otto Was Right on its preview film, with 1.1 and its store link", async () => {
   const response = await render("/projects/otto-was-right");
   assert.equal(response.status, 200);
   const html = await response.text();
-  assert.match(html, /He can’t turn left\. Lay the road\./);
-  assert.match(html, /<h1>Otto Was Right<span class="title-badge is-single" role="note" aria-label="New Version!">/, "the release badge sits on the title");
-  assert.match(html, /class="release-chip" href="#whats-new-otto-was-right"/, "the version chip jumps to what is new");
+  // The preview film opens the page; there is no separate hero.
+  assert.doesNotMatch(html, /class="project-hero/);
+  assert.ok(html.indexOf('class="project-release project-release-portrait"') < html.indexOf('class="project-overview"'), "the film comes first");
+  assert.match(html, /<h1 id="release-otto-was-right">One night in Bo City<span class="title-badge is-single" role="note" aria-label="New Version!">/, "the release badge sits on the film title");
   assert.match(html, /id="whats-new-otto-was-right"/);
   for (const headliner of ["Night Two", "The cheetah", "Rampage", "Choose again"]) assert.match(html, new RegExp(`</span>${headliner}</h3>`));
   assert.match(html, /\/media\/otto\/v1\.1\/night2\.webp/);
   assert.equal((html.match(/alt="Film poster for the /g) ?? []).length, 9, "nine new shells on the shelf");
   assert.match(html, /One Shot now opens at 36 stars\./);
-  assert.match(html, /class="store-button" href="https:\/\/apps\.apple\.com\/us\/app\/otto-was-right\/id6819539423"/);
-  assert.match(html, /View on the App Store/);
+  assert.match(html, /href="https:\/\/apps\.apple\.com\/us\/app\/otto-was-right\/id6819539423"[^>]*>App Store page/);
   assert.doesNotMatch(html, /Coming to the App Store|Available In/);
   assert.match(html, /class="project-release project-release-portrait"/);
   assert.match(html, /class="yt-facade film-facade" data-src="\/media\/otto\/otto-preview\.mp4"[^>]*aria-label="Play preview:/, "the preview opens behind one large play button");

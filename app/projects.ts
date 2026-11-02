@@ -40,6 +40,8 @@ export type Project = {
     youtubeId?: string;
     /** A vertical film, shown in a phone frame. */
     portrait?: boolean;
+    /** Open the page with this film instead of the hero. */
+    lead?: boolean;
     src?: string;
     url: string;
     linkLabel?: string;
@@ -402,6 +404,7 @@ export const projects: Project[] = [
       description: "A terminal line from dispatch, seventy-two orders, and a robot who only goes straight or right. Straight from the game, with no captions added.",
       src: "/media/otto/otto-preview.mp4",
       portrait: true,
+      lead: true,
       url: "https://apps.apple.com/us/app/otto-was-right/id6819539423",
       linkLabel: "App Store page",
       poster: "/media/optimized/otto-preview-poster.webp",

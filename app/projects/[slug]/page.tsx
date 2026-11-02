@@ -93,6 +93,47 @@ export default async function ProjectPage({ params }: { params: Promise<{ slug: 
     </section>
   );
 
+  // A film can open the page in place of the hero: the game in motion says
+  // more than a still, and two introductions in a row said the same thing.
+  const filmLeads = Boolean(project.featuredFilm?.lead);
+  const FilmHeading = filmLeads ? "h1" : "h2";
+  const filmSection = project.featuredFilm && (
+    <section className={`project-release${project.featuredFilm.portrait ? " project-release-portrait" : ""}`} aria-labelledby={`release-${project.slug}`}>
+      <div className="project-release-copy">
+        <p className="eyebrow">{project.featuredFilm.portrait ? "APP PREVIEW" : "FEATURED FILM"}</p>
+        <FilmHeading id={`release-${project.slug}`}>
+        {project.featuredFilm.title}
+        {filmLeads && project.badge && (
+          <span className={`title-badge${project.badge.label ? "" : " is-single"}`} role="note" aria-label={[project.badge.label, project.badge.value].filter(Boolean).join(" ")}>
+            {project.badge.label && <small>{project.badge.label}</small>}<b>{project.badge.value}</b>
+          </span>
+        )}
+      </FilmHeading>
+        <span>{project.featuredFilm.format}</span>
+        <p>{project.featuredFilm.description}</p>
+        <a href={project.featuredFilm.url} target="_blank" rel="noreferrer">
+          {project.featuredFilm.linkLabel ?? "Watch on YouTube"} <span aria-hidden="true">↗</span>
+        </a>
+      </div>
+      <div className="project-release-film">
+        {project.featuredFilm.src ? (
+          <FilmPlayer
+            src={`${base}${project.featuredFilm.src}`}
+            title={`${project.featuredFilm.title} — ${project.featuredFilm.format}`}
+            poster={project.featuredFilm.poster ? `${base}${project.featuredFilm.poster}` : undefined}
+            label={project.featuredFilm.portrait ? "Play preview" : "Play film"}
+          />
+        ) : project.featuredFilm.youtubeId && (
+          <YouTubeFacade
+            id={project.featuredFilm.youtubeId}
+            title={`${project.featuredFilm.title} — ${project.featuredFilm.format}`}
+            poster={project.featuredFilm.poster ? `${base}${project.featuredFilm.poster}` : undefined}
+          />
+        )}
+      </div>
+    </section>
+  );
+
   return (
     <main className={`detail-page accent-${project.accent}`}>
       <a className="skip-link" href="#project-content">Skip to project content</a>
@@ -103,51 +144,53 @@ export default async function ProjectPage({ params }: { params: Promise<{ slug: 
       </header>
 
       <article id="project-content">
-        <section className="project-hero">
-          <div className="project-identity">
-            <p className="project-category">{project.category}</p>
-            <h1>
-              {project.title}
-              {project.badge && (
-                <span className={`title-badge${project.badge.label ? "" : " is-single"}`} role="note" aria-label={[project.badge.label, project.badge.value].filter(Boolean).join(" ")}>
-                  {project.badge.label && <small>{project.badge.label}</small>}<b>{project.badge.value}</b>
-                </span>
+        {filmLeads ? filmSection : (
+          <section className="project-hero">
+            <div className="project-identity">
+              <p className="project-category">{project.category}</p>
+              <h1>
+                {project.title}
+                {project.badge && (
+                  <span className={`title-badge${project.badge.label ? "" : " is-single"}`} role="note" aria-label={[project.badge.label, project.badge.value].filter(Boolean).join(" ")}>
+                    {project.badge.label && <small>{project.badge.label}</small>}<b>{project.badge.value}</b>
+                  </span>
+                )}
+              </h1>
+              {project.currentRelease && (
+                <a className="release-chip" href={project.update ? `#whats-new-${project.slug}` : project.versions ? `#versions-${project.slug}` : project.externalUrl}>
+                  <b>{project.currentRelease.version}</b>
+                  <span>New · {project.currentRelease.headline}</span>
+                </a>
               )}
-            </h1>
-            {project.currentRelease && (
-              <a className="release-chip" href={project.update ? `#whats-new-${project.slug}` : project.versions ? `#versions-${project.slug}` : project.externalUrl}>
-                <b>{project.currentRelease.version}</b>
-                <span>New · {project.currentRelease.headline}</span>
+              <p className="project-tagline">{project.tagline}</p>
+              <a className="store-button" href={project.externalUrl} target="_blank" rel="noreferrer">
+                <AppIcon project={project} />
+                <span className="store-button-copy">
+                  <strong>{project.externalLabel}</strong>
+                </span>
+                <span className="store-button-arrow" aria-hidden="true">↗</span>
               </a>
-            )}
-            <p className="project-tagline">{project.tagline}</p>
-            <a className="store-button" href={project.externalUrl} target="_blank" rel="noreferrer">
-              <AppIcon project={project} />
-              <span className="store-button-copy">
-                <strong>{project.externalLabel}</strong>
-              </span>
-              <span className="store-button-arrow" aria-hidden="true">↗</span>
-            </a>
-          </div>
-          <figure
-            className={`project-hero-visual${heroContain ? " project-hero-contain" : ""}`}
-            style={{
-              "--hero-position": project.hero.position ?? "50% 50%",
-              "--hero-zoom": project.hero.zoom ?? 1,
-              ...(project.hero.aspect ? { "--hero-aspect": project.hero.aspect } : {}),
-            } as CSSProperties}
-          >
-            {project.hero.href ? (
-              <a className="project-hero-link" href={project.hero.href} target="_blank" rel="noreferrer" aria-label={`${project.externalLabel}: ${project.hero.alt}`}>
-                {/* eslint-disable-next-line @next/next/no-img-element */}
+            </div>
+            <figure
+              className={`project-hero-visual${heroContain ? " project-hero-contain" : ""}`}
+              style={{
+                "--hero-position": project.hero.position ?? "50% 50%",
+                "--hero-zoom": project.hero.zoom ?? 1,
+                ...(project.hero.aspect ? { "--hero-aspect": project.hero.aspect } : {}),
+              } as CSSProperties}
+            >
+              {project.hero.href ? (
+                <a className="project-hero-link" href={project.hero.href} target="_blank" rel="noreferrer" aria-label={`${project.externalLabel}: ${project.hero.alt}`}>
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img src={`${base}${project.hero.displaySrc ?? project.hero.src}`} alt={project.hero.alt} width={project.hero.width} height={project.hero.height} fetchPriority="high" decoding="async" />
+                </a>
+              ) : (
+                /* eslint-disable-next-line @next/next/no-img-element */
                 <img src={`${base}${project.hero.displaySrc ?? project.hero.src}`} alt={project.hero.alt} width={project.hero.width} height={project.hero.height} fetchPriority="high" decoding="async" />
-              </a>
-            ) : (
-              /* eslint-disable-next-line @next/next/no-img-element */
-              <img src={`${base}${project.hero.displaySrc ?? project.hero.src}`} alt={project.hero.alt} width={project.hero.width} height={project.hero.height} fetchPriority="high" decoding="async" />
-            )}
-          </figure>
-        </section>
+              )}
+            </figure>
+          </section>
+        )}
 
         <section className="project-overview">
           <dl className="project-meta">
@@ -161,35 +204,7 @@ export default async function ProjectPage({ params }: { params: Promise<{ slug: 
           </div>
         </section>
 
-        {project.featuredFilm && (
-          <section className={`project-release${project.featuredFilm.portrait ? " project-release-portrait" : ""}`} aria-labelledby={`release-${project.slug}`}>
-            <div className="project-release-copy">
-              <p className="eyebrow">{project.featuredFilm.portrait ? "APP PREVIEW" : "FEATURED FILM"}</p>
-              <h2 id={`release-${project.slug}`}>{project.featuredFilm.title}</h2>
-              <span>{project.featuredFilm.format}</span>
-              <p>{project.featuredFilm.description}</p>
-              <a href={project.featuredFilm.url} target="_blank" rel="noreferrer">
-                {project.featuredFilm.linkLabel ?? "Watch on YouTube"} <span aria-hidden="true">↗</span>
-              </a>
-            </div>
-            <div className="project-release-film">
-              {project.featuredFilm.src ? (
-                <FilmPlayer
-                  src={`${base}${project.featuredFilm.src}`}
-                  title={`${project.featuredFilm.title} — ${project.featuredFilm.format}`}
-                  poster={project.featuredFilm.poster ? `${base}${project.featuredFilm.poster}` : undefined}
-                  label={project.featuredFilm.portrait ? "Play preview" : "Play film"}
-                />
-              ) : project.featuredFilm.youtubeId && (
-                <YouTubeFacade
-                  id={project.featuredFilm.youtubeId}
-                  title={`${project.featuredFilm.title} — ${project.featuredFilm.format}`}
-                  poster={project.featuredFilm.poster ? `${base}${project.featuredFilm.poster}` : undefined}
-                />
-              )}
-            </div>
-          </section>
-        )}
+        {!filmLeads && filmSection}
 
         {project.model && (
           <section className="model-section" data-mark={project.model.mark} aria-labelledby={`model-${project.slug}`}>
