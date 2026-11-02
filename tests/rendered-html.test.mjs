@@ -24,7 +24,7 @@ test("renders the finished portfolio home", async () => {
   const iconOrder = [...html.matchAll(/work-icons\/thumbs\/([a-z0-9-]+)\.webp/g)].map((match) => match[1]);
   assert.deepEqual([...new Set(iconOrder)].slice(0, 4), ["folio", "surge-method", "here-we-go-film-studio", "otto-was-right"], "Here We Go sits third and Otto fourth on the home screen");
   assert.doesNotMatch(html, /work-icons\/thumbs\/quicky-resume\.webp|href="\/projects\/quicky-resume"/, "Quicky is hidden from the iPhone");
-  assert.match(html, /class="release-badge is-single is-long" aria-label="Available Now!"/);
+  assert.match(html, /class="release-badge is-single" aria-label="New Version!"[^>]*>(?:(?!<\/span>).)*New Version!/);
   for (const [slug, text] of [["surge-method", "New Version!"], ["here-we-go-film-studio", "New Film!"], ["texas-jack", "New Version!"]]) {
     assert.match(html, new RegExp(`href="/projects/${slug}"[\\s\\S]{0,600}class="release-badge is-single" aria-label="${text}"`), `${slug} carries "${text}"`);
   }
@@ -176,12 +176,18 @@ test("reserves flagship case-study evidence for the three lead projects", async 
   assert.doesNotMatch(await nonFlagship.text(), /CASE STUDY/);
 });
 
-test("presents Otto Was Right as released, with its store link and vertical preview", async () => {
+test("presents Otto Was Right 1.1 with its store link, what is new, and vertical preview", async () => {
   const response = await render("/projects/otto-was-right");
   assert.equal(response.status, 200);
   const html = await response.text();
   assert.match(html, /He can’t turn left\. Lay the road\./);
-  assert.match(html, /<h1>Otto Was Right<span class="title-badge is-single" role="note" aria-label="Available Now!">/, "the release badge sits on the title");
+  assert.match(html, /<h1>Otto Was Right<span class="title-badge is-single" role="note" aria-label="New Version!">/, "the release badge sits on the title");
+  assert.match(html, /class="release-chip" href="#whats-new-otto-was-right"/, "the version chip jumps to what is new");
+  assert.match(html, /id="whats-new-otto-was-right"/);
+  for (const headliner of ["Night Two", "The cheetah", "Rampage", "Choose again"]) assert.match(html, new RegExp(`</span>${headliner}</h3>`));
+  assert.match(html, /\/media\/otto\/v1\.1\/night2\.webp/);
+  assert.equal((html.match(/alt="Film poster for the /g) ?? []).length, 9, "nine new shells on the shelf");
+  assert.match(html, /One Shot now opens at 36 stars\./);
   assert.match(html, /class="store-button" href="https:\/\/apps\.apple\.com\/us\/app\/otto-was-right\/id6819539423"/);
   assert.match(html, /View on the App Store/);
   assert.doesNotMatch(html, /Coming to the App Store|Available In/);

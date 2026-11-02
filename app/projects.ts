@@ -59,6 +59,16 @@ export type Project = {
   };
   /** The shipping version, shown as a chip in the hero that jumps to the timeline. */
   currentRelease?: { version: string; headline: string };
+  /** One release told in full: headline changes with pictures, a shelf, and the smaller changes. */
+  update?: {
+    version: string;
+    date: string;
+    title: string;
+    description: string;
+    headliners: { title: string; body: string; image: string; alt: string }[];
+    shelf?: { title: string; description: string; items: { name: string; group: string; image: string }[] };
+    more: string[];
+  };
   /** Every shipped version, oldest first, rendered as a timeline. */
   versions?: {
     eyebrow: string;
@@ -343,13 +353,49 @@ export const projects: Project[] = [
     year: "2026",
     role: "Game design, story, art & engineering",
     accent: "aqua",
-    badge: { value: "Available Now!" },
+    badge: { value: "New Version!" },
+    currentRelease: { version: "1.1", headline: "Night Two" },
     externalUrl: "https://apps.apple.com/us/app/otto-was-right/id6819539423",
     externalLabel: "View on the App Store",
     tagline: "He can’t turn left. Lay the road.",
     description: "Unit 0770 cannot turn left any more. He is due to be scrapped at eight in the morning, and he cannot get to the desk by himself. So they have given him to you. Lay the road in front of him, one square at a time.",
     note: "Free. No ads. No purchases. No account. English and 简体中文.",
     hero: { src: "/media/otto/otto-fork.jpg", displaySrc: "/media/optimized/otto-fork.webp", alt: "A screenprint of Otto, a small round robot, at a fork: the left road orange and fading, the right road black, his shadow leaning right", width: 2560, height: 1440, position: "50% 30%" },
+    update: {
+      version: "1.1",
+      date: "November 2026",
+      title: "Night Two",
+      description: "A second night in the rain, a cheetah loose on the roads, and a new way to play Rush.",
+      headliners: [
+        { title: "Night Two", body: "A second night in the rain: twelve new districts under neon, its own story, its own fork and two new endings.", image: "/media/otto/v1.1/night2.webp", alt: "A street of Bo City at night under neon signs and paper lanterns" },
+        { title: "The cheetah", body: "A security unit on four fast legs, let out of its cage to bring him in. It hunts the roads of the sixth district: keep out of its way. Where it goes after that is in the story.", image: "/media/otto/v1.1/hound.webp", alt: "A glowing spotted security cheetah standing on a lit road at night" },
+        { title: "Rampage", body: "A new way in Rush. He walks until he hits a wall; you have one red button. Opens at 72 stars.", image: "/media/otto/v1.1/rampage.webp", alt: "A control panel with a big red right-turn button, a green button and a gauge" },
+        { title: "Choose again", body: "Once a night has had its ending, go back into its twelfth district and send him the other way. No need to play the night again.", image: "/media/otto/v1.1/fork.webp", alt: "A snapshot of the city skyline at dusk in a yellow frame" },
+      ],
+      shelf: {
+        title: "Nine new shells",
+        description: "Each with the poster of a film he never made.",
+        items: [
+          { name: "Foody", group: "Store", image: "/media/otto/v1.1/skin_foody.webp" },
+          { name: "The noodle stand", group: "Store", image: "/media/otto/v1.1/skin_noodle.webp" },
+          { name: "The photographer", group: "Store", image: "/media/otto/v1.1/skin_photographer.webp" },
+          { name: "The stunt double", group: "Store", image: "/media/otto/v1.1/skin_stunt.webp" },
+          { name: "Keep Rolling", group: "The star and his double", image: "/media/otto/v1.1/bundle_rolling.webp" },
+          { name: "Spotted collar", group: "A Night Two ending", image: "/media/otto/v1.1/skin_dogtag.webp" },
+          { name: "Unboxed", group: "A Night Two ending", image: "/media/otto/v1.1/skin_unboxed.webp" },
+          { name: "The Survivalist", group: "Earned with stars", image: "/media/otto/v1.1/skin_survivalist.webp" },
+          { name: "The Perfectionist", group: "Earned with stars", image: "/media/otto/v1.1/skin_perfectionist.webp" },
+        ],
+      },
+      more: [
+        "One Shot now opens at 36 stars.",
+        "A banner tells you whenever something opens, wherever you are.",
+        "At 8:10 you see the way he will go before he sets off.",
+        "The last road of every district made again, with its coin back at the end.",
+        "Fireworks over the city once the first night is done, and a bigger flag on the goal.",
+        "New posters for Foody, Action Star and The Stunt Double, and a new icon.",
+      ],
+    },
     featuredFilm: {
       title: "One night in Bo City",
       format: "App preview · 0:28 · Vertical",
@@ -390,8 +436,8 @@ export const projects: Project[] = [
         "Offline by design: no account, no ads, no data collected.",
       ],
       results: [
-        "Released on the App Store on October 29, 2026.",
-        "Twelve districts, seventy-two roads, two endings, and a weekly map on Game Center.",
+        "Released on the App Store on October 29, 2026. Version 1.1 followed in November.",
+        "Two nights: seventy-two roads in the first, twelve more districts in the second, four endings, and a weekly map on Game Center.",
         "Forty-odd shells to earn by playing. Nothing to buy.",
       ],
       built: [
@@ -402,7 +448,7 @@ export const projects: Project[] = [
     },
     features: [
       { title: "Things that change", body: "Glass that breaks behind him. Belts that carry him, and buttons that turn them. Streets with no lamps, where you see only what his light has touched." },
-      { title: "A night in Bo City", body: "Twelve districts from eight in the evening to eight in the morning, in the rain. After the eleventh, the road forks." },
+      { title: "A night in Bo City", body: "Twelve districts from eight in the evening to eight in the morning, in the rain. After the eleventh, the road forks. Since 1.1, a second night under neon." },
       { title: "After the night", body: "A new map for everyone every Monday, a tower of roads against the clock, and shells for Otto, each with the poster of a film he never made." },
     ],
     media: [
