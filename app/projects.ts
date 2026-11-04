@@ -360,7 +360,7 @@ export const projects: Project[] = [
     role: "Game design, story, art & engineering",
     accent: "aqua",
     badge: { value: "New Version!" },
-    currentRelease: { version: "1.2", headline: "Tin Pallet" },
+    currentRelease: { version: "1.3", headline: "Rival" },
     externalUrl: "https://apps.apple.com/us/app/otto-was-right/id6819539423",
     externalLabel: "View on the App Store",
     tagline: "He can’t turn left. Lay the road.",
@@ -368,6 +368,43 @@ export const projects: Project[] = [
     note: "Free. No ads. No purchases. No account. English and 简体中文.",
     hero: { src: "/media/otto/otto-fork.jpg", displaySrc: "/media/optimized/otto-fork.webp", alt: "A screenprint of Otto, a small round robot, at a fork: the left road orange and fading, the right road black, his shadow leaning right", width: 2560, height: 1440, position: "50% 30%" },
     updates: [
+      {
+        version: "1.3",
+        date: "November 2026",
+        title: "Rival",
+        description: "A new game in Rush against 0771, two new shells and a Thanksgiving set, and a quieter game around them.",
+        headliners: [
+          { title: "Rival", body: "A new game in Rush, against 0771. One board, one bag of tiles, a turn each: lay road, glass and arrow stickers, send your robot, and take the parcel before it does. You can see where the next one will land, so plan for two at once, or wait on the spot and let it drop on you. In the last round every parcel is a present, worth two. 0771 thinks out loud while it plays. One coin to sit down; win, and you take two; draw, and you have yours back. Opens at 144 stars.", image: "/media/otto/v1.3/rival.webp", alt: "0771 in its high chair across the board, a row of tiles laid out in front of it" },
+        ],
+        shelves: [{
+          title: "New shells",
+          description: "Two in the store, and a Thanksgiving set of three.",
+          items: [
+            { name: "The Racer", group: "Store", image: "/media/otto/v1.3/skin_racer.webp" },
+            { name: "The Physio", group: "Store", image: "/media/otto/v1.3/skin_physio.webp" },
+            { name: "Thanksgiving", group: "A new set", image: "/media/otto/v1.3/bundle_thanksgiving.webp" },
+            { name: "Pilgrims", group: "In the Thanksgiving set", image: "/media/otto/v1.3/skin_pilgrim.webp" },
+            { name: "First Light", group: "In the Thanksgiving set", image: "/media/otto/v1.3/skin_wampanoag.webp" },
+            { name: "Tom Turkey", group: "In the Thanksgiving set", image: "/media/otto/v1.3/skin_turkey.webp" },
+          ],
+        }, {
+          title: "New poster",
+          description: "Super Late, as two windows one over the other.",
+          items: [
+            { name: "Super Late", group: "New poster", image: "/media/otto/v1.3/bundle_superlate.webp" },
+          ],
+        }],
+        more: [
+          "New sounds all through the game, and through the first night’s story: the cuts between scenes, the claw that brings him back, the lights coming on across the map.",
+          "Rampage: the arena is bigger, and your coins are at the top right; each one you win flies up into them.",
+          "Rampage: when you ask to leave, the game stands still behind the question.",
+          "Tin Pallet: the tilt sign on the panel is bigger, and easier to touch.",
+          "How to play: SKIP comes up when you tap the screen three times quickly.",
+          "Quieter where it should be: the headphones before the title come up in silence, a new road’s name no longer chimes, and the bells, the title cards’ tone, the rain on his shell and a few small whooshes are gone.",
+          "The store: each week two single shells and one from a set are on sale, and the sets stand cheapest first.",
+          "Super Late has a new poster, two windows one over the other. Night Mail and Night Cab are now 15 coins each, or 21 together.",
+        ],
+      },
       {
         version: "1.2",
         date: "November 2, 2026",
@@ -494,7 +531,7 @@ export const projects: Project[] = [
         "Offline by design: no account, no ads, no data collected.",
       ],
       results: [
-        "Released on the App Store on October 29, 2026. Version 1.1 followed in November, and 1.2 on November 2.",
+        "Released on the App Store on October 29, 2026. Version 1.1 followed in November, 1.2 on November 2, and 1.3 after it.",
         "Two nights: seventy-two roads in the first, twelve more districts in the second, four endings, and a weekly map on Game Center.",
         "Forty-odd shells to earn by playing. Nothing to buy.",
       ],

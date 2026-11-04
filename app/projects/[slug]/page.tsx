@@ -382,7 +382,7 @@ export default async function ProjectPage({ params }: { params: Promise<{ slug: 
               </div>
               <p>{latestUpdate.description}</p>
             </div>
-            <div className="update-headliners">
+            <div className={`update-headliners${latestUpdate.headliners.length === 1 ? " is-single" : ""}`}>
               {latestUpdate.headliners.map((item, index) => (
                 <article key={item.title}>
                   {/* eslint-disable-next-line @next/next/no-img-element */}
