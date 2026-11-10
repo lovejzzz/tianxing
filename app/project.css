@@ -262,18 +262,10 @@
 .update-more ul { margin: 0; padding: 0; list-style: none; display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 0 clamp(24px, 3vw, 48px); border-top: 1px solid rgba(255, 255, 255, 0.14); }
 .update-more li { padding: 14px 0; border-bottom: 1px solid rgba(255, 255, 255, 0.08); color: var(--on-ink-2); font-size: 15px; line-height: 1.55; }
 
-.update-earlier { max-width: var(--measure); margin: clamp(80px, 9vw, 128px) auto 0; padding-top: 40px; border-top: 1px solid rgba(255, 255, 255, 0.14); }
-.update-earlier .eyebrow { margin: 0; }
-.update-earlier .eyebrow span { margin-left: 8px; color: var(--on-ink-3); }
-.update-earlier h3 { margin: 12px 0 0; font-size: clamp(24px, 2.2vw, 32px); font-weight: 600; letter-spacing: -0.03em; }
-.update-earlier header > p { margin: 8px 0 0; max-width: 60ch; color: var(--on-ink-2); font: 400 18px/1.45 var(--serif); }
-.update-earlier-headliners { margin: 32px 0 0; padding: 0; list-style: none; display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: clamp(16px, 2vw, 28px); }
-.update-earlier-headliners li { min-width: 0; }
-.update-earlier-headliners img { width: 100%; height: auto; aspect-ratio: 800 / 416; display: block; object-fit: cover; border-radius: 8px; border: 1px solid rgba(255, 255, 255, 0.08); opacity: 0.88; }
-.update-earlier-headliners strong { display: block; margin-top: 14px; font-size: 15px; font-weight: 550; letter-spacing: -0.01em; }
-.update-earlier-headliners p { margin: 6px 0 0; color: var(--on-ink-3); font-size: 13.5px; line-height: 1.55; }
-.update-earlier-shelf { margin: 28px 0 0; color: var(--on-ink-3); font-size: 13.5px; line-height: 1.6; }
-.update-earlier-shelf b { color: var(--on-ink-2); font-weight: 550; }
+/* Earlier releases follow in full, each opened by a rule and a quieter heading. */
+.update-release + .update-release { max-width: var(--measure); margin: clamp(96px, 10vw, 152px) auto 0; padding-top: clamp(56px, 6vw, 88px); border-top: 1px solid rgba(255, 255, 255, 0.14); }
+.update-release + .update-release .update-heading h2 { font-size: clamp(44px, 5vw, 80px); }
+.update-release + .update-release .update-heading .eyebrow span { border-color: rgba(255, 255, 255, 0.2); color: var(--on-ink-2); }
 
 /* Self-hosted film */
 .project-release-film video { width: 100%; height: 100%; display: block; object-fit: cover; background: #000; }
@@ -484,7 +476,6 @@
   .update-headliners.is-single article { grid-template-columns: 1fr; grid-template-rows: auto; }
   .update-headliners.is-single :is(img, h3, p) { grid-column: auto; grid-row: auto; }
   .update-headliners.is-single h3 { margin-top: 22px; font-size: clamp(26px, 6vw, 36px); }
-  .update-earlier-headliners { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   /* Nine posters scroll sideways inside the section rather than shrinking to stamps. */
   .update-shelf ul { margin-inline: calc(-1 * var(--gutter)); padding: 0 var(--gutter) 8px; display: flex; overflow-x: auto; scroll-snap-type: x mandatory; scroll-padding-inline: var(--gutter); scrollbar-width: none; }
   .update-shelf ul::-webkit-scrollbar { display: none; }
@@ -536,7 +527,6 @@
   .update-headliners { grid-template-columns: 1fr; }
   .update-shelf header { flex-direction: column; gap: 6px; }
   .update-more ul { grid-template-columns: 1fr; }
-  .update-earlier-headliners { grid-template-columns: 1fr; }
   .versions-heading h2 { font-size: 46px; }
   .versions-track > li { padding-left: 80px; }
   .versions-bar { width: calc(10px + 40px * var(--release-rise)); }
