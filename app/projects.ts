@@ -360,7 +360,7 @@ export const projects: Project[] = [
     role: "Game design, story, art & engineering",
     accent: "aqua",
     badge: { value: "New Version!" },
-    currentRelease: { version: "1.3", headline: "Rival" },
+    currentRelease: { version: "1.4", headline: "Glass Town" },
     externalUrl: "https://apps.apple.com/us/app/otto-was-right/id6819539423",
     externalLabel: "View on the App Store",
     tagline: "He can’t turn left. Lay the road.",
@@ -369,8 +369,33 @@ export const projects: Project[] = [
     hero: { src: "/media/otto/otto-fork.jpg", displaySrc: "/media/optimized/otto-fork.webp", alt: "A screenprint of Otto, a small round robot, at a fork: the left road orange and fading, the right road black, his shadow leaning right", width: 2560, height: 1440, position: "50% 30%" },
     updates: [
       {
+        version: "1.4",
+        date: "November 10, 2026",
+        title: "Glass Town",
+        description: "A new game in Rush on a district of cracked glass, three new shells, and a set given on Christmas Eve.",
+        headliners: [
+          { title: "Glass Town", body: "A new game in Rush. A district of cracked glass, and three tries a board. Pick any tile on the edge and he sets off from it; the glass he drives off stays broken for the tries after, so a try that fails can break the glass the next one needs. Reach the flag and the next board comes. The newsroom behind the glass puts it on the air. Opens at 180 stars.", image: "/media/otto/v1.4/glasstown.webp", alt: "A board of glowing cracked-glass tiles in a dark district, with the newsroom lit behind it" },
+        ],
+        shelves: [{
+          title: "New shells",
+          description: "Three in the store. Christmas Gifts is not sold: it is given to everyone who opens the game on Christmas Eve.",
+          items: [
+            { name: "The Collector", group: "Store", image: "/media/otto/v1.4/skin_collector.webp" },
+            { name: "Yesterday", group: "Store", image: "/media/otto/v1.4/skin_yesterday.webp" },
+            { name: "Dream", group: "Store", image: "/media/otto/v1.4/skin_dream.webp" },
+            { name: "Christmas Gifts", group: "Opens on Christmas Eve", image: "/media/otto/v1.4/bundle_christmas.webp" },
+            { name: "Father Christmas", group: "In Christmas Gifts", image: "/media/otto/v1.4/skin_santa.webp" },
+            { name: "Sleigh Bells", group: "In Christmas Gifts", image: "/media/otto/v1.4/skin_reindeer.webp" },
+            { name: "Do Not Open", group: "In Christmas Gifts", image: "/media/otto/v1.4/skin_present.webp" },
+          ],
+        }],
+        more: [
+          "Undo brings him back to the start even when no tile has been laid.",
+        ],
+      },
+      {
         version: "1.3",
-        date: "November 2026",
+        date: "November 4, 2026",
         title: "Rival",
         description: "A new game in Rush against 0771, two new shells and a Thanksgiving set, and a quieter game around them.",
         headliners: [
@@ -531,7 +556,7 @@ export const projects: Project[] = [
         "Offline by design: no account, no ads, no data collected.",
       ],
       results: [
-        "Released on the App Store on October 29, 2026. Version 1.1 followed in November, 1.2 on November 2, and 1.3 after it.",
+        "Released on the App Store on October 29, 2026. Version 1.1 followed in November, 1.2 on November 2, 1.3 on November 4, and 1.4 on November 10.",
         "Two nights: seventy-two roads in the first, twelve more districts in the second, four endings, and a weekly map on Game Center.",
         "Forty-odd shells to earn by playing. Nothing to buy.",
       ],

@@ -176,7 +176,7 @@ test("reserves flagship case-study evidence for the three lead projects", async 
   assert.doesNotMatch(await nonFlagship.text(), /CASE STUDY/);
 });
 
-test("opens Otto Was Right on its preview film, with 1.3 in full and earlier versions beneath", async () => {
+test("opens Otto Was Right on its preview film, with 1.4 in full and earlier versions beneath", async () => {
   const response = await render("/projects/otto-was-right");
   assert.equal(response.status, 200);
   const html = await response.text();
@@ -186,16 +186,19 @@ test("opens Otto Was Right on its preview film, with 1.3 in full and earlier ver
   assert.ok(html.indexOf('class="project-release project-release-portrait"') < html.indexOf('class="project-overview"'), "the film comes first");
   assert.match(html, /<h1 id="release-otto-was-right">Otto Was Right<span class="title-badge is-single" role="note" aria-label="New Version!">/, "the release badge sits on the film title");
   assert.match(html, /id="whats-new-otto-was-right"/);
-  assert.match(html, /WHAT’S NEW <span>1\.3/);
+  assert.match(html, /WHAT’S NEW <span>1\.4/);
   assert.match(html, /class="update-headliners is-single"/, "one headline gets the wide card");
-  assert.match(html, /<\/span>Rival<\/h3>/);
-  assert.equal((html.match(/alt="Poster for /g) ?? []).length, 7, "six new shells and one new poster");
-  assert.match(html, /Night Mail and Night Cab are now 15 coins each, or 21 together\./);
-  // 1.2 and 1.1 stay, compactly, beneath 1.3, newest first.
+  assert.match(html, /<\/span>Glass Town<\/h3>/);
+  assert.equal((html.match(/alt="Poster for /g) ?? []).length, 7, "three store shells and the Christmas Gifts set of three");
+  assert.match(html, /Christmas Gifts is not sold/, "the Christmas set is given, never priced");
+  assert.match(html, /Undo brings him back to the start even when no tile has been laid\./);
+  // 1.3, 1.2 and 1.1 stay, compactly, beneath 1.4, newest first.
+  assert.match(html, /EARLIER <span>1\.3/);
   assert.match(html, /EARLIER <span>1\.2/);
   assert.match(html, /EARLIER <span>1\.1/);
   assert.match(html, /\/media\/otto\/v1\.1\/night2\.webp/);
-  assert.ok(html.indexOf("</span>Rival</h3>") < html.indexOf("Tin Pallet") && html.indexOf("Tin Pallet") < html.indexOf("Night Two"), "the newest version comes first");
+  const order = ["</span>Glass Town</h3>", "<h3>Rival</h3>", "<h3>Tin Pallet</h3>", "<h3>Night Two</h3>"].map((needle) => html.indexOf(needle));
+  assert.ok(order.every((at, i) => at > 0 && (i === 0 || at > order[i - 1])), "the newest version comes first");
   assert.match(html, /class="app-store-badge" href="https:\/\/apps\.apple\.com\/us\/app\/otto-was-right\/id6819539423"[^>]*><img src="\/art\/app-store-badge\.svg" alt="Download on the App Store"/, "the store link is Apple's badge");
   assert.doesNotMatch(html, /Coming to the App Store|Available In/);
   assert.match(html, /class="project-release project-release-portrait"/);
